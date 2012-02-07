@@ -63,22 +63,21 @@ class Time:
 class System: #library
 	""" Contains various housekeeping methods """
 	
-	def __init__(self,title,width,height):
+	def __init__(self):
 		""" Main init, called from app module """
 		pygame.init()
 		pygame.display.init()
-		pygame.display.set_caption(title)
+		pygame.display.set_caption("Geometry Genocide")
 		pygame.mixer.pre_init()
-		Global.window = width,height
-		# defines the vector origin to be the middle of screen
-		Vector.origin = width/2, height/2
 		self.load_sounds()
 		# Play Start up sound
 		self.play('start.wav')
 		self._loop = True
-		Global.canvas = pygame.display.set_mode((width, height),
-																			pygame.DOUBLEBUF)
-	
+		Global.canvas = pygame.display.set_mode((0, 0),pygame.FULLSCREEN | pygame.DOUBLEBUF)
+		Global.window = Global.canvas.get_width(),Global.canvas.get_height()
+		# defines the vector origin to be the middle of screen
+		Vector.origin = Global.canvas.get_width()/2, Global.canvas.get_height()/2
+		
 		
 	def play(self,filename):
 		""" Plays a specified sound """

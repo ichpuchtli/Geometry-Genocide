@@ -30,10 +30,15 @@ class App(Interface):
 			
 			# Render
 			self.background()
-			for obj in  self.user_interface() + self.battlefield():
+
+			for obj in self.user_interface():
 				obj.render()
 			
-			# Double Buff 
+			for obj in self.battlefield():
+				obj.render();
+
+
+			# Double Buffer 
 			self.flip()
 			
 		# Close Application after main loop is terminated
@@ -41,8 +46,7 @@ class App(Interface):
 
 if __name__ == '__main__' :
 	
-	# Window Title, Width and Height (adjustable)
-	game = App('Geometry Genocide',1200,920)
+	game = App()
 	game.load_main_menu()
 	game.loop()
 	
