@@ -353,14 +353,18 @@ class Pinwheel(Euclidean):
 		self.rotate(-Global.milliseconds/10)
 		self.accelerate()
 		
-class Bullet(Sprite):
+class Bullet(Euclidean):
 	""" Bullet object """
 	def __init__(self,position=(0,0),angle=0):
-		self.image = 'bullet.png'
+		self.matrix = [-2,0], [0,1], [2,0], [0,-1] 
+		self.scale(5)
+		self.color = 255,0,0
+		self.color2 = 255,200,200
 		self.x, self.y = position
 		self.direction = Vector(cos(radians(angle)),sin(radians(angle)))
 		self.speed = 1
-		self.load()
+		self.original = self.copy()
+		self.time = Time()	
 		self.rotate(angle)
 	
 	def destruct(self):
@@ -385,7 +389,7 @@ class Bullet(Sprite):
 					return True
 					break
 			else:
-				self.accelerate()
+				System.accelerate(self)
 		else:
 			self.destruct()
 			
