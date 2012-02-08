@@ -18,13 +18,14 @@ class Interface(Gameplay):
 		""" Returns a list of interface objects to be rendered"""
 		
 		if self.main_menu:
-			# Return main menu items
-			return [self.play_button, self.exit_button, self.logo]
+			self.play_button.render()
+			self.exit_button.render()
+			self.logo.render()
 		else:
-			# Return in game items
 			self.lives << Global.lives
 			self.score << Global.score
-			return [self.score,self.lives]
+			self.score.render()
+			self.lives.render()
 			
 
 	def load_game_interface(self):
@@ -44,9 +45,9 @@ class Interface(Gameplay):
 		
 		# Load and position text objects
 		self.score = Text() 
-		self.score += [100, Vector.origin[1]-30]
+		self.score.position += [100, Vector.origin[1]-30]
 		self.lives = Text()
-		self.lives  += [-100, Vector.origin[1]-30]
+		self.lives.position  += [-100, Vector.origin[1]-30]
 		
 	
 	def load_main_menu(self):
@@ -58,11 +59,11 @@ class Interface(Gameplay):
 		
 		# Load and position the logo and menu
 		self.logo = Logo()
-		self.logo += 0,100
+		self.logo.position += 0,100
 		self.play_button = PlayBtn()
-		self.play_button += -250,0
+		self.play_button.position += -250,0
 		self.exit_button = ExitBtn()
-		self.exit_button += 255,0
+		self.exit_button.position += 255,0
 		
 			
 	def on_event(self,event):
@@ -87,11 +88,11 @@ class Interface(Gameplay):
 		elif event.type == MOUSEBUTTONUP:
 			if self.main_menu:
 				# determine if mouse click is near the play button
-				if abs(self.play_button-self.get_mouse_position()) <150:
+				if abs(self.play_button.position-self.get_mouse_position()) <150:
 					self.load_game_interface()
 					
 				# determine if mouse click is near the exit button
-				elif abs(self.exit_button-self.get_mouse_position()) <150:
+				elif abs(self.exit_button.position-self.get_mouse_position()) <150:
 					self._loop = False
 			else:
 				self.stop_shooting()

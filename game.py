@@ -15,9 +15,9 @@ class Logo(Sprite):
 	""" Main logo object """
 	def __init__(self):
 		self.image = 'logo.png'
+		self.position = Vector(0,0)
 		self.load_image()
 		self.center = self.get_center()
-		self.x,self.y  = 0,0
 		self.transparency(0)
 		self.time = Time()
 	
@@ -29,10 +29,10 @@ class Logo(Sprite):
 class PlayBtn(Sprite):
 	""" Play button object """
 	def __init__(self):
+		self.position = Vector(0,0)
 		self.image = 'play.png'
 		self.load_image()
 		self.center = self.get_center()
-		self.x,self.y  = 0,0
 		self.transparency(0)
 		self.time = Time()
 	
@@ -44,10 +44,10 @@ class PlayBtn(Sprite):
 class ExitBtn(Sprite):
 	""" Exit button object """
 	def __init__(self):
+		self.position = Vector(0,0)
 		self.image = 'exit.png'
 		self.load_image()
 		self.center = self.get_center()
-		self.x,self.y  = 0,0
 		self.transparency(0)
 		self.time = Time()
 	
@@ -67,18 +67,18 @@ class Euclidean(Draw):
 	def pinata(self,radius):
 		""" Creates a set of circle instances associated with points in a matrix """
 		for i in range(len(self.matrix)):
-			Global.enemies += [Circle(self+self.matrix[i],radius,self.color,
+			Global.enemies += [Circle(self.position+self.matrix[i],radius,self.color,
 			self.color2)]
 
 	def follow(self):
 		""" Calculates the unit direction vector from object position to player 
 			position a displacer is added to slightly disperse a horde of enemies"""
-		self.direction = -(self-(Global.SpaceShip_position+self.displacer))
+		self.direction = -(self.position-(Global.SpaceShip_position+self.displacer))
 
 	def attack(self):
 		""" Similar to the follow method except the object is directed slightly 
 		ahead of the spaceship"""
-		self.direction = -(self-(self.displacer+Global.SpaceShip_position+\
+		self.direction = -(self.position-(self.displacer+Global.SpaceShip_position+\
 		Global.SpaceShip_direction*100))
 	
 	def accelerate(self):
@@ -87,14 +87,14 @@ class Euclidean(Draw):
 			
 		if Global.deathstars != []:
 			closest_deathstar = sorted(Global.deathstars,key=
-			lambda x:  abs(self-x))[0]
-			self.direction = -(self-(closest_deathstar+self.displacer))
-		System.accelerate(self)
+			lambda x:  abs(self.position-x.position))[0]
+			self.direction = -(self.position-(closest_deathstar.position+self.displacer))
+		Draw.accelerate(self)
 		
 	def load(self):
 		""" Prepares enemy object """
-		self.x,self.y = Vector.origin + Vector()*50
-		self *= [choice([1,-1]),choice([1,-1])]
+		self.position.x,self.position.y = Vector.origin + Vector()*50
+		self.position *= [choice([1,-1]),choice([1,-1])]
 		self.original = self.copy()
 		self.speed = 0.05
 		self.direction = Vector()
@@ -103,12 +103,12 @@ class Euclidean(Draw):
 	
 	def bounce(self):
 		""" flips direction of objects to stop going off screen """
-		if abs(self.x) >= Global.window[0]/2:
+		if abs(self.position.x) >= Global.window[0]/2:
 			self.direction.x *= -1
-			self.x *= 0.99
-		elif abs(self.y) >= Global.window[1]/2:
+			self.position.x *= 0.99
+		elif abs(self.position.y) >= Global.window[1]/2:
 			self.direction.y *= -1
-			self.y *= 0.99
+			self.position.y *= 0.99
 
 	def reload(self):
 		""" base reload method """
@@ -119,31 +119,32 @@ class Euclidean(Draw):
 	def fusion(self,radius):
 		""" draws a set of circles associated with points in a matrix """
 		for i in range(len(self.matrix)):
-			self.nice_circle(self+self.matrix[i],radius,self.color,self.color2)
+			self.nice_circle(self.position+self.matrix[i],radius,self.color,self.color2)
 			
 	def destruct(self):
 		""" base destruct method"""
-		Global.particles.append(Explosion(self.tupl(),10,self.color))
+		Global.particles.append(Explosion(self.position.tupl(),10,self.color))
 		Global.enemies.remove(self)
 		Global.score += self.score
 
 
 		
-class CrossHair(Sprite):
+class CrossHair(Sprite,System):
 	""" Cursor object """
 	def __init__(self):
 
 		self.image = 'cursor.png'
 		self.load()
-		self.x, self.y = 0,0
+		self.position = Vector(0,0)
 		
 	def reload(self):
-		self.x, self.y = self.get_mouse_position()
+		self.position.x, self.position.y = self.get_mouse_position()
 	
 class Square(Euclidean):
 	'Square Enemy'
 	
 	def __init__(self):
+		self.position = Vector(0,0)
 		self.play('square.wav')
 		self.matrix =  [15,15], [-15,15], [-15,-15],[15,15], [15,-15],[-15,-15]\
 		,[-15,15],[15,-15]  
@@ -161,19 +162,19 @@ class Square(Euclidean):
 		
 	def destruct(self):
 		Euclidean.destruct(self)
-		Global.enemies += [Square2((self.x+10,self.y+5)),
-		Square2((self.x-10,self.y-5))]
+		Global.enemies += [Square2((self.position.x+10,self.position.y+5)),
+		Square2((self.position.x-10,self.position.y-5))]
 	
 class Square2(Euclidean):
 	""" Child square object """
 	def __init__(self,position):
+		self.position = Vector(position[0],position[1])
 		self.matrix = [10,10], [-10,10], [-10,-10],[10,10], [10,-10],[-10,-10],\
 		[-10,10],[10,-10]
 		self.color = 255,32,255
 		self.color2 = 255,32,255
 		self.load()
 		self.speed = 0.2
-		self.x,self.y = position
 		self.score = 150
 		
 		
@@ -186,6 +187,7 @@ class Octagon(Euclidean):
 	""" Octagon Enemy"""
 	def __init__(self):
 		self.play('octagon.wav')
+		self.position = Vector(0,0)
 		self.matrix = [1.207,0.5], [0.5,1.207], [-0.5,1.207],[-1.207,0.5]\
 		,[-1.207,-0.5],[-0.5,-1.207],[0.5,-1.207],[1.207,-0.5]
 		self.scale(25)
@@ -211,6 +213,7 @@ class Octagon(Euclidean):
 class Triangle2(Euclidean):
 	""" Triangle enemy """
 	def __init__(self):
+		self.position = Vector(0,0)
 		self.play('triangle2.wav')
 		self.matrix = [-0.5,-3**0.5/4], [0.5,-3**0.5/4], [0,3**0.5/4]
 		self.scale(30)
@@ -238,6 +241,7 @@ class Rhombus(Euclidean):
 	
 	def __init__(self):
 		self.play('rhombus.wav')
+		self.position = Vector(0,0)
 		self.matrix =  [-15,0], [0, 25], [15,0], [0, -25] 
 		self.color = 0,200,255
 		self.color2 = 0,140,200
@@ -253,12 +257,14 @@ class Circle(Euclidean):
 	""" Circle enemy"""
 	def __init__(self,position=None,radius=10,color=(32,64,255),
 	color2=(50,200,255)):
+
+		self.position = Vector(0,0)
+		
 		if position:
-			self.x,self.y = position
+			self.position.x,self.position.y = position
 		else:
-			self.x,self.y = self.x,self.y = Vector.origin + Vector()*50
-			self *= [choice([1,-1]),choice([1,-1])]
-	
+			self.position.x,self.position.y = Vector.origin + Vector()*50
+			self.position *= [choice([1,-1]),choice([1,-1])]
 		self.radius = radius
 		self.speed = 0.35
 		self.direction = ~Vector()
@@ -273,7 +279,7 @@ class Circle(Euclidean):
 
 	def render(self):
 		self.reload()
-		self.nice_circle(self,self.radius,self.color,self.color2)
+		self.nice_circle(self.position,self.radius,self.color,self.color2)
 
 		
 class Explosion(Draw):
@@ -283,7 +289,7 @@ class Explosion(Draw):
 		self.color = color
 		self.speed = speed
 		self.span = span
-		self.x,self.y = pos
+		self.position = Vector(pos[0],pos[1])
 		
 		for i in range(size):
 			self.particles.append(Vector())
@@ -295,7 +301,7 @@ class Explosion(Draw):
 			self.destruct()
 			
 		for particle in self.particles:
-			self.line(self+particle*self.speed*self.time.period(),self+particle\
+			self.line(self.position+particle*self.speed*self.time.period(),self.position+particle\
 			*self.speed*self.time.period()*1.1,self.color)
 		
 	def destruct(self):
@@ -306,10 +312,11 @@ class DeathStar(Sprite):
 	def __init__(self):
 		self.play('deathstar.wav')
 		self.image = 'deathstar.png'
+		self.position = -(Global.SpaceShip_position+Vector(0,0))
 		self.lives = 20
-		self.x,self.y = -(Global.SpaceShip_position+Vector(0,0))
-		if abs(self-Global.SpaceShip_position) < 100:
-			self += 150,150
+
+		if abs(self.position-Global.SpaceShip_position) < 100:
+			self.position += 150,150
 		self.circles = 5
 		self.load()
 		
@@ -321,17 +328,17 @@ class DeathStar(Sprite):
 			self.play('deathstar2.wav')
 			self.destruct()
 			for i in range(self.circles):
-				Global.enemies += [Circle(self+Vector()*100)]			
+				Global.enemies += [Circle(self.position+Vector()*100)]			
 		
 		for terrorist in Global.enemies:
-			if abs(terrorist-self) < 50:
+			if abs(terrorist.position-self.position) < 50:
 				terrorist.destruct()
 				self.circles += 1
 				break
 	
 	def destruct(self):
 		Global.deathstars.remove(self)
-		Global.particles.append(Explosion(self.tupl(),100,(235,97,61)))
+		Global.particles.append(Explosion(self.position.tupl(),100,(235,97,61)))
 	
 
 class Pinwheel(Euclidean):
@@ -340,6 +347,7 @@ class Pinwheel(Euclidean):
 		self.play('pinwheel.wav')
 		self.matrix = [0,0], [0,1],[0.5,0.5],[-0.5,-0.5],[0,-1],[0,0],[1,0],\
 		[0.5,-0.5],[-0.5,0.5], [-1,0]
+		self.position = Vector(0,0)
 		self.scale(20)
 		self.load()
 		self.color = 200,64,255
@@ -360,7 +368,7 @@ class Bullet(Euclidean):
 		self.scale(5)
 		self.color = 255,0,0
 		self.color2 = 255,200,200
-		self.x, self.y = position
+		self.position = Vector(position[0],position[1])
 		self.direction = Vector(cos(radians(angle)),sin(radians(angle)))
 		self.speed = 1
 		self.original = self.copy()
@@ -370,36 +378,39 @@ class Bullet(Euclidean):
 	def destruct(self):
 		Global.bullets.remove(self)
 		return True
-		
+
+	def accelerate(self):
+		Draw.accelerate(self);
+
 	def reload(self):
 		
-		if abs(self.x)-50 < Global.window[0]/2 and \
-		 abs(self.y)-50 < Global.window[1]/2:
+		if abs(self.position.x)-50 < Global.window[0]/2 and \
+		 abs(self.position.y)-50 < Global.window[1]/2:
 			for planet in Global.deathstars:
-				if abs(planet-self) < 64:
+				if abs(planet.position-self.position) < 64:
 					planet.hit()
 					self.destruct()
 					return True
 					break
 					
 			for terrorist in Global.enemies:
-				if abs(terrorist-self) < 30:
+				if abs(terrorist.position-self.position) < 60:
 					self.destruct()
 					terrorist.destruct()
 					return True
 					break
 			else:
-				System.accelerate(self)
+				self.accelerate()
 		else:
 			self.destruct()
 			
-class SpaceShip(Sprite):
+class SpaceShip(Sprite,System):
 	""" SpaceShip object player controlled"""
 
 	def init(self):
 		self.image = 'player.png'
 		self.load()
-		self.x, self.y = 0,0
+		self.position = Vector(0,0)
 		self.speed = 0.35
 		self.shooting = False
 		self.shot_delay = 0.12
@@ -416,14 +427,14 @@ class SpaceShip(Sprite):
 		if self.shooting:
 			if self.time > self.shot_delay:
 				self.time.reset()
-				angle = (self._cursor - self).angle()
-				Global.bullets += [Bullet(self.tupl(),angle)]
+				angle = (self._cursor.position - self.position).angle()
+				Global.bullets += [Bullet(self.position.tupl(),angle)]
 
 				if Global.score > 150000:
-					Global.bullets += [Bullet(self.tupl(),angle-3)]
+					Global.bullets += [Bullet(self.position.tupl(),angle-3)]
 					
 				if Global.score > 25000:
-					Global.bullets += [Bullet(self.tupl(),angle+3)]
+					Global.bullets += [Bullet(self.position.tupl(),angle+3)]
 					
 				elif Global.score > 50000:
 					self.shot_delay = 0.06
@@ -432,20 +443,20 @@ class SpaceShip(Sprite):
 					
 				
 			
-		if  (self.x <= -Global.window[0]/2 and self.direction.x < 0) or \
-		 (self.x >= Global.window[0]/2 and self.direction.x > 0):
+		if  (self.position.x <= -Global.window[0]/2 and self.direction.x < 0) or \
+		 (self.position.x >= Global.window[0]/2 and self.direction.x > 0):
 			self.direction.x = 0
-		elif (self.y <= -Global.window[1]/2 and self.direction.y < 0) or \
-		(self.y >= Global.window[1]/2 and self.direction.y > 0):
+		elif (self.position.y <= -Global.window[1]/2 and self.direction.y < 0) or \
+		(self.position.y >= Global.window[1]/2 and self.direction.y > 0):
 			self.direction.y = 0
 			
 		for terrorist in Global.enemies + Global.deathstars:
-			if abs(terrorist-self) < 32:
+			if abs(terrorist.position-self.position) < 32:
 				self.destruct()
 				break
 		else:
 			self.accelerate()
-			Global.SpaceShip_position = self.tupl()
+			Global.SpaceShip_position = self.position.tupl()
 			Global.SpaceShip_direction = ~self.direction
 			
 	
@@ -459,14 +470,14 @@ class SpaceShip(Sprite):
 			
 		Global.lives -= 1
 		if Global.lives < 1:
-			Global.particles.append(Explosion(self.tupl(),500,(255,255,200),4,0.7))
+			Global.particles.append(Explosion(self.position.tupl(),500,(255,255,200),4,0.7))
 			self.load_main_menu()	
 			self.score = Text() << Global.score
 			self.score.log('scores.txt') 
 			self.play('die.wav')
 			
 		else:
-			Global.particles.append(Explosion(self.tupl(),500,(255,255,200)))
+			Global.particles.append(Explosion(self.position.tupl(),500,(255,255,200)))
 			self.init()
 			
 			self.play('die1.wav')
@@ -488,13 +499,25 @@ class Gameplay(SpaceShip):
 		if not self.main_menu:
 		
 			self.assult()
-			
-			# return all objects in the battlefield to be rendered
-			return Global.bullets + [self._cursor] + [self] + Global.deathstars \
-			+ Global.enemies + Global.particles
 
+			self._cursor.render()
+			
+			for obj in Global.bullets:
+				obj.render()
+			
+			for obj in Global.deathstars:
+				obj.render()
+
+			for obj in Global.enemies:
+				obj.render()
+
+			for obj in Global.particles:
+				obj.render()
+
+			self.render()
 		else:
-			return Global.particles
+			 for obj in Global.particles:
+				 obj.render()
 
 	def add(self,geo=None,x=1):
 		"""Spawns any enemy object if geo is undefined spawn random enemy"""

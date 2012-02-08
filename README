@@ -1,0 +1,29 @@
+Geometry Genocide v1.0
+
+2D Arcade Game inspired by Geometry Wars. 
+
+Design
+
+This game is written in python using the pygame (pygame.org) library for graphics and sound management.
+
+This project was developed for a 1st year college assignment. The initial design overused inheritence and operator overloading being the cool thing at the time. I recently found this project sitting in some old folders and decided to put it online, after which I decided to polish some aspects of the games design to perform better on low end machines such as netbooks.   
+
+Requirements
+
+1. Python 2.x (Python. 3.x) not tested
+2. Pygame 1.9.x
+
+Install
+
+For Python visit http://python.org/download/
+For Pygame visit http://pygame.org/download.shtml
+
+Download and extract the contents of the zipfile
+
+Start the game by directing your terminal to the folder which you extracted the zipfile and run "python app.py".
+
+Author
+
+Sam Macpherson
+
+

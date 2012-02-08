@@ -95,7 +95,7 @@ class System: #library
 		""" Moves an objects by summing partial displacements,using the change
 			in time over the main loop to maintain speed across all computers
 			the speed is in terms of pixels/millisecond """
-		self +=  ~self.direction*self.speed*Global.dt
+		self.position +=  ~self.direction*self.speed*Global.dt
 	
 	def mouse_visible(self,x):
 		""" Controls mouse visibility True -> visible, False -> invisible"""
@@ -245,19 +245,38 @@ class Matrix:
 				self.matrix[m][1] = self.original[m][0]*sin(angle)+\
 				self.original[m][1]*cos(angle)
 
-class Render(System,Vector):
+class Render():
 	""" Render Class """
 	def render(self,):
 		""" blits object to screen if reload method returns None """
 		if not self.reload():	
-			self.blit(self.image, (self.literal() - self.center).tupl())
+			self.blit(self.image, (self.position.literal() - self.center).tupl())
+
+	def play(self,filename):
+		""" Plays a specified sound """
+		Global.sounds[filename].play()
 	
 	def blit(self,image,position):
 		Global.canvas.blit(image,position)
-		
 
-class Draw(System,Matrix,Vector):
-	""" Drawing class """
+	def accelerate(self):
+		""" Moves an objects by summing partial displacements,using the change
+			in time over the main loop to maintain speed across all computers
+			the speed is in terms of pixels/millisecond """
+		self.position +=  ~self.direction*self.speed*Global.dt
+
+class Draw(Matrix):
+
+	def accelerate(self):
+		""" Moves an objects by summing partial displacements,using the change
+			in time over the main loop to maintain speed across all computers
+			the speed is in terms of pixels/millisecond """
+		self.position +=  ~self.direction*self.speed*Global.dt
+
+
+	def play(self,filename):
+		""" Plays a specified sound """
+		Global.sounds[filename].play()
 	
 	def nice_circle(self,position,radius,color,color2):
 		""" Pretty Circle """
@@ -288,10 +307,10 @@ class Draw(System,Matrix,Vector):
 		if not self.reload():	
 			for i in range(len(self.matrix)):
 				if (len(self.matrix)-1) == i:
-					self.nice_line(self+self.matrix[i],self+self.matrix[0],self.color
+					self.nice_line(self.position+self.matrix[i],self.position+self.matrix[0],self.color
 					,self.color2)
 				else:
-					self.nice_line(self+self.matrix[i],self+self.matrix[i+1],self.color
+					self.nice_line(self.position+self.matrix[i],self.position+self.matrix[i+1],self.color
 					,self.color2)
 		
 class Text(Render):
@@ -299,6 +318,7 @@ class Text(Render):
 	def __init__(self,fontsize=24,font='Arial'):
 		""" Initiates Font size, color, position and Font family"""
 		self.x,self.y = 0,0
+		self.position = Vector(0,0)
 		self.center = 0,0
 		self.fontfamily = font
 		self.fontsize = fontsize

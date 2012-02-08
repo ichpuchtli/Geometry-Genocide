@@ -31,12 +31,9 @@ class App(Interface):
 			# Render
 			self.background()
 
-			for obj in self.user_interface():
-				obj.render()
+			self.user_interface()
 			
-			for obj in self.battlefield():
-				obj.render();
-
+			self.battlefield()
 
 			# Double Buffer 
 			self.flip()
