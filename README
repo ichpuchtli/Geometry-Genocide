@@ -6,7 +6,7 @@ Design
 
 This game is written in python using the pygame (pygame.org) library for graphics and sound management.
 
-This project was developed for a 1st year college assignment. The initial design overused inheritence and operator overloading being the cool thing at the time. I recently found this project sitting in some old folders and decided to put it online, after which I decided to polish some aspects of the games design to perform better on low end machines such as netbooks.   
+This project was developed for a 1st year college assignment I will admit the code is horrible, but it does the job. 
 
 Requirements
 
@@ -18,7 +18,7 @@ Install
 For Python visit http://python.org/download/
 For Pygame visit http://pygame.org/download.shtml
 
-Download and extract the contents of the zipfile
+Download and extract the contents of the zip file
 
 Start the game by directing your terminal to the folder which you extracted the zipfile and run "python app.py".
 

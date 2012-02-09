@@ -93,7 +93,7 @@ class Euclidean(Draw):
 		
 	def load(self):
 		""" Prepares enemy object """
-		self.position.x,self.position.y = Vector.origin + Vector()*50
+		self.position = Vector()*50 +  Vector.origin
 		self.position *= [choice([1,-1]),choice([1,-1])]
 		self.original = self.copy()
 		self.speed = 0.05
@@ -120,10 +120,12 @@ class Euclidean(Draw):
 		""" draws a set of circles associated with points in a matrix """
 		for i in range(len(self.matrix)):
 			self.nice_circle(self.position+self.matrix[i],radius,self.color,self.color2)
-			
+	def remove(self):
+			Global.enemies.remove(self)
+
 	def destruct(self):
 		""" base destruct method"""
-		Global.particles.append(Explosion(self.position.tupl(),10,self.color))
+		Global.particles.append(Explosion(self.position.tupl(),15,self.color))
 		Global.enemies.remove(self)
 		Global.score += self.score
 
@@ -162,13 +164,12 @@ class Square(Euclidean):
 		
 	def destruct(self):
 		Euclidean.destruct(self)
-		Global.enemies += [Square2((self.position.x+10,self.position.y+5)),
-		Square2((self.position.x-10,self.position.y-5))]
+		Global.enemies += [Square2(Vector(10,5) + self.position),
+		Square2(Vector(-10,-5) + self.position)]
 	
 class Square2(Euclidean):
 	""" Child square object """
-	def __init__(self,position):
-		self.position = Vector(position[0],position[1])
+	def __init__(self,vector):
 		self.matrix = [10,10], [-10,10], [-10,-10],[10,10], [10,-10],[-10,-10],\
 		[-10,10],[10,-10]
 		self.color = 255,32,255
@@ -176,6 +177,7 @@ class Square2(Euclidean):
 		self.load()
 		self.speed = 0.2
 		self.score = 150
+		self.position = vector
 		
 		
 	def reload(self):
@@ -284,7 +286,7 @@ class Circle(Euclidean):
 		
 class Explosion(Draw):
 	""" Explosion object """
-	def __init__(self,pos,size,color,span=1,speed=2):
+	def __init__(self,pos,size,color,span=1,speed=1):
 		self.particles = []
 		self.color = color
 		self.speed = speed
@@ -292,7 +294,7 @@ class Explosion(Draw):
 		self.position = Vector(pos[0],pos[1])
 		
 		for i in range(size):
-			self.particles.append(Vector())
+			self.particles.append(Vector() + Vector())
 		
 		self.time = Time()
 	
@@ -338,7 +340,7 @@ class DeathStar(Sprite):
 	
 	def destruct(self):
 		Global.deathstars.remove(self)
-		Global.particles.append(Explosion(self.position.tupl(),100,(235,97,61)))
+	#	Global.particles.append(Explosion(self.position.tupl(),100,(235,97,61)))
 	
 
 class Pinwheel(Euclidean):
@@ -394,7 +396,7 @@ class Bullet(Euclidean):
 					break
 					
 			for terrorist in Global.enemies:
-				if abs(terrorist.position-self.position) < 60:
+				if abs(terrorist.position-self.position) < 38:
 					self.destruct()
 					terrorist.destruct()
 					return True
@@ -413,7 +415,7 @@ class SpaceShip(Sprite,System):
 		self.position = Vector(0,0)
 		self.speed = 0.35
 		self.shooting = False
-		self.shot_delay = 0.12
+		self.shot_delay = 0.15
 		self.direction = Vector(0,0)
 		self.time = Time()
 		
@@ -437,9 +439,9 @@ class SpaceShip(Sprite,System):
 					Global.bullets += [Bullet(self.position.tupl(),angle+3)]
 					
 				elif Global.score > 50000:
-					self.shot_delay = 0.06
-				elif Global.score > 10000:
 					self.shot_delay = 0.09
+				elif Global.score > 10000:
+					self.shot_delay = 0.12
 					
 				
 			
@@ -463,21 +465,21 @@ class SpaceShip(Sprite,System):
 	def destruct(self):
 	
 		while len(Global.enemies) > 0:
-			Global.enemies[-1].destruct()
+			Global.enemies[-1].remove()
 			
 		while len(Global.deathstars) > 0:
 			Global.deathstars[-1].destruct()
 			
 		Global.lives -= 1
 		if Global.lives < 1:
-			Global.particles.append(Explosion(self.position.tupl(),500,(255,255,200),4,0.7))
+			Global.particles.append(Explosion(self.position.tupl(),200,(255,255,200),5,0.2))
 			self.load_main_menu()	
 			self.score = Text() << Global.score
 			self.score.log('scores.txt') 
 			self.play('die.wav')
 			
 		else:
-			Global.particles.append(Explosion(self.position.tupl(),500,(255,255,200)))
+			Global.particles.append(Explosion(self.position.tupl(),200,(255,255,200)))
 			self.init()
 			
 			self.play('die1.wav')
@@ -493,12 +495,15 @@ class Gameplay(SpaceShip):
 		SpaceShip.init(self)
 		# initiate timers
 		self.reset_clocks(True)
-		
+		self.cluster_size = 8
+
 	def battlefield(self):
 		# if in game
 		if not self.main_menu:
 		
 			self.assult()
+			
+			self.render()
 
 			self._cursor.render()
 			
@@ -514,7 +519,6 @@ class Gameplay(SpaceShip):
 			for obj in Global.particles:
 				obj.render()
 
-			self.render()
 		else:
 			 for obj in Global.particles:
 				 obj.render()
@@ -562,6 +566,10 @@ class Gameplay(SpaceShip):
 			if self.timer[2] > 3:
 				self.timer[2].reset()
 				self.add(None,2)
+				# add an enemy if number gets below 20
+				if  len(Global.enemies) < 25:
+					self.add()
+		
 		
 			# Every 11s
 			if self.timer[3] > 11:
@@ -573,14 +581,16 @@ class Gameplay(SpaceShip):
 			if self.timer[4] > 17:
 				self.timer[4].reset()
 				self.add(None,2)
-				self.add_cluster(choice((Pinwheel,Rhombus)),8)
+				self.add_cluster(choice((Pinwheel,Rhombus)),self.cluster_size)
+				self.cluster_size += 1
 			
 			# Every 23s
 			if self.timer[5] > 23:
 				self.timer[5].reset()
 				self.add(Triangle2)
-				self.add_cluster(Square,8)
-			
+				self.add_cluster(Square,self.cluster_size)
+				self.cluster_size += 1
+
 			# Every 39s 
 			if self.timer[6] > 39:
 				self.timer[6].reset()
@@ -590,27 +600,25 @@ class Gameplay(SpaceShip):
 			
 		else: # if after 2 mins since game start
 	
-			# add an enemy if number gets below 20
-			if  len(Global.enemies) < 25:
-				self.add()
-		
+	
 			# Every 3sec
 			if self.timer[2] > 3:
 				self.timer[2].reset()
 				self.add(Square)
+				self.add(Pinwheel)
 				self.add(Triangle2)
 				self.add()
 			
 		# Every 11 sec
 			if self.timer[3] > 11:
 				self.timer[3].reset()
-				self.add_cluster(choice((Triangle2,Square,Rhombus)),8)
+				self.add_cluster(choice((Triangle2,Square,Rhombus)),self.cluster_size)
 				self.add(None,2)
 
 		# Every  17 sec
 			if self.timer[4] > 17:
 				self.timer[4].reset()
-				self.add(choice((Octagon,Circle,Triangle2)),2)
+				self.add(choice((Octagon,Circle,Triangle2)),self.cluster_size)
 				self.add(None,3)
 				self.add(Octagon)
 			
@@ -629,7 +637,7 @@ class Gameplay(SpaceShip):
 			# Every 46s
 			if self.timer[6] > 46:
 				self.timer[6].reset()
-				self.add_cluster(Rhombus,50)
+				self.add_cluster(choice(Triangle2,Rhombus,Circle,Pinwheel),self.cluster_size)
 				self.add(None,10)
 
 

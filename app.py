@@ -1,8 +1,4 @@
-#| Title: Geometry Genocide
-#| Version: 1.0
-#| Author: Sam Macpherson
-#| Description: A single player retro shooter for windows and linux.
-__doc__ = 'Creates an instance of the App class, loads the main menu and \
+_doc__ = 'Creates an instance of the App class, loads the main menu and \
 enters main loop.'
 	
 from interface import Interface
@@ -14,7 +10,8 @@ class App(Interface):
 
 	def loop(self):
 		""" Main Loop """
-		
+		self.load_main_menu()
+
 		# Initiate Time
 		self.clock = Time()
 		
@@ -44,7 +41,6 @@ class App(Interface):
 if __name__ == '__main__' :
 	
 	game = App()
-	game.load_main_menu()
 	game.loop()
 	
 	

@@ -280,9 +280,9 @@ class Draw(Matrix):
 	
 	def nice_circle(self,position,radius,color,color2):
 		""" Pretty Circle """
-		self.circle(position,color,radius-1)
-		self.circle(position,color2,radius)
-		self.circle(position,color,radius+1)
+		self.circle(position,color2,radius-1)
+		self.circle(position,color,radius)
+		self.circle(position,color2,radius+1)
 	
 	def circle(self,position,color,radius,width=1):
 		""" Draw Circle """
@@ -297,9 +297,9 @@ class Draw(Matrix):
 	def nice_line(self,point1,point2,color,color2):
 		""" Pretty Line """
 		
-		self.line(point1-(1,0),point2-(1,0),color)
-		self.line(point1,point2,color2)
-		self.line(point1+(0,1),point2+(1,0),color)
+		self.line(point1-(1,0),point2-(1,0),color2)
+		self.line(point1,point2,color)
+		self.line(point1+(0,1),point2+(1,0),color2)
 		
 	def trace(self):
 		""" Draws a series of lines from points given in a matrix joining the last 
