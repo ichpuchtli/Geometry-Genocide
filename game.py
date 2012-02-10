@@ -1,7 +1,4 @@
-#| Title: Geometry Genocide
-#| Version: 1.0
 #| Author: Sam Macpherson
-#| Description: A single player retro shooter for windows and linux.
 __doc__ = 'This module contains a series of classes which contribute to the \
 overall game play'
 
@@ -406,7 +403,7 @@ class Bullet(Euclidean):
 		else:
 			self.destruct()
 			
-class SpaceShip(Sprite,System):
+class SpaceShip(Sprite):
 	""" SpaceShip object player controlled"""
 
 	def init(self):

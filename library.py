@@ -1,7 +1,3 @@
-#| Title: Geometry Genocide
-#| Version: 1.0
-#| Author: Sam Macpherson
-#| Description: A single player retro shooter for windows and linux.
 __doc__ = 'This module contains various support classes including vector \
 and matrix support, rendering support, time management and other various \
 classes ' 

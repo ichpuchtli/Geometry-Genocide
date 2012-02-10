@@ -1,17 +1,13 @@
-#| Title: Geometry Genocide
-#| Version: 1.0
-#| Author: Sam Macpherson
-#| Description: A single player retro shooter for windows and linux.
 __doc__ = 'This module contains the Interface class, the interface class is \
 responsible for handling events and switching between the main menu and \
 the in game menu.'
 
 from pygame.locals import *
 
-from library import Global, Text, Vector
+from library import Global, Text, Vector, System
 from game import Gameplay, Logo, PlayBtn, ExitBtn, CrossHair
 
-class Interface(Gameplay):
+class Interface(Gameplay,System):
 	""" Interface Class """
 	
 	def user_interface(self):

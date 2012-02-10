@@ -1,42 +1,45 @@
-_doc__ = 'Creates an instance of the App class, loads the main menu and \
+__doc__ = 'Creates an instance of the App class, loads the main menu and \
 enters main loop.'
 	
 from interface import Interface
 from library import Time
 
 
-class App(Interface):
+class App():
 	'Application Class '
+
+	def __init__(self):
+		self.app = Interface()
 
 	def loop(self):
 		""" Main Loop """
-		self.load_main_menu()
+		self.app.load_main_menu()
 
 		# Initiate Time
 		self.clock = Time()
 		
-		while self._loop:
+		while self.app._loop:
 	
 			# Main Loop Time Delta
 			self.clock.grandfather()
 			self.clock.reset()
 			
 			# Events
-			for event in self.events():
-				self.on_event(event)
+			for event in self.app.events():
+				self.app.on_event(event)
 			
 			# Render
-			self.background()
+			self.app.background()
 
-			self.user_interface()
+			self.app.user_interface()
 			
-			self.battlefield()
+			self.app.battlefield()
 
 			# Double Buffer 
-			self.flip()
+			self.app.flip()
 			
 		# Close Application after main loop is terminated
-		self.window_close()
+		self.app.window_close()
 
 if __name__ == '__main__' :
 	
