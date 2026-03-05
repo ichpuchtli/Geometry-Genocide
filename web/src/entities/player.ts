@@ -21,6 +21,8 @@ export class Player extends Entity {
   shotTimer = 0;
   invulnTimer = 0;
   aimAngle = 0;
+  private slowTimer = 0;
+  private slowFactor = 1;
 
   constructor(private input: Input) {
     super();
@@ -65,9 +67,16 @@ export class Player extends Entity {
     // Invulnerability countdown
     if (this.invulnTimer > 0) this.invulnTimer -= dt;
 
+    // Slow timer countdown
+    if (this.slowTimer > 0) {
+      this.slowTimer -= dt;
+      if (this.slowTimer <= 0) this.slowFactor = 1;
+    }
+
     // Movement
     const dir = this.input.getMovementDir();
-    this.velocity.set(dir.x * PLAYER_SPEED, dir.y * PLAYER_SPEED);
+    const speed = PLAYER_SPEED * this.slowFactor;
+    this.velocity.set(dir.x * speed, dir.y * speed);
     this.move(dt);
 
     // Clamp to world bounds
@@ -94,6 +103,11 @@ export class Player extends Entity {
     const stage = this.getWeaponStage();
     this.shotTimer = stage.shotDelay;
     return stage.angleOffsets.map(offset => this.aimAngle + (offset * Math.PI) / 180);
+  }
+
+  applySlow(factor: number, duration: number): void {
+    this.slowFactor = factor;
+    this.slowTimer = duration * 1000; // convert seconds to ms
   }
 
   render(renderer: Renderer): void {

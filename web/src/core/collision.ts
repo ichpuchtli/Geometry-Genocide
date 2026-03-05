@@ -29,20 +29,40 @@ export function checkCollisions(
     absorbedEnemies: [],
   };
 
-  // Bullet vs Enemy
+  // Bullet vs Enemy (with onBulletHit for reflect/absorb/damage)
   for (const b of bullets) {
     if (!b.active) continue;
     for (const e of enemies) {
       if (!e.active || e.isSpawning) continue;
       if (b.position.distanceToSq(e.position) < BULLET_COLLISION_RADIUS_ENEMY * BULLET_COLLISION_RADIUS_ENEMY) {
+        const bulletAngle = Math.atan2(b.position.y - e.position.y, b.position.x - e.position.x);
+        const reaction = e.onBulletHit(bulletAngle);
+
+        if (reaction === 'reflect') {
+          // Bounce bullet back — don't deactivate, don't damage
+          b.velocity.x *= -1;
+          b.velocity.y *= -1;
+          b.angle = Math.atan2(b.velocity.y, b.velocity.x);
+          break;
+        }
+
+        if (reaction === 'absorb') {
+          // Consume bullet, no damage
+          b.active = false;
+          break;
+        }
+
+        // reaction === 'damage' — normal behavior
         b.active = false;
-        e.active = false;
-        result.killedEnemies.push({
-          enemy: e,
-          position: e.position.clone(),
-          color: e.color,
-          scoreValue: e.scoreValue,
-        });
+        const killed = e.hit();
+        if (killed) {
+          result.killedEnemies.push({
+            enemy: e,
+            position: e.position.clone(),
+            color: e.color,
+            scoreValue: e.scoreValue,
+          });
+        }
         break;
       }
     }

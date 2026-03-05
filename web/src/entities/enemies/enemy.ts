@@ -5,11 +5,15 @@ import { WORLD_WIDTH, WORLD_HEIGHT, ENEMY_COLLISION_RADIUS } from '../../config'
 
 export type EnemyDeathResult = {
   spawnEnemies?: { type: string; position: Vec2 }[];
+  /** If true, children spawn with a staggered theatrical delay */
+  staggeredSpawn?: boolean;
 };
 
 export abstract class Enemy extends Entity {
   speed = 0.1;
   scoreValue = 0;
+  hp = 1;
+  maxHp = 1;
   color: [number, number, number] = [1, 1, 1];
   color2: [number, number, number] = [0.5, 0.5, 0.5];
   /** Base shape vertices (unrotated, unscaled) */
@@ -170,6 +174,22 @@ export abstract class Enemy extends Entity {
     const glowR = this.collisionRadius + 8;
     renderer.drawCircle(this.position.x, this.position.y, glowR,
       [this.color[0] * pulse, this.color[1] * pulse, this.color[2] * pulse], 24);
+  }
+
+  /** Called when a bullet collides. Override for special bullet interactions.
+   *  'damage' = normal hit, 'absorb' = consume bullet no damage, 'reflect' = bounce bullet back */
+  onBulletHit(_bulletAngle: number): 'damage' | 'absorb' | 'reflect' {
+    return 'damage';
+  }
+
+  /** Returns true if the enemy is now dead */
+  hit(): boolean {
+    this.hp--;
+    if (this.hp <= 0) {
+      this.active = false;
+      return true;
+    }
+    return false;
   }
 
   /** Override to spawn children on death */

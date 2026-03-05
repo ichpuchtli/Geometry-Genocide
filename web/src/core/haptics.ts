@@ -1,50 +1,59 @@
-import { WebHaptics } from 'web-haptics';
+/**
+ * Game haptics using navigator.vibrate directly.
+ *
+ * The web-haptics library hid its iOS checkbox-switch element with
+ * display:none which prevented it from firing, and its PWM intensity
+ * simulation made short Android pulses imperceptible. Direct vibrate
+ * calls are simpler and more reliable on Android / Chrome.
+ *
+ * iOS Safari does not support the Vibration API at all — there is no
+ * reliable web-only haptics path for iOS, so calls silently no-op.
+ */
 
-/** Thin wrapper over web-haptics tuned for game events */
+const supported = typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function';
+
+function vibrate(pattern: number | number[]): void {
+  if (supported) navigator.vibrate(pattern);
+}
+
 export class HapticsManager {
-  private haptics: WebHaptics;
-
-  constructor() {
-    this.haptics = new WebHaptics();
-  }
-
   /** Light tap — enemy kill, bullet hit */
   light(): void {
-    this.haptics.trigger(15);
+    vibrate(18);
   }
 
   /** Medium impact — enemy spawn, small explosion */
   medium(): void {
-    this.haptics.trigger(40);
+    vibrate(40);
   }
 
   /** Heavy impact — boss kill, large explosion */
   heavy(): void {
-    this.haptics.trigger([60, 30, 80]);
+    vibrate([60, 30, 80]);
   }
 
   /** Player death — long dramatic rumble */
   death(): void {
-    this.haptics.trigger([100, 40, 120, 40, 160]);
+    vibrate([100, 40, 120, 40, 160]);
   }
 
   /** Boss spawn — ominous double pulse */
   bossSpawn(): void {
-    this.haptics.trigger([80, 60, 120]);
+    vibrate([80, 60, 120]);
   }
 
   /** Player respawn — sharp nudge */
   respawn(): void {
-    this.haptics.trigger('nudge');
+    vibrate([80, 80, 50]);
   }
 
   /** BlackHole absorb — quick suck */
   absorb(): void {
-    this.haptics.trigger(25);
+    vibrate(25);
   }
 
   /** Error/warning — e.g. last life */
   warning(): void {
-    this.haptics.trigger('error');
+    vibrate([40, 40, 40, 40, 40]);
   }
 }
