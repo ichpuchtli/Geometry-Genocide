@@ -94,6 +94,7 @@ export class Game {
 
   private state: GameState = 'menu';
   private gameTime = 0;
+  private gameOverTime = 0;
   private mobile: boolean;
 
   // Trail IDs for bullets (keyed by bullet index)
@@ -223,12 +224,86 @@ export class Game {
     return Math.min(base + enemyBoost, 1);
   }
 
+  /** Update gravity wells on the grid from large enemies (Octagon, DeathStar) */
+  private updateGravityWells(): void {
+    const wells: { x: number; y: number; mass: number; radius: number }[] = [];
+    for (const e of this.enemies) {
+      if (!e.active) continue;
+      if (e instanceof Octagon) {
+        // Octagon: moderate gravity well (pulls grid inward)
+        wells.push({ x: e.position.x, y: e.position.y, mass: -15, radius: 200 });
+      }
+    }
+    for (const ds of this.deathstars) {
+      if (!ds.active) continue;
+      // DeathStar: strong gravity well
+      wells.push({ x: ds.position.x, y: ds.position.y, mass: -30, radius: 300 });
+    }
+    this.grid.setGravityWells(wells);
+  }
+
+  /** Update during game over: keep enemies alive with idle animation + gravity */
+  private updateGameOver(dt: number): void {
+    this.gameOverTime += dt / 1000;
+
+    // Keep explosions animating
+    this.explosions.update(dt);
+
+    // Gentle idle rotation for enemies (no movement)
+    for (const e of this.enemies) {
+      if (!e.active) continue;
+      e.rotation += dt * 0.001;
+    }
+
+    // DeathStars keep pulsing
+    for (const ds of this.deathstars) {
+      if (ds.active) ds.update(dt);
+    }
+
+    // Gravity: big enemies pull smaller ones slowly during game over
+    for (const e of this.enemies) {
+      if (!e.active) continue;
+      // Pulled by Octagons
+      for (const o of this.enemies) {
+        if (o === e || !o.active || !(o instanceof Octagon)) continue;
+        const dx = o.position.x - e.position.x;
+        const dy = o.position.y - e.position.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist > 10 && dist < 200) {
+          const pull = 0.02 * dt / dist;
+          e.position.x += dx * pull;
+          e.position.y += dy * pull;
+        }
+      }
+      // Pulled by DeathStars
+      for (const ds of this.deathstars) {
+        if (!ds.active) continue;
+        const dx = ds.position.x - e.position.x;
+        const dy = ds.position.y - e.position.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist > 10 && dist < 300) {
+          const pull = 0.04 * dt / dist;
+          e.position.x += dx * pull;
+          e.position.y += dy * pull;
+        }
+      }
+    }
+
+    // Update gravity wells for grid warping
+    this.updateGravityWells();
+  }
+
   update(dt: number): void {
     // Update grid displacement decay regardless of state
     this.grid.update(dt);
 
     // Update touch mode on HUD
     this.hud.setTouchMode(this.input.mode === 'touch');
+
+    if (this.state === 'gameover') {
+      this.updateGameOver(dt);
+      return;
+    }
 
     if (this.state !== 'playing') return;
 
@@ -414,6 +489,9 @@ export class Game {
     // Explosions
     this.explosions.update(dt);
 
+    // Update gravity wells for grid warping during gameplay
+    this.updateGravityWells();
+
     // Camera
     this.camera.follow(this.player.position);
 
@@ -447,16 +525,12 @@ export class Game {
     );
     this.player.active = false;
     this.state = 'gameover';
-    // Clean up trails
-    for (const e of this.enemies) {
-      if (e.trailId >= 0) this.trails.unregister(e.trailId);
-    }
+    this.gameOverTime = 0;
+    // Clean up bullet trails only — keep enemy trails for the frozen scene
     for (const [, tid] of this.bulletTrailIds) {
       this.trails.unregister(tid);
     }
     this.bulletTrailIds.clear();
-    this.enemies = [];
-    this.deathstars = [];
     this.audio.playSFX('die');
     this.audio.stopMusic();
     this.hud.drawGameOver(this.player.score, this.player.enemiesKilled, this.gameTime);
@@ -523,6 +597,13 @@ export class Game {
 
       // Off-screen indicators
       renderOffscreenIndicators(this.renderer, this.camera, this.enemies, this.deathstars);
+    }
+
+    // Game over: render frozen enemies with unique glow effects
+    if (this.state === 'gameover') {
+      const t = this.gameOverTime;
+      for (const e of this.enemies) e.renderGlow(this.renderer, t);
+      for (const ds of this.deathstars) ds.renderGlow(this.renderer, t);
     }
 
     // Explosions render in all states (lingering after death)

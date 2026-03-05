@@ -33,4 +33,18 @@ export class CircleEnemy extends Enemy {
     // Outer ring
     renderer.drawCircle(this.position.x, this.position.y, this.radius + 1, this.color2, 20);
   }
+
+  /** Expanding ripple rings */
+  renderGlow(renderer: Renderer, time: number): void {
+    if (!this.active) return;
+    this.render(renderer);
+    // Two ripple rings at different phases
+    for (let i = 0; i < 2; i++) {
+      const phase = (time * 2 + i * 0.5) % 1.0;
+      const rippleR = this.radius + phase * 18;
+      const alpha = (1 - phase) * 0.4;
+      renderer.drawCircle(this.position.x, this.position.y, rippleR,
+        [this.color[0] * alpha, this.color[1] * alpha, this.color[2] * alpha], 20);
+    }
+  }
 }

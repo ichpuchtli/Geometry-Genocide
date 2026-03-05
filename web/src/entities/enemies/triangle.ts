@@ -37,6 +37,20 @@ export class Triangle extends Enemy {
     }
   }
 
+  /** Sequential vertex glow - energy pulses between vertices */
+  renderGlow(renderer: Renderer, time: number): void {
+    if (!this.active) return;
+    this.render(renderer);
+    const points = this.getWorldPoints();
+    // One vertex glows brightly at a time, cycling
+    const activeIdx = Math.floor((time * 3) % 3);
+    for (let i = 0; i < points.length; i++) {
+      const bright = i === activeIdx ? 0.8 : 0.2;
+      renderer.drawCircle(points[i][0], points[i][1], 12,
+        [this.color[0] * bright, this.color[1] * bright, this.color[2] * bright], 14);
+    }
+  }
+
   onDeath(): EnemyDeathResult {
     return {
       spawnEnemies: this.getWorldPoints().map(([x, y]) => ({

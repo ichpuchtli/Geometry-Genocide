@@ -100,6 +100,17 @@ export abstract class Enemy extends Entity {
     renderer.drawLineLoop(points, this.color);
   }
 
+  /** Render with unique glow effect for game over screen. Override per enemy type. */
+  renderGlow(renderer: Renderer, time: number): void {
+    if (!this.active) return;
+    // Default: render normally + pulsing glow ring
+    this.render(renderer);
+    const pulse = 0.5 + Math.sin(time * 3) * 0.3;
+    const glowR = this.collisionRadius + 8;
+    renderer.drawCircle(this.position.x, this.position.y, glowR,
+      [this.color[0] * pulse, this.color[1] * pulse, this.color[2] * pulse], 24);
+  }
+
   /** Override to spawn children on death */
   onDeath(): EnemyDeathResult {
     return {};

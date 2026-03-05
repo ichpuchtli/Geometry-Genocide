@@ -70,4 +70,24 @@ export class DeathStar extends Entity {
       renderer.drawCircle(cx, cy, 3, this.color, 8);
     }
   }
+
+  /** Massive gravity aura with slow-rotating energy rings */
+  renderGlow(renderer: Renderer, time: number): void {
+    if (!this.active) return;
+    this.render(renderer);
+    const px = this.position.x;
+    const py = this.position.y;
+    // Gravity distortion rings
+    for (let i = 0; i < 4; i++) {
+      const phase = (time * 0.8 + i * 0.25) % 1.0;
+      const ringR = 50 + phase * 60;
+      const alpha = (1 - phase) * 0.25;
+      renderer.drawCircle(px, py, ringR,
+        [this.color2[0] * alpha, this.color2[1] * alpha, this.color2[2] * alpha], 32);
+    }
+    // Inner bright glow
+    const core = 0.35 + Math.sin(time * 1.5) * 0.15;
+    renderer.drawCircle(px, py, 25,
+      [this.color2[0] * core, this.color2[1] * core, this.color2[2] * core], 24);
+  }
 }

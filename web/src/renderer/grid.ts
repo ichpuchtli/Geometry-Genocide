@@ -11,6 +11,13 @@ export interface GridForce {
   decay: number; // strength units per second
 }
 
+export interface GravityWell {
+  x: number;
+  y: number;
+  mass: number;   // negative strength = pull grid inward
+  radius: number;
+}
+
 const GRID_SPACING = 80;
 const MAX_FORCES = 16;
 
@@ -21,6 +28,7 @@ export class GridRenderer {
   private vertexCount = 0;
 
   private forces: GridForce[] = [];
+  private gravityWells: GravityWell[] = [];
 
   // Uniform locations
   private uResolution: WebGLUniformLocation;
@@ -70,6 +78,11 @@ export class GridRenderer {
     this.forces.push({ x, y, strength, radius, decay });
   }
 
+  /** Set gravity wells (persistent forces that warp the grid inward). Call each frame. */
+  setGravityWells(wells: GravityWell[]): void {
+    this.gravityWells = wells;
+  }
+
   update(dt: number): void {
     const dtSec = dt / 1000;
     for (let i = this.forces.length - 1; i >= 0; i--) {
@@ -88,16 +101,21 @@ export class GridRenderer {
     // Uniforms
     gl.uniform2f(this.uResolution, viewW, viewH);
     gl.uniform2f(this.uCamera, cameraX, cameraY);
-    gl.uniform3f(this.uGridColor, 0.05, 0.15, 0.3);
+    // Purple space-time continuum grid
+    gl.uniform3f(this.uGridColor, 0.18, 0.05, 0.35);
 
-    // Forces
-    const count = Math.min(this.forces.length, MAX_FORCES);
+    // Combine explosion forces + gravity wells
+    const combined: { x: number; y: number; strength: number; radius: number }[] = [];
+    for (const f of this.forces) combined.push(f);
+    for (const w of this.gravityWells) combined.push({ x: w.x, y: w.y, strength: w.mass, radius: w.radius });
+
+    const count = Math.min(combined.length, MAX_FORCES);
     gl.uniform1i(this.uForceCount, count);
 
     const forceData = new Float32Array(MAX_FORCES * 3);
     const radiiData = new Float32Array(MAX_FORCES);
     for (let i = 0; i < count; i++) {
-      const f = this.forces[i];
+      const f = combined[i];
       forceData[i * 3] = f.x;
       forceData[i * 3 + 1] = f.y;
       forceData[i * 3 + 2] = f.strength;
@@ -117,5 +135,6 @@ export class GridRenderer {
 
   clear(): void {
     this.forces.length = 0;
+    this.gravityWells.length = 0;
   }
 }

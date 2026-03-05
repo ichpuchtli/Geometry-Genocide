@@ -1,5 +1,6 @@
 import { Enemy } from './enemy';
 import { Vec2 } from '../../core/vector';
+import { Renderer } from '../../renderer/sprite-batch';
 import { COLORS, ENEMY_SPEED, ENEMY_SCORES } from '../../config';
 
 export class Rhombus extends Enemy {
@@ -16,5 +17,21 @@ export class Rhombus extends Enemy {
     if (!this.active || !playerPos) return;
     this.follow(playerPos);
     this.move(dt);
+  }
+
+  /** Pulsing cyan diamond aura */
+  renderGlow(renderer: Renderer, time: number): void {
+    if (!this.active) return;
+    this.render(renderer);
+    // Breathing glow: expanding/contracting scaled outline
+    const pulse = 1.2 + Math.sin(time * 4) * 0.3;
+    const cos = Math.cos(this.rotation);
+    const sin = Math.sin(this.rotation);
+    const glowPoints = this.shapePoints.map(([x, y]) => [
+      this.position.x + (x * pulse) * cos - (y * pulse) * sin,
+      this.position.y + (x * pulse) * sin + (y * pulse) * cos,
+    ]);
+    const a = 0.3 + Math.sin(time * 4) * 0.15;
+    renderer.drawLineLoop(glowPoints, [this.color[0] * a, this.color[1] * a, this.color[2] * a]);
   }
 }
