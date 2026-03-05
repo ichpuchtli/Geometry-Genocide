@@ -40,6 +40,7 @@ import {
   MOBILE_TRAIL_LENGTH_ENEMY,
   MOBILE_TRAIL_LENGTH_BULLET,
   MOBILE_ZOOM,
+  DESKTOP_ZOOM,
   BULLET_COLOR,
   DIFFICULTY_PHASES,
   SCREEN_SHAKE_SMALL,
@@ -122,7 +123,7 @@ export class Game {
     this.trailLenBullet = this.mobile ? MOBILE_TRAIL_LENGTH_BULLET : TRAIL_LENGTH_BULLET;
 
     this.renderer = new Renderer(gameCanvas);
-    if (this.mobile) this.renderer.zoom = MOBILE_ZOOM;
+    this.renderer.zoom = this.mobile ? MOBILE_ZOOM : DESKTOP_ZOOM;
     const gl = this.renderer.getGL();
 
     this.bloom = new BloomPass(gl);

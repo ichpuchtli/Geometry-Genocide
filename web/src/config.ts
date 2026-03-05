@@ -133,6 +133,7 @@ export const CLUSTER_BASE_SIZE = 8;
 export const SPAWN_DELAY_BETWEEN = 10; // ms between each enemy in a cluster
 
 // --- Camera ---
+export const DESKTOP_ZOOM = 0.75; // zoom out on desktop to show more environment
 export const CAMERA_LERP_SPEED = 0.08;
 export const SCREEN_SHAKE_SMALL = 3;
 export const SCREEN_SHAKE_LARGE = 6;
@@ -164,7 +165,7 @@ export const TRAIL_LENGTH_ENEMY = 18;
 export const TRAIL_LENGTH_BULLET = 10;
 
 // --- Mobile ---
-export const MOBILE_ZOOM = 0.55; // zoom out on mobile to see more of the world
+export const MOBILE_ZOOM = 0.45; // zoom out on mobile to see more of the world
 export const MOBILE_BLOOM_SCALE = 0.25; // bloom FBO at quarter-res on mobile
 export const MOBILE_MAX_ENEMIES = 80;
 export const MOBILE_MAX_PARTICLES = 30;
