@@ -100,6 +100,10 @@ export class BloomPass {
   apply(canvasWidth: number, canvasHeight: number): void {
     const gl = this.gl;
 
+    // Disable blending for fullscreen passes — otherwise alpha=0 fragments
+    // from the extract shader blend with old FBO data instead of overwriting
+    gl.disable(gl.BLEND);
+
     // --- Step 1: Extract bright pixels ---
     gl.bindFramebuffer(gl.FRAMEBUFFER, this.extractFBO.framebuffer);
     gl.viewport(0, 0, this.extractFBO.width, this.extractFBO.height);
@@ -152,5 +156,8 @@ export class BloomPass {
     gl.uniform1i(gl.getUniformLocation(this.compositeProgram, 'u_bloom'), 1);
     gl.uniform1f(gl.getUniformLocation(this.compositeProgram, 'u_bloomIntensity'), this.intensity);
     this.drawQuad(this.compositeProgram);
+
+    // Re-enable blending for next frame's entity rendering
+    gl.enable(gl.BLEND);
   }
 }
