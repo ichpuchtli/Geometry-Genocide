@@ -42,6 +42,19 @@ export const COLORS = {
   octagon:  { color: [1.0, 0.502, 0.125] as [number, number, number], color2: [1.0, 0.502, 0.251] as [number, number, number] },
   deathstar:{ color: [0.6, 0.2, 0.2] as [number, number, number], color2: [0.9, 0.4, 0.25] as [number, number, number] },
   blackhole:{ color: [0.5, 0.1, 0.8] as [number, number, number], color2: [0.3, 0.0, 0.6] as [number, number, number] },
+  // --- New fractal/topology enemies ---
+  sierpinski:     { color: [1.0, 0.843, 0.0] as [number, number, number], color2: [0.722, 0.525, 0.043] as [number, number, number] },
+  mobius:         { color: [0.0, 1.0, 0.784] as [number, number, number], color2: [0.0, 0.533, 0.4] as [number, number, number] },
+  koch:           { color: [0.533, 0.867, 1.0] as [number, number, number], color2: [1.0, 1.0, 1.0] as [number, number, number] },
+  penrose:        { color: [1.0, 0.078, 0.576] as [number, number, number], color2: [0.58, 0.0, 0.827] as [number, number, number] },
+  mengerdust:     { color: [1.0, 0.4, 0.0] as [number, number, number], color2: [0.6, 0.2, 0.0] as [number, number, number] },
+  hyperbolicdisc: { color: [0.0, 0.267, 1.0] as [number, number, number], color2: [0.102, 0.0, 0.4] as [number, number, number] },
+  fibspiral:      { color: [0.667, 1.0, 0.0] as [number, number, number], color2: [0.333, 0.533, 0.0] as [number, number, number] },
+  tesseract:      { color: [0.667, 0.0, 1.0] as [number, number, number], color2: [1.0, 0.0, 0.667] as [number, number, number] },
+  mandelbrot:     { color: [0.8, 0.0, 0.0] as [number, number, number], color2: [0.267, 0.0, 0.0] as [number, number, number] },
+  klein:          { color: [0.0, 1.0, 0.667] as [number, number, number], color2: [0.0, 0.4, 0.267] as [number, number, number] },
+  shard:          { color: [1.0, 0.9, 0.3] as [number, number, number], color2: [0.8, 0.7, 0.1] as [number, number, number] },
+  minimandel:     { color: [1.0, 0.2, 0.2] as [number, number, number], color2: [0.5, 0.0, 0.0] as [number, number, number] },
 };
 
 // --- Enemy speeds (px/ms) ---
@@ -54,6 +67,19 @@ export const ENEMY_SPEED = {
   triangle: 0.2,
   octagon: 0.15,
   blackhole: 0.04,
+  // --- New enemies ---
+  sierpinski: 0.08,
+  mobius: 0.18,
+  koch: 0.12,
+  penrose: 0.14,
+  mengerdust: 0.06,
+  hyperbolicdisc: 0.10,
+  fibspiral: 0.22,
+  tesseract: 0.09,
+  mandelbrot: 0.04,
+  klein: 0.13,
+  shard: 0.3,
+  minimandel: 0.25,
 };
 
 // --- Enemy scores ---
@@ -66,10 +92,45 @@ export const ENEMY_SCORES = {
   triangle: 550,
   octagon: 1650,
   blackhole: 2000,
+  // --- New enemies ---
+  sierpinski: 2400,
+  mobius: 900,
+  koch: 1200,
+  penrose: 1500,
+  mengerdust: 3200,
+  hyperbolicdisc: 2000,
+  fibspiral: 600,
+  tesseract: 2800,
+  mandelbrot: 4000,
+  klein: 1800,
+  shard: 100,
+  minimandel: 150,
 };
 
-// --- Octagon ---
+// --- Enemy HP ---
 export const OCTAGON_HP = 3;
+export const SIERPINSKI_HP = 3;
+export const MOBIUS_HP = 2;
+export const KOCH_HP = 2;
+export const PENROSE_HP = 2;
+export const MENGERDUST_HP = 5;
+export const HYPERBOLICDISC_HP = 3;
+export const TESSERACT_HP = 4;
+export const MANDELBROT_HP = 6;
+export const KLEIN_HP = 3;
+
+// --- MengerDust ---
+export const MENGERDUST_ABSORB_COUNT = 3;
+export const MENGERDUST_OVERLOAD_DURATION = 1.0; // seconds
+
+// --- Mandelbrot ---
+export const MANDELBROT_MAX_MINIONS = 4;
+export const MANDELBROT_SPAWN_INTERVAL = 5.0; // seconds
+export const MANDELBROT_BUD_REGROW_TIME = 3.0; // seconds
+
+// --- HyperbolicDisc ---
+export const HYPERBOLICDISC_WARP_RADIUS = 150; // px — bullet curving range
+export const HYPERBOLICDISC_WARP_FORCE = 0.0004; // bullet bend strength
 
 // --- Enemy collision radii ---
 export const ENEMY_COLLISION_RADIUS = 28;
@@ -91,48 +152,13 @@ export const EXPLOSION_POOL_SIZE = 60;
 // --- Spawner / difficulty ---
 // Phase boundaries in seconds
 export const DIFFICULTY_PHASES = {
-  tutorial:  { start: 0,   end: 30 },
-  rampUp:    { start: 30,  end: 120 },
-  midGame:   { start: 120, end: 240 },
-  intense:   { start: 240, end: 420 },
-  chaos:     { start: 420, end: Infinity },
+  tutorial:  { start: 0,   end: 45 },
+  rampUp:    { start: 45,  end: 150 },
+  midGame:   { start: 150, end: 300 },
+  intense:   { start: 300, end: 480 },
+  chaos:     { start: 480, end: Infinity },
 };
 
-// Spawn intervals per phase (seconds)
-export const SPAWN_INTERVALS = {
-  tutorial: {
-    base: 3.0,
-    squad: Infinity,
-    cluster: Infinity,
-    boss: Infinity,
-  },
-  rampUp: {
-    base: 3.0,
-    squad: 11.0,
-    cluster: 17.0,
-    boss: 45.0,
-  },
-  midGame: {
-    base: 2.5,
-    squad: 9.0,
-    cluster: 15.0,
-    boss: 35.0,
-  },
-  intense: {
-    base: 2.0,
-    squad: 7.0,
-    cluster: 12.0,
-    boss: 30.0,
-  },
-  chaos: {
-    base: 1.5,
-    squad: 5.0,
-    cluster: 10.0,
-    boss: 20.0,
-  },
-};
-
-export const CLUSTER_BASE_SIZE = 8;
 export const SPAWN_DELAY_BETWEEN = 10; // ms between each enemy in a cluster
 
 // --- Camera ---

@@ -176,6 +176,12 @@ export abstract class Enemy extends Entity {
       [this.color[0] * pulse, this.color[1] * pulse, this.color[2] * pulse], 24);
   }
 
+  /** Called when a bullet collides. Override for special bullet interactions.
+   *  'damage' = normal hit, 'absorb' = consume bullet no damage, 'reflect' = bounce bullet back */
+  onBulletHit(_bulletAngle: number): 'damage' | 'absorb' | 'reflect' {
+    return 'damage';
+  }
+
   /** Returns true if the enemy is now dead */
   hit(): boolean {
     this.hp--;

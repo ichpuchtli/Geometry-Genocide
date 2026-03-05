@@ -49,6 +49,8 @@ import {
   SCREEN_SHAKE_DEATH,
   WORLD_WIDTH,
   WORLD_HEIGHT,
+  HYPERBOLICDISC_WARP_RADIUS,
+  HYPERBOLICDISC_WARP_FORCE,
 } from './config';
 
 // Enemy factory imports
@@ -59,6 +61,19 @@ import { CircleEnemy } from './entities/enemies/circle';
 import { Triangle } from './entities/enemies/triangle';
 import { Octagon } from './entities/enemies/octagon';
 import { BlackHole } from './entities/enemies/blackhole';
+// --- New fractal/topology enemies ---
+import { FibSpiral } from './entities/enemies/fibspiral';
+import { Mobius } from './entities/enemies/mobius';
+import { Koch } from './entities/enemies/koch';
+import { Penrose } from './entities/enemies/penrose';
+import { Shard } from './entities/enemies/shard';
+import { Sierpinski } from './entities/enemies/sierpinski';
+import { MengerDust } from './entities/enemies/mengerdust';
+import { HyperbolicDisc } from './entities/enemies/hyperbolicdisc';
+import { Tesseract } from './entities/enemies/tesseract';
+import { Mandelbrot } from './entities/enemies/mandelbrot';
+import { MiniMandel } from './entities/enemies/minimandel';
+import { Klein } from './entities/enemies/klein';
 
 type GameState = 'menu' | 'playing' | 'gameover';
 
@@ -73,6 +88,19 @@ function createEnemy(type: string, pos?: Vec2): Enemy {
     case 'triangle': e = new Triangle(); break;
     case 'octagon': e = new Octagon(); break;
     case 'blackhole': e = new BlackHole(); break;
+    // --- New fractal/topology enemies ---
+    case 'fibspiral': e = new FibSpiral(); break;
+    case 'mobius': e = new Mobius(); break;
+    case 'koch': e = new Koch(); break;
+    case 'penrose': e = new Penrose(); break;
+    case 'shard': e = new Shard(pos); return e;
+    case 'sierpinski': e = new Sierpinski(); break;
+    case 'mengerdust': e = new MengerDust(); break;
+    case 'hyperbolicdisc': e = new HyperbolicDisc(); break;
+    case 'tesseract': e = new Tesseract(); break;
+    case 'mandelbrot': e = new Mandelbrot(); break;
+    case 'minimandel': { const m = new MiniMandel(pos); return m; }
+    case 'klein': e = new Klein(); break;
     default: e = new Rhombus(); break;
   }
   if (!pos) {
@@ -262,6 +290,9 @@ export class Game {
         // BlackHole: massive gravity well, grows aggressively with absorbed enemies
         const mass = -(45 + e.absorbedCount * 10);
         wells.push({ x: e.position.x, y: e.position.y, mass, radius: BlackHole.ATTRACT_RADIUS * 1.3 });
+      } else if (e instanceof HyperbolicDisc) {
+        // HyperbolicDisc: 3x stronger grid warp (space distortion)
+        wells.push({ x: e.position.x, y: e.position.y, mass: -24, radius: HYPERBOLICDISC_WARP_RADIUS });
       }
     }
     for (const ds of this.deathstars) {
@@ -464,14 +495,16 @@ export class Game {
     }
 
     // Spawn
-    const spawns = this.waveManager.update(dt);
+    const spawns = this.waveManager.update(dt, this.player.position);
     for (const req of spawns) {
       if (req.type === 'deathstar') {
         this.deathstars.push(new DeathStar(this.player.position));
         this.audio.playSFX('deathstar');
         this.haptics.bossSpawn();
       } else {
-        const enemy = createEnemy(req.type);
+        const enemy = createEnemy(req.type, req.position);
+        // If ambush spawn, use longer spawn animation
+        if (req.isAmbush) enemy.spawnTimer = 0.8;
         // Register trail for enemy
         enemy.trailId = this.trails.register(enemy.color, this.trailLenEnemy);
         this.enemies.push(enemy);
@@ -480,6 +513,51 @@ export class Game {
         // Play spawn SFX for specific enemy types
         this.playEnemySpawnSFX(req.type);
         this.haptics.medium();
+      }
+    }
+
+    // HyperbolicDisc bullet warping — bend bullets toward disc centers
+    const warpR2 = HYPERBOLICDISC_WARP_RADIUS * HYPERBOLICDISC_WARP_RADIUS;
+    for (const b of this.bullets.bullets) {
+      if (!b.active) continue;
+      for (const e of this.enemies) {
+        if (!e.active || e.isSpawning || !(e instanceof HyperbolicDisc)) continue;
+        const dx = e.position.x - b.position.x;
+        const dy = e.position.y - b.position.y;
+        const dist2 = dx * dx + dy * dy;
+        if (dist2 < warpR2 && dist2 > 1) {
+          const dist = Math.sqrt(dist2);
+          const force = HYPERBOLICDISC_WARP_FORCE * dt / dist;
+          b.velocity.x += dx / dist * force;
+          b.velocity.y += dy / dist * force;
+        }
+      }
+    }
+
+    // Koch ice trail — slow player when touching
+    for (const e of this.enemies) {
+      if (!e.active || !(e instanceof Koch)) continue;
+      const koch = e as Koch;
+      for (const seg of koch.iceTrail) {
+        const dx = this.player.position.x - seg.x;
+        const dy = this.player.position.y - seg.y;
+        if (dx * dx + dy * dy < Koch.SLOW_RADIUS * Koch.SLOW_RADIUS) {
+          this.player.applySlow(Koch.SLOW_FACTOR, Koch.SLOW_DURATION);
+          break; // only need to trigger once per frame
+        }
+      }
+    }
+
+    // Mandelbrot minion spawning
+    for (const e of this.enemies) {
+      if (!e.active || !(e instanceof Mandelbrot)) continue;
+      const mb = e as Mandelbrot;
+      while (mb.pendingMinions.length > 0) {
+        const pos = mb.pendingMinions.shift()!;
+        const minion = createEnemy('minimandel', pos) as MiniMandel;
+        minion.parent = mb;
+        minion.trailId = this.trails.register(minion.color, this.trailLenEnemy);
+        this.enemies.push(minion);
       }
     }
 
@@ -518,6 +596,11 @@ export class Game {
       // Unregister trail
       if (kill.enemy.trailId >= 0) {
         this.trails.unregister(kill.enemy.trailId);
+      }
+
+      // Notify Mandelbrot parent if a MiniMandel died
+      if (kill.enemy instanceof MiniMandel && (kill.enemy as MiniMandel).parent) {
+        (kill.enemy as MiniMandel).parent!.onMinionDeath();
       }
 
       // Spawn children
@@ -676,6 +759,13 @@ export class Game {
       case 'triangle': this.audio.playSFX('triangle2'); break;
       case 'octagon': this.audio.playSFX('octagon'); break;
       case 'blackhole': this.audio.playSFX('deathstar'); break;
+      // New enemies — reuse existing SFX
+      case 'sierpinski': case 'koch': case 'mengerdust':
+        this.audio.playSFX('octagon'); break;
+      case 'mobius': case 'fibspiral': case 'penrose': case 'klein':
+        this.audio.playSFX('rhombus'); break;
+      case 'tesseract': case 'hyperbolicdisc': case 'mandelbrot':
+        this.audio.playSFX('deathstar'); break;
     }
   }
 
