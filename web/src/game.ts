@@ -56,6 +56,7 @@ import { Square, Square2 } from './entities/enemies/square';
 import { CircleEnemy } from './entities/enemies/circle';
 import { Triangle } from './entities/enemies/triangle';
 import { Octagon } from './entities/enemies/octagon';
+import { BlackHole } from './entities/enemies/blackhole';
 
 type GameState = 'menu' | 'playing' | 'gameover';
 
@@ -69,6 +70,7 @@ function createEnemy(type: string, pos?: Vec2): Enemy {
     case 'circle': e = new CircleEnemy(pos); return e;
     case 'triangle': e = new Triangle(); break;
     case 'octagon': e = new Octagon(); break;
+    case 'blackhole': e = new BlackHole(); break;
     default: e = new Rhombus(); break;
   }
   if (!pos) {
@@ -243,6 +245,10 @@ export class Game {
       if (e instanceof Octagon) {
         // Octagon: moderate gravity well (pulls grid inward)
         wells.push({ x: e.position.x, y: e.position.y, mass: -15, radius: 200 });
+      } else if (e instanceof BlackHole) {
+        // BlackHole: strong gravity well, grows with absorbed enemies
+        const mass = -(25 + e.absorbedCount * 5);
+        wells.push({ x: e.position.x, y: e.position.y, mass, radius: BlackHole.ATTRACT_RADIUS });
       }
     }
     for (const ds of this.deathstars) {
@@ -251,6 +257,48 @@ export class Game {
       wells.push({ x: ds.position.x, y: ds.position.y, mass: -30, radius: 300 });
     }
     this.grid.setGravityWells(wells);
+  }
+
+  /** Apply BlackHole gravitational attraction to nearby enemies + absorb on contact */
+  private applyBlackHoleAttraction(dt: number): void {
+    const blackholes: BlackHole[] = [];
+    for (const e of this.enemies) {
+      if (e.active && !e.isSpawning && e instanceof BlackHole) {
+        blackholes.push(e);
+      }
+    }
+    if (blackholes.length === 0) return;
+
+    for (const bh of blackholes) {
+      const attractR2 = BlackHole.ATTRACT_RADIUS * BlackHole.ATTRACT_RADIUS;
+      const absorbR2 = (bh.collisionRadius + 10) * (bh.collisionRadius + 10);
+
+      for (const e of this.enemies) {
+        if (!e.active || e.isSpawning || e === bh || e instanceof BlackHole) continue;
+
+        const dx = bh.position.x - e.position.x;
+        const dy = bh.position.y - e.position.y;
+        const dist2 = dx * dx + dy * dy;
+
+        // Absorb enemies that get too close
+        if (dist2 < absorbR2 && bh.absorbedCount < BlackHole.MAX_ABSORB) {
+          e.active = false;
+          bh.absorbEnemy();
+          if (e.trailId >= 0) this.trails.unregister(e.trailId);
+          this.explosions.spawn(e.position.x, e.position.y, e.color, 8, 0.4);
+          this.grid.addForce(e.position.x, e.position.y, 8, 60, 6);
+          continue;
+        }
+
+        // Attract within radius
+        if (dist2 < attractR2 && dist2 > 1) {
+          const dist = Math.sqrt(dist2);
+          const force = BlackHole.GRAVITY_STRENGTH * dt / dist;
+          e.position.x += dx / dist * force;
+          e.position.y += dy / dist * force;
+        }
+      }
+    }
   }
 
   /** Update during game over: keep enemies alive with idle animation + gravity */
@@ -274,9 +322,9 @@ export class Game {
     // Gravity: big enemies pull smaller ones slowly during game over
     for (const e of this.enemies) {
       if (!e.active) continue;
-      // Pulled by Octagons
+      // Pulled by Octagons and BlackHoles
       for (const o of this.enemies) {
-        if (o === e || !o.active || !(o instanceof Octagon)) continue;
+        if (o === e || !o.active || (!(o instanceof Octagon) && !(o instanceof BlackHole))) continue;
         const dx = o.position.x - e.position.x;
         const dy = o.position.y - e.position.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
@@ -368,6 +416,9 @@ export class Game {
     if (activeDeathstars.length > 0) {
       applyDeathStarAttraction(this.enemies, activeDeathstars);
     }
+
+    // BlackHole attraction — pull nearby non-blackhole enemies toward black holes
+    this.applyBlackHoleAttraction(dt);
 
     // Enemies
     for (const e of this.enemies) {
@@ -557,6 +608,7 @@ export class Game {
       case 'pinwheel': this.audio.playSFX('pinwheel'); break;
       case 'triangle': this.audio.playSFX('triangle2'); break;
       case 'octagon': this.audio.playSFX('octagon'); break;
+      case 'blackhole': this.audio.playSFX('deathstar'); break;
     }
   }
 

@@ -101,8 +101,8 @@ export class GridRenderer {
     // Uniforms
     gl.uniform2f(this.uResolution, viewW, viewH);
     gl.uniform2f(this.uCamera, cameraX, cameraY);
-    // Purple space-time continuum grid
-    gl.uniform3f(this.uGridColor, 0.18, 0.05, 0.35);
+    // Purple space-time continuum grid (brightened for mobile visibility)
+    gl.uniform3f(this.uGridColor, 0.22, 0.08, 0.45);
 
     // Combine explosion forces + gravity wells
     const combined: { x: number; y: number; strength: number; radius: number }[] = [];
@@ -131,6 +131,9 @@ export class GridRenderer {
     gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
 
     gl.drawArrays(gl.LINES, 0, this.vertexCount);
+
+    // Clean up GL state to prevent conflicts on iOS Safari
+    gl.disableVertexAttribArray(aPos);
   }
 
   clear(): void {

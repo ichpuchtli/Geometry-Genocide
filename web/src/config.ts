@@ -41,6 +41,7 @@ export const COLORS = {
   triangle: { color: [0.682, 0.796, 0.0] as [number, number, number], color2: [0, 0.502, 0] as [number, number, number] },
   octagon:  { color: [1.0, 0.502, 0.125] as [number, number, number], color2: [1.0, 0.502, 0.251] as [number, number, number] },
   deathstar:{ color: [0.6, 0.2, 0.2] as [number, number, number], color2: [0.9, 0.4, 0.25] as [number, number, number] },
+  blackhole:{ color: [0.5, 0.1, 0.8] as [number, number, number], color2: [0.3, 0.0, 0.6] as [number, number, number] },
 };
 
 // --- Enemy speeds (px/ms) ---
@@ -52,6 +53,7 @@ export const ENEMY_SPEED = {
   circle: 0.35,
   triangle: 0.2,
   octagon: 0.25,
+  blackhole: 0.04,
 };
 
 // --- Enemy scores ---
@@ -63,6 +65,7 @@ export const ENEMY_SCORES = {
   circle: 300,
   triangle: 550,
   octagon: 1650,
+  blackhole: 2000,
 };
 
 // --- Enemy collision radii ---
