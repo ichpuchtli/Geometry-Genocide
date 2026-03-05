@@ -10,7 +10,7 @@ export const WORLD_HEIGHT = 3600;
 // --- Player ---
 export const PLAYER_SPEED = 0.35; // px/ms
 export const PLAYER_COLLISION_RADIUS = 24;
-export const PLAYER_STARTING_LIVES = 3;
+export const PLAYER_STARTING_LIVES = 5;
 export const PLAYER_INVULN_DURATION = 2000; // ms of invulnerability after respawn
 export const PLAYER_SHIP_SCALE = 18;
 
