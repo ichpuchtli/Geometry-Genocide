@@ -1,0 +1,48 @@
+name: "Player Movement"
+tags: [phase1, gameplay]
+steps:
+  - action: launch
+    url: "/"
+    waitFor: "canvas#game"
+
+  - action: wait
+    ms: 300
+
+  # Start game
+  - action: click
+    selector: "canvas#game"
+    x: 0.5
+    y: 0.5
+
+  - action: wait
+    ms: 300
+
+  # Move with WASD
+  - action: keyPress
+    key: "w"
+    duration: 300
+
+  - action: keyPress
+    key: "d"
+    duration: 300
+
+  - action: keyPress
+    key: "s"
+    duration: 300
+
+  - action: keyPress
+    key: "a"
+    duration: 300
+
+  - action: screenshot
+    name: "04-after-movement"
+
+  - action: evalCheck
+    description: "GL context still healthy after movement"
+    script: |
+      const c = document.getElementById('game');
+      const gl = c.getContext('webgl', {alpha: false, antialias: true});
+      return gl && gl.getError() === gl.NO_ERROR;
+
+  - action: assertNoErrors
+    description: "No errors during movement"

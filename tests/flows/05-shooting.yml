@@ -1,0 +1,43 @@
+name: "Shooting Mechanics"
+tags: [phase1, gameplay]
+steps:
+  - action: launch
+    url: "/"
+    waitFor: "canvas#game"
+
+  - action: wait
+    ms: 300
+
+  # Start game
+  - action: click
+    selector: "canvas#game"
+    x: 0.5
+    y: 0.5
+
+  - action: wait
+    ms: 200
+
+  # Move mouse and hold click to shoot
+  - action: mouseMove
+    x: 800
+    y: 360
+
+  - action: mouseDown
+
+  - action: wait
+    ms: 500
+
+  - action: mouseUp
+
+  - action: screenshot
+    name: "05-after-shooting"
+
+  - action: evalCheck
+    description: "GL context intact after shooting"
+    script: |
+      const c = document.getElementById('game');
+      const gl = c.getContext('webgl', {alpha: false, antialias: true});
+      return gl && gl.getError() === gl.NO_ERROR;
+
+  - action: assertNoErrors
+    description: "No errors during shooting"

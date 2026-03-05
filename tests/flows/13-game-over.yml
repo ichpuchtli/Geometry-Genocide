@@ -1,0 +1,63 @@
+name: "Game Over Flow"
+tags: [phase2, ui]
+steps:
+  - action: launch
+    url: "/"
+    waitFor: "canvas#game"
+
+  - action: wait
+    ms: 300
+
+  # Start game
+  - action: click
+    selector: "canvas#game"
+    x: 0.5
+    y: 0.5
+
+  - action: wait
+    ms: 500
+
+  # Press ESC to trigger game over
+  - action: keyPress
+    key: "Escape"
+    duration: 100
+
+  - action: wait
+    ms: 500
+
+  - action: evalCheck
+    description: "HUD shows game over screen"
+    script: |
+      var c = document.getElementById('hud');
+      if (!c) return false;
+      var ctx = c.getContext('2d');
+      if (!ctx) return false;
+      var cx = Math.floor(c.width / 2);
+      var cy = Math.floor(c.height / 2);
+      var size = Math.min(300, c.width, c.height);
+      var data = ctx.getImageData(cx - size/2, cy - size/2, size, size).data;
+      var redPixels = 0;
+      for (var i = 0; i < data.length; i += 4) {
+        if (data[i] > 200 && data[i+1] < 100 && data[i+2] < 100 && data[i+3] > 0) {
+          redPixels++;
+        }
+      }
+      return redPixels > 20;
+
+  - action: screenshot
+    name: "13-game-over"
+
+  # Click to restart
+  - action: click
+    selector: "canvas#game"
+    x: 0.5
+    y: 0.5
+
+  - action: wait
+    ms: 500
+
+  - action: screenshot
+    name: "13-restarted"
+
+  - action: assertNoErrors
+    description: "No errors during game over and restart"

@@ -1,0 +1,22 @@
+name: "Responsive Layout (Phase 3)"
+tags: [phase3, mobile]
+steps:
+  - action: launch
+    url: "/"
+    waitFor: "canvas#game"
+
+  - action: wait
+    ms: 300
+
+  # TODO Phase 3: Test at mobile viewport sizes
+  # The runner should support viewport override per flow:
+  #   viewport: { width: 375, height: 667 }
+
+  - action: evalCheck
+    description: "Canvas fills viewport (placeholder)"
+    script: |
+      const c = document.getElementById('game');
+      return c.clientWidth > 0 && c.clientHeight > 0;
+
+  - action: screenshot
+    name: "22-responsive-placeholder"

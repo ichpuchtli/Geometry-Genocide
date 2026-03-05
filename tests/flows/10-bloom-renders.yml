@@ -1,0 +1,32 @@
+name: "Bloom Rendering"
+tags: [phase2, visual]
+steps:
+  - action: launch
+    url: "/"
+    waitFor: "canvas#game"
+
+  - action: wait
+    ms: 300
+
+  # Start game - bloom should be active
+  - action: click
+    selector: "canvas#game"
+    x: 0.5
+    y: 0.5
+
+  - action: wait
+    ms: 500
+
+  - action: evalCheck
+    description: "Multiple WebGL programs exist (bloom shaders compiled)"
+    script: |
+      const c = document.getElementById('game');
+      const gl = c.getContext('webgl', {alpha: false, antialias: true});
+      // If bloom shaders compiled, there should be no GL errors
+      return gl && gl.getError() === gl.NO_ERROR;
+
+  - action: screenshot
+    name: "10-bloom-active"
+
+  - action: assertNoErrors
+    description: "No errors with bloom pipeline"

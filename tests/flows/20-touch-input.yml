@@ -1,0 +1,27 @@
+name: "Touch Input (Phase 3)"
+tags: [phase3, mobile]
+steps:
+  - action: launch
+    url: "/"
+    waitFor: "canvas#game"
+
+  - action: wait
+    ms: 300
+
+  # TODO Phase 3: Test touch virtual joystick
+  # - action: touchStart
+  #   x: 100
+  #   y: 500
+  # - action: touchMove
+  #   x: 150
+  #   y: 450
+  # - action: touchEnd
+
+  - action: evalCheck
+    description: "Canvas is touch-ready (placeholder)"
+    script: |
+      const c = document.getElementById('game');
+      return 'ontouchstart' in window || navigator.maxTouchPoints > 0 || !!c;
+
+  - action: screenshot
+    name: "20-touch-placeholder"

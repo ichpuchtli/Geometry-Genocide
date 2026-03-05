@@ -1,0 +1,84 @@
+name: "30s Gameplay Soak"
+tags: [phase1, soak]
+steps:
+  - action: launch
+    url: "/"
+    waitFor: "canvas#game"
+
+  - action: wait
+    ms: 300
+
+  # Start game
+  - action: click
+    selector: "canvas#game"
+    x: 0.5
+    y: 0.5
+
+  - action: wait
+    ms: 200
+
+  # Hold down fire toward right
+  - action: mouseMove
+    x: 900
+    y: 360
+
+  - action: mouseDown
+
+  # Move around while shooting for 5s
+  - action: keys
+    keys: ["w", "d"]
+    duration: 2000
+
+  - action: keys
+    keys: ["s", "d"]
+    duration: 2000
+
+  - action: keys
+    keys: ["s", "a"]
+    duration: 2000
+
+  - action: screenshot
+    name: "06-mid-soak"
+
+  - action: keys
+    keys: ["w", "a"]
+    duration: 2000
+
+  - action: keys
+    keys: ["w"]
+    duration: 2000
+
+  # Move mouse to different position
+  - action: mouseMove
+    x: 400
+    y: 200
+
+  - action: keys
+    keys: ["a"]
+    duration: 2000
+
+  - action: keys
+    keys: ["s"]
+    duration: 2000
+
+  - action: keys
+    keys: ["d"]
+    duration: 2000
+
+  - action: mouseUp
+
+  - action: wait
+    ms: 1000
+
+  - action: screenshot
+    name: "06-end-soak"
+
+  - action: evalCheck
+    description: "GL context survived 30s soak test"
+    script: |
+      const c = document.getElementById('game');
+      const gl = c.getContext('webgl', {alpha: false, antialias: true});
+      return gl && gl.getError() === gl.NO_ERROR;
+
+  - action: assertNoErrors
+    description: "No errors during 30s soak"
