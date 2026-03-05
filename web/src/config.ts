@@ -52,7 +52,7 @@ export const ENEMY_SPEED = {
   square2: 0.2,
   circle: 0.35,
   triangle: 0.2,
-  octagon: 0.25,
+  octagon: 0.15,
   blackhole: 0.04,
 };
 
@@ -67,6 +67,9 @@ export const ENEMY_SCORES = {
   octagon: 1650,
   blackhole: 2000,
 };
+
+// --- Octagon ---
+export const OCTAGON_HP = 3;
 
 // --- Enemy collision radii ---
 export const ENEMY_COLLISION_RADIUS = 28;
@@ -107,13 +110,13 @@ export const SPAWN_INTERVALS = {
     base: 3.0,
     squad: 11.0,
     cluster: 17.0,
-    boss: 60.0,
+    boss: 45.0,
   },
   midGame: {
     base: 2.5,
     squad: 9.0,
     cluster: 15.0,
-    boss: 45.0,
+    boss: 35.0,
   },
   intense: {
     base: 2.0,

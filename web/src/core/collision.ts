@@ -36,13 +36,15 @@ export function checkCollisions(
       if (!e.active || e.isSpawning) continue;
       if (b.position.distanceToSq(e.position) < BULLET_COLLISION_RADIUS_ENEMY * BULLET_COLLISION_RADIUS_ENEMY) {
         b.active = false;
-        e.active = false;
-        result.killedEnemies.push({
-          enemy: e,
-          position: e.position.clone(),
-          color: e.color,
-          scoreValue: e.scoreValue,
-        });
+        const killed = e.hit();
+        if (killed) {
+          result.killedEnemies.push({
+            enemy: e,
+            position: e.position.clone(),
+            color: e.color,
+            scoreValue: e.scoreValue,
+          });
+        }
         break;
       }
     }

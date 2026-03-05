@@ -120,6 +120,9 @@ export class Game {
   private trailLenEnemy: number;
   private trailLenBullet: number;
 
+  // Staggered spawn queue for theatrical enemy deaths (e.g. Octagon)
+  private pendingSpawns: { type: string; position: Vec2; delay: number; origin: Vec2 }[] = [];
+
   constructor(private gameCanvas: HTMLCanvasElement, hudCanvas: HTMLCanvasElement) {
     this.mobile = isMobile();
     this.trailLenEnemy = this.mobile ? MOBILE_TRAIL_LENGTH_ENEMY : TRAIL_LENGTH_ENEMY;
@@ -213,6 +216,7 @@ export class Game {
     this.bullets.clear();
     this.enemies = [];
     this.deathstars = [];
+    this.pendingSpawns = [];
     this.explosions.clear();
     this.trails.clear();
     this.grid.clear();
@@ -517,10 +521,31 @@ export class Game {
       // Spawn children
       const deathResult = kill.enemy.onDeath();
       if (deathResult.spawnEnemies) {
-        for (const child of deathResult.spawnEnemies) {
-          const ce = createEnemy(child.type, child.position);
-          ce.trailId = this.trails.register(ce.color, this.trailLenEnemy);
-          this.enemies.push(ce);
+        if (deathResult.staggeredSpawn) {
+          // Theatrical staggered spawn — buildup shockwave then release one by one
+          const origin = kill.position.clone();
+          // Initial implosion flash
+          this.explosions.spawn(
+            origin.x, origin.y, kill.color,
+            this.mobile ? 30 : 60, 0.6,
+          );
+          this.camera.shake(SCREEN_SHAKE_LARGE);
+          // Queue each child with increasing delay
+          for (let i = 0; i < deathResult.spawnEnemies.length; i++) {
+            const child = deathResult.spawnEnemies[i];
+            this.pendingSpawns.push({
+              type: child.type,
+              position: child.position.clone(),
+              delay: 300 + i * 120, // stagger: 300ms pause then 120ms between each
+              origin,
+            });
+          }
+        } else {
+          for (const child of deathResult.spawnEnemies) {
+            const ce = createEnemy(child.type, child.position);
+            ce.trailId = this.trails.register(ce.color, this.trailLenEnemy);
+            this.enemies.push(ce);
+          }
         }
       }
     }
@@ -568,6 +593,26 @@ export class Game {
         this.onPlayerRespawn();
       }
     }
+
+    // Process staggered spawn queue (theatrical Octagon death etc.)
+    for (const ps of this.pendingSpawns) {
+      ps.delay -= dt;
+      if (ps.delay <= 0) {
+        const ce = createEnemy(ps.type, ps.position);
+        ce.trailId = this.trails.register(ce.color, this.trailLenEnemy);
+        this.enemies.push(ce);
+        // Mini flash per spawn
+        this.explosions.spawn(ps.position.x, ps.position.y, [1, 0.6, 0.2], 12, 0.3);
+        this.grid.addForce(ps.position.x, ps.position.y, GRID_EXPLOSION_STRENGTH * 0.5, GRID_EXPLOSION_RADIUS * 0.4, GRID_EXPLOSION_DECAY);
+        this.haptics.light();
+      }
+    }
+    // Emit a pulsing warning ring at the origin while spawns are pending
+    if (this.pendingSpawns.length > 0) {
+      const origin = this.pendingSpawns[0].origin;
+      this.grid.addForce(origin.x, origin.y, GRID_EXPLOSION_STRENGTH * 0.3, GRID_EXPLOSION_RADIUS * 0.6, GRID_EXPLOSION_DECAY * 2);
+    }
+    this.pendingSpawns = this.pendingSpawns.filter(ps => ps.delay > 0);
 
     // Clean up inactive enemies
     this.enemies = this.enemies.filter(e => {

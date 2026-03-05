@@ -1,9 +1,11 @@
 import { Enemy, EnemyDeathResult } from './enemy';
 import { Vec2 } from '../../core/vector';
 import { Renderer } from '../../renderer/sprite-batch';
-import { COLORS, ENEMY_SPEED, ENEMY_SCORES } from '../../config';
+import { COLORS, ENEMY_SPEED, ENEMY_SCORES, OCTAGON_HP } from '../../config';
 
 export class Octagon extends Enemy {
+  private hitFlash = 0; // flash timer on taking damage
+
   constructor() {
     super();
     const s = 25;
@@ -17,10 +19,18 @@ export class Octagon extends Enemy {
     this.color2 = COLORS.octagon.color2;
     this.speed = ENEMY_SPEED.octagon;
     this.scoreValue = ENEMY_SCORES.octagon;
+    this.hp = OCTAGON_HP;
+    this.maxHp = OCTAGON_HP;
+  }
+
+  hit(): boolean {
+    this.hitFlash = 0.15; // 150ms white flash
+    return super.hit();
   }
 
   update(dt: number, playerPos?: Vec2, playerVel?: Vec2): void {
     if (!this.active || !playerPos) return;
+    if (this.hitFlash > 0) this.hitFlash -= dt / 1000;
     if (playerVel) {
       this.attack(playerPos, playerVel);
     } else {
@@ -32,12 +42,27 @@ export class Octagon extends Enemy {
 
   render(renderer: Renderer): void {
     if (!this.active) return;
+    if (this.isSpawning) { this.renderSpawn(renderer); return; }
     const points = this.getWorldPoints();
-    renderer.drawLineLoop(points.map(([x, y]) => [x - 1, y]), this.color2);
-    renderer.drawLineLoop(points, this.color);
+    // Flash white when hit
+    const drawColor: [number, number, number] = this.hitFlash > 0
+      ? [1, 1, 1] : this.color;
+    const drawColor2: [number, number, number] = this.hitFlash > 0
+      ? [0.8, 0.8, 0.8] : this.color2;
+    renderer.drawLineLoop(points.map(([x, y]) => [x - 1, y]), drawColor2);
+    renderer.drawLineLoop(points, drawColor);
     // Fusion circles at vertices
     for (const [x, y] of points) {
-      renderer.drawCircle(x, y, 7, this.color, 12);
+      renderer.drawCircle(x, y, 7, drawColor, 12);
+    }
+    // HP indicator: dots around the octagon
+    if (this.hp < this.maxHp) {
+      for (let i = 0; i < this.hp; i++) {
+        const a = (i / this.maxHp) * Math.PI * 2;
+        const dx = this.position.x + Math.cos(a) * 42;
+        const dy = this.position.y + Math.sin(a) * 42;
+        renderer.drawCircle(dx, dy, 3, this.color, 8);
+      }
     }
   }
 
@@ -61,6 +86,7 @@ export class Octagon extends Enemy {
 
   onDeath(): EnemyDeathResult {
     return {
+      staggeredSpawn: true,
       spawnEnemies: this.getWorldPoints().map(([x, y]) => ({
         type: 'circle',
         position: new Vec2(x, y),
