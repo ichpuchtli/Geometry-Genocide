@@ -190,8 +190,12 @@ export class Game {
       this.audio.resume().catch(() => {});
     }
 
-    if (this.state === 'menu' || this.state === 'gameover') {
-      // Request fullscreen on mobile (must be in user gesture handler)
+    if (this.state === 'menu') {
+      if (this.mobile && !document.fullscreenElement) {
+        document.documentElement.requestFullscreen?.().catch(() => {});
+      }
+      this.startGame();
+    } else if (this.state === 'gameover' && this.gameOverTime >= 5) {
       if (this.mobile && !document.fullscreenElement) {
         document.documentElement.requestFullscreen?.().catch(() => {});
       }
