@@ -33,7 +33,7 @@ export function checkCollisions(
   for (const b of bullets) {
     if (!b.active) continue;
     for (const e of enemies) {
-      if (!e.active) continue;
+      if (!e.active || e.isSpawning) continue;
       if (b.position.distanceToSq(e.position) < BULLET_COLLISION_RADIUS_ENEMY * BULLET_COLLISION_RADIUS_ENEMY) {
         b.active = false;
         e.active = false;
@@ -71,7 +71,7 @@ export function checkCollisions(
   // Player vs Enemy
   if (!player.isInvulnerable && player.active) {
     for (const e of enemies) {
-      if (!e.active) continue;
+      if (!e.active || e.isSpawning) continue;
       const dist = player.position.distanceToSq(e.position);
       const minDist = player.collisionRadius + e.collisionRadius;
       if (dist < minDist * minDist) {

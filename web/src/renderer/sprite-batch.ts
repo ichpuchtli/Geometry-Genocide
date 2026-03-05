@@ -32,6 +32,7 @@ export class Renderer {
   public cameraX = 0;
   public cameraY = 0;
   public zoom = 1.0;
+  private blendMode: 'normal' | 'additive' = 'normal';
 
   getGL(): WebGLRenderingContext { return this.gl; }
 
@@ -170,6 +171,20 @@ export class Renderer {
         r, g, b, alpha,
       );
     }
+  }
+
+  /** Flush current batch, switch blend mode, start new batch */
+  setBlendMode(mode: 'normal' | 'additive'): void {
+    if (mode === this.blendMode) return;
+    this.end();
+    this.blendMode = mode;
+    const gl = this.gl;
+    if (mode === 'additive') {
+      gl.blendFunc(gl.SRC_ALPHA, gl.ONE);
+    } else {
+      gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+    }
+    this.begin(false);
   }
 
   end(): void {

@@ -74,8 +74,8 @@ export const DEATHSTAR_CIRCLE_SPAWN = 5;
 export const DEATHSTAR_ATTRACT_RADIUS = 50;
 
 // --- Explosion particles ---
-export const EXPLOSION_PARTICLE_COUNT_SMALL = 15;
-export const EXPLOSION_PARTICLE_COUNT_LARGE = 80;
+export const EXPLOSION_PARTICLE_COUNT_SMALL = 30;
+export const EXPLOSION_PARTICLE_COUNT_LARGE = 120;
 export const EXPLOSION_PARTICLE_COUNT_DEATH = 200;
 export const EXPLOSION_DURATION_DEFAULT = 1.0; // seconds
 export const EXPLOSION_DURATION_LARGE = 2.0;
@@ -131,6 +131,9 @@ export const SPAWN_DELAY_BETWEEN = 10; // ms between each enemy in a cluster
 
 // --- Camera ---
 export const CAMERA_LERP_SPEED = 0.08;
+export const SCREEN_SHAKE_SMALL = 3;
+export const SCREEN_SHAKE_LARGE = 6;
+export const SCREEN_SHAKE_DEATH = 12;
 
 // --- HUD ---
 export const HUD_FONT = '24px monospace';
@@ -140,10 +143,10 @@ export const HUD_COLOR = '#20ff20';
 export const OFFSCREEN_INDICATOR_RANGE = 800;
 
 // --- Bloom ---
-export const BLOOM_THRESHOLD = 0.15;
-export const BLOOM_INTENSITY = 1.4;
-export const BLOOM_BLUR_PASSES = 4;
-export const BLOOM_BLUR_RADIUS = 1.5;
+export const BLOOM_THRESHOLD = 0.08;
+export const BLOOM_INTENSITY = 1.7;
+export const BLOOM_BLUR_PASSES = 5;
+export const BLOOM_BLUR_RADIUS = 2.0;
 
 // --- Grid ---
 export const GRID_EXPLOSION_STRENGTH = 40;
@@ -154,16 +157,16 @@ export const GRID_ENEMY_RADIUS = 100;
 export const GRID_ENEMY_DECAY = 8.0;
 
 // --- Trails ---
-export const TRAIL_LENGTH_ENEMY = 10;
-export const TRAIL_LENGTH_BULLET = 6;
+export const TRAIL_LENGTH_ENEMY = 18;
+export const TRAIL_LENGTH_BULLET = 10;
 
 // --- Mobile ---
 export const MOBILE_ZOOM = 0.55; // zoom out on mobile to see more of the world
 export const MOBILE_BLOOM_SCALE = 0.25; // bloom FBO at quarter-res on mobile
 export const MOBILE_MAX_ENEMIES = 80;
 export const MOBILE_MAX_PARTICLES = 30;
-export const MOBILE_TRAIL_LENGTH_ENEMY = 5;
-export const MOBILE_TRAIL_LENGTH_BULLET = 3;
+export const MOBILE_TRAIL_LENGTH_ENEMY = 8;
+export const MOBILE_TRAIL_LENGTH_BULLET = 5;
 
 // --- Virtual Joystick ---
 export const JOYSTICK_MAX_RADIUS = 60; // max knob displacement from center

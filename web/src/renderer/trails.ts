@@ -45,7 +45,8 @@ export class TrailSystem {
       for (let i = 1; i < trail.length; i++) {
         const idx0 = (trail.head - i - 1 + trail.maxLen) % trail.maxLen;
         const idx1 = (trail.head - i + trail.maxLen) % trail.maxLen;
-        const alpha = (1 - i / trail.length) * 0.6;
+        const tFrac = i / trail.length;
+        const alpha = Math.pow(1 - tFrac, 2) * 0.85;
         renderer.drawLine(
           trail.points[idx0].x, trail.points[idx0].y,
           trail.points[idx1].x, trail.points[idx1].y,
