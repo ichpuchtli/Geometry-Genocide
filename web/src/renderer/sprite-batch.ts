@@ -1,0 +1,187 @@
+import { createProgram } from './webgl-context';
+import entityVert from './shaders/entity.vert';
+import entityFrag from './shaders/entity.frag';
+
+// Each vertex: x, y, r, g, b, a (6 floats)
+const FLOATS_PER_VERTEX = 6;
+const MAX_VERTICES = 64000;
+
+export class Renderer {
+  private gl: WebGLRenderingContext;
+  private program: WebGLProgram;
+  private buffer: WebGLBuffer;
+  private data: Float32Array;
+  private vertexCount = 0;
+
+  // Uniform locations
+  private uResolution: WebGLUniformLocation;
+  private uCamera: WebGLUniformLocation;
+
+  // Attribute locations
+  private aPosition: number;
+  private aColor: number;
+
+  // Current draw mode batch
+  private currentMode: number = 0; // gl.LINES or gl.TRIANGLES
+  private batches: { mode: number; start: number; count: number }[] = [];
+
+  public width = 0;
+  public height = 0;
+  public cameraX = 0;
+  public cameraY = 0;
+
+  constructor(private canvas: HTMLCanvasElement) {
+    const gl = canvas.getContext('webgl', { alpha: false, antialias: true })
+      || canvas.getContext('experimental-webgl', { alpha: false, antialias: true });
+    if (!gl) throw new Error('WebGL not supported');
+    this.gl = gl as WebGLRenderingContext;
+
+    this.program = createProgram(this.gl, entityVert, entityFrag);
+    this.gl.useProgram(this.program);
+
+    // Uniforms
+    this.uResolution = this.gl.getUniformLocation(this.program, 'u_resolution')!;
+    this.uCamera = this.gl.getUniformLocation(this.program, 'u_camera')!;
+
+    // Attributes
+    this.aPosition = this.gl.getAttribLocation(this.program, 'a_position');
+    this.aColor = this.gl.getAttribLocation(this.program, 'a_color');
+
+    // Buffer
+    const buf = this.gl.createBuffer();
+    if (!buf) throw new Error('Failed to create buffer');
+    this.buffer = buf;
+    this.data = new Float32Array(MAX_VERTICES * FLOATS_PER_VERTEX);
+
+    // Enable blending for alpha
+    this.gl.enable(this.gl.BLEND);
+    this.gl.blendFunc(this.gl.SRC_ALPHA, this.gl.ONE_MINUS_SRC_ALPHA);
+
+    this.resize();
+  }
+
+  resize(): void {
+    const dpr = window.devicePixelRatio || 1;
+    this.width = this.canvas.clientWidth;
+    this.height = this.canvas.clientHeight;
+    this.canvas.width = this.width * dpr;
+    this.canvas.height = this.height * dpr;
+    this.gl.viewport(0, 0, this.canvas.width, this.canvas.height);
+  }
+
+  begin(): void {
+    this.vertexCount = 0;
+    this.batches.length = 0;
+    this.currentMode = 0;
+    this.gl.clearColor(0, 0, 0, 1);
+    this.gl.clear(this.gl.COLOR_BUFFER_BIT);
+  }
+
+  private pushVertex(x: number, y: number, r: number, g: number, b: number, a: number): void {
+    if (this.vertexCount >= MAX_VERTICES) return;
+    const i = this.vertexCount * FLOATS_PER_VERTEX;
+    this.data[i] = x;
+    this.data[i + 1] = y;
+    this.data[i + 2] = r;
+    this.data[i + 3] = g;
+    this.data[i + 4] = b;
+    this.data[i + 5] = a;
+    this.vertexCount++;
+  }
+
+  private ensureMode(mode: number): void {
+    if (this.currentMode !== mode) {
+      this.currentMode = mode;
+      this.batches.push({ mode, start: this.vertexCount, count: 0 });
+    }
+  }
+
+  drawLine(x1: number, y1: number, x2: number, y2: number, r: number, g: number, b: number, a: number = 1): void {
+    this.ensureMode(this.gl.LINES);
+    this.pushVertex(x1, y1, r, g, b, a);
+    this.pushVertex(x2, y2, r, g, b, a);
+    this.batches[this.batches.length - 1].count += 2;
+  }
+
+  drawTriangle(
+    x1: number, y1: number,
+    x2: number, y2: number,
+    x3: number, y3: number,
+    r: number, g: number, b: number, a: number = 1,
+  ): void {
+    this.ensureMode(this.gl.TRIANGLES);
+    this.pushVertex(x1, y1, r, g, b, a);
+    this.pushVertex(x2, y2, r, g, b, a);
+    this.pushVertex(x3, y3, r, g, b, a);
+    this.batches[this.batches.length - 1].count += 3;
+  }
+
+  /** Draw a line loop from an array of [x,y] points — connects last to first */
+  drawLineLoop(points: number[][], color: [number, number, number], alpha: number = 1): void {
+    const [r, g, b] = color;
+    for (let i = 0; i < points.length; i++) {
+      const next = (i + 1) % points.length;
+      this.drawLine(
+        points[i][0], points[i][1],
+        points[next][0], points[next][1],
+        r, g, b, alpha,
+      );
+    }
+  }
+
+  /** Draw a circle approximation using line segments */
+  drawCircle(cx: number, cy: number, radius: number, color: [number, number, number], segments: number = 24, alpha: number = 1): void {
+    const [r, g, b] = color;
+    const step = (Math.PI * 2) / segments;
+    for (let i = 0; i < segments; i++) {
+      const a1 = i * step;
+      const a2 = (i + 1) * step;
+      this.drawLine(
+        cx + Math.cos(a1) * radius, cy + Math.sin(a1) * radius,
+        cx + Math.cos(a2) * radius, cy + Math.sin(a2) * radius,
+        r, g, b, alpha,
+      );
+    }
+  }
+
+  /** Draw a filled circle using triangle fan */
+  drawFilledCircle(cx: number, cy: number, radius: number, color: [number, number, number], segments: number = 24, alpha: number = 1): void {
+    const [r, g, b] = color;
+    const step = (Math.PI * 2) / segments;
+    for (let i = 0; i < segments; i++) {
+      const a1 = i * step;
+      const a2 = (i + 1) * step;
+      this.drawTriangle(
+        cx, cy,
+        cx + Math.cos(a1) * radius, cy + Math.sin(a1) * radius,
+        cx + Math.cos(a2) * radius, cy + Math.sin(a2) * radius,
+        r, g, b, alpha,
+      );
+    }
+  }
+
+  end(): void {
+    const gl = this.gl;
+    gl.useProgram(this.program);
+
+    // Upload data
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.buffer);
+    gl.bufferData(gl.ARRAY_BUFFER, this.data.subarray(0, this.vertexCount * FLOATS_PER_VERTEX), gl.DYNAMIC_DRAW);
+
+    // Set up attributes
+    const stride = FLOATS_PER_VERTEX * 4;
+    gl.enableVertexAttribArray(this.aPosition);
+    gl.vertexAttribPointer(this.aPosition, 2, gl.FLOAT, false, stride, 0);
+    gl.enableVertexAttribArray(this.aColor);
+    gl.vertexAttribPointer(this.aColor, 4, gl.FLOAT, false, stride, 8);
+
+    // Set uniforms
+    gl.uniform2f(this.uResolution, this.width, this.height);
+    gl.uniform2f(this.uCamera, this.cameraX, this.cameraY);
+
+    // Draw each batch
+    for (const batch of this.batches) {
+      gl.drawArrays(batch.mode, batch.start, batch.count);
+    }
+  }
+}
