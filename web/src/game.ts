@@ -18,6 +18,7 @@ import { WaveManager } from './spawner/wave-manager';
 import { Starfield } from './renderer/starfield';
 import { checkCollisions, applyDeathStarAttraction } from './core/collision';
 import { Vec2 } from './core/vector';
+import { HapticsManager } from './core/haptics';
 import {
   EXPLOSION_PARTICLE_COUNT_SMALL,
   EXPLOSION_PARTICLE_COUNT_LARGE,
@@ -40,6 +41,7 @@ import {
   MOBILE_TRAIL_LENGTH_ENEMY,
   MOBILE_TRAIL_LENGTH_BULLET,
   MOBILE_ZOOM,
+  DESKTOP_ZOOM,
   BULLET_COLOR,
   DIFFICULTY_PHASES,
   SCREEN_SHAKE_SMALL,
@@ -56,6 +58,7 @@ import { Square, Square2 } from './entities/enemies/square';
 import { CircleEnemy } from './entities/enemies/circle';
 import { Triangle } from './entities/enemies/triangle';
 import { Octagon } from './entities/enemies/octagon';
+import { BlackHole } from './entities/enemies/blackhole';
 
 type GameState = 'menu' | 'playing' | 'gameover';
 
@@ -69,6 +72,7 @@ function createEnemy(type: string, pos?: Vec2): Enemy {
     case 'circle': e = new CircleEnemy(pos); return e;
     case 'triangle': e = new Triangle(); break;
     case 'octagon': e = new Octagon(); break;
+    case 'blackhole': e = new BlackHole(); break;
     default: e = new Rhombus(); break;
   }
   if (!pos) {
@@ -101,10 +105,12 @@ export class Game {
   private joystickRenderer: VirtualJoystickRenderer;
   private waveManager: WaveManager;
   private starfield: Starfield;
+  private haptics: HapticsManager;
 
   private state: GameState = 'menu';
   private gameTime = 0;
   private gameOverTime = 0;
+  private totalTime = 0; // monotonic time for shader effects
   private mobile: boolean;
 
   // Trail IDs for bullets (keyed by bullet index)
@@ -120,7 +126,7 @@ export class Game {
     this.trailLenBullet = this.mobile ? MOBILE_TRAIL_LENGTH_BULLET : TRAIL_LENGTH_BULLET;
 
     this.renderer = new Renderer(gameCanvas);
-    if (this.mobile) this.renderer.zoom = MOBILE_ZOOM;
+    this.renderer.zoom = this.mobile ? MOBILE_ZOOM : DESKTOP_ZOOM;
     const gl = this.renderer.getGL();
 
     this.bloom = new BloomPass(gl);
@@ -143,6 +149,7 @@ export class Game {
     this.joystickRenderer = new VirtualJoystickRenderer(hudCanvas);
     this.waveManager = new WaveManager();
     this.starfield = new Starfield(200, WORLD_WIDTH, WORLD_HEIGHT);
+    this.haptics = new HapticsManager();
 
     // Click/touch to start + init audio
     // Use touchend for iOS Safari reliability (touchstart preventDefault in Input
@@ -187,8 +194,12 @@ export class Game {
       this.audio.resume().catch(() => {});
     }
 
-    if (this.state === 'menu' || this.state === 'gameover') {
-      // Request fullscreen on mobile (must be in user gesture handler)
+    if (this.state === 'menu') {
+      if (this.mobile && !document.fullscreenElement) {
+        document.documentElement.requestFullscreen?.().catch(() => {});
+      }
+      this.startGame();
+    } else if (this.state === 'gameover' && this.gameOverTime >= 5) {
       if (this.mobile && !document.fullscreenElement) {
         document.documentElement.requestFullscreen?.().catch(() => {});
       }
@@ -241,16 +252,63 @@ export class Game {
     for (const e of this.enemies) {
       if (!e.active) continue;
       if (e instanceof Octagon) {
-        // Octagon: moderate gravity well (pulls grid inward)
-        wells.push({ x: e.position.x, y: e.position.y, mass: -15, radius: 200 });
+        // Octagon: heavy gravity well (pulls grid inward hard)
+        wells.push({ x: e.position.x, y: e.position.y, mass: -30, radius: 280 });
+      } else if (e instanceof BlackHole) {
+        // BlackHole: massive gravity well, grows aggressively with absorbed enemies
+        const mass = -(45 + e.absorbedCount * 10);
+        wells.push({ x: e.position.x, y: e.position.y, mass, radius: BlackHole.ATTRACT_RADIUS * 1.3 });
       }
     }
     for (const ds of this.deathstars) {
       if (!ds.active) continue;
-      // DeathStar: strong gravity well
-      wells.push({ x: ds.position.x, y: ds.position.y, mass: -30, radius: 300 });
+      // DeathStar: crushing gravity well
+      wells.push({ x: ds.position.x, y: ds.position.y, mass: -55, radius: 400 });
     }
     this.grid.setGravityWells(wells);
+  }
+
+  /** Apply BlackHole gravitational attraction to nearby enemies + absorb on contact */
+  private applyBlackHoleAttraction(dt: number): void {
+    const blackholes: BlackHole[] = [];
+    for (const e of this.enemies) {
+      if (e.active && !e.isSpawning && e instanceof BlackHole) {
+        blackholes.push(e);
+      }
+    }
+    if (blackholes.length === 0) return;
+
+    for (const bh of blackholes) {
+      const attractR2 = BlackHole.ATTRACT_RADIUS * BlackHole.ATTRACT_RADIUS;
+      const absorbR2 = (bh.collisionRadius + 10) * (bh.collisionRadius + 10);
+
+      for (const e of this.enemies) {
+        if (!e.active || e.isSpawning || e === bh || e instanceof BlackHole) continue;
+
+        const dx = bh.position.x - e.position.x;
+        const dy = bh.position.y - e.position.y;
+        const dist2 = dx * dx + dy * dy;
+
+        // Absorb enemies that get too close
+        if (dist2 < absorbR2 && bh.absorbedCount < BlackHole.MAX_ABSORB) {
+          e.active = false;
+          bh.absorbEnemy();
+          if (e.trailId >= 0) this.trails.unregister(e.trailId);
+          this.explosions.spawn(e.position.x, e.position.y, e.color, 15, 0.6);
+          this.grid.addForce(e.position.x, e.position.y, -20, 120, 4);
+          this.haptics.absorb();
+          continue;
+        }
+
+        // Attract within radius
+        if (dist2 < attractR2 && dist2 > 1) {
+          const dist = Math.sqrt(dist2);
+          const force = BlackHole.GRAVITY_STRENGTH * dt / dist;
+          e.position.x += dx / dist * force;
+          e.position.y += dy / dist * force;
+        }
+      }
+    }
   }
 
   /** Update during game over: keep enemies alive with idle animation + gravity */
@@ -274,9 +332,9 @@ export class Game {
     // Gravity: big enemies pull smaller ones slowly during game over
     for (const e of this.enemies) {
       if (!e.active) continue;
-      // Pulled by Octagons
+      // Pulled by Octagons and BlackHoles
       for (const o of this.enemies) {
-        if (o === e || !o.active || !(o instanceof Octagon)) continue;
+        if (o === e || !o.active || (!(o instanceof Octagon) && !(o instanceof BlackHole))) continue;
         const dx = o.position.x - e.position.x;
         const dy = o.position.y - e.position.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
@@ -305,6 +363,8 @@ export class Game {
   }
 
   update(dt: number): void {
+    this.totalTime += dt / 1000;
+
     // Update grid displacement decay regardless of state
     this.grid.update(dt);
     this.camera.updateShake(dt);
@@ -369,6 +429,9 @@ export class Game {
       applyDeathStarAttraction(this.enemies, activeDeathstars);
     }
 
+    // BlackHole attraction — pull nearby non-blackhole enemies toward black holes
+    this.applyBlackHoleAttraction(dt);
+
     // Enemies
     for (const e of this.enemies) {
       if (!e.active) continue;
@@ -400,15 +463,17 @@ export class Game {
       if (req.type === 'deathstar') {
         this.deathstars.push(new DeathStar(this.player.position));
         this.audio.playSFX('deathstar');
+        this.haptics.bossSpawn();
       } else {
         const enemy = createEnemy(req.type);
         // Register trail for enemy
         enemy.trailId = this.trails.register(enemy.color, this.trailLenEnemy);
         this.enemies.push(enemy);
-        // Grid ripple on spawn
-        this.grid.addForce(enemy.position.x, enemy.position.y, 10, 80, 6);
+        // Grid ripple on spawn — cranked up
+        this.grid.addForce(enemy.position.x, enemy.position.y, 18, 120, 5);
         // Play spawn SFX for specific enemy types
         this.playEnemySpawnSFX(req.type);
+        this.haptics.medium();
       }
     }
 
@@ -442,6 +507,7 @@ export class Game {
       this.camera.shake(SCREEN_SHAKE_SMALL);
 
       this.audio.playSFX('crash');
+      this.haptics.light();
 
       // Unregister trail
       if (kill.enemy.trailId >= 0) {
@@ -475,6 +541,7 @@ export class Game {
       );
       this.camera.shake(SCREEN_SHAKE_LARGE);
       this.audio.playSFX('deathstar2');
+      this.haptics.heavy();
       for (let i = 0; i < kill.circleSpawnCount; i++) {
         const offset = Vec2.random().scale(100);
         const ce = createEnemy('circle', kill.position.add(offset));
@@ -488,6 +555,7 @@ export class Game {
       deathstar.absorbEnemy();
       if (enemy.trailId >= 0) this.trails.unregister(enemy.trailId);
       this.explosions.spawn(enemy.position.x, enemy.position.y, enemy.color, 8, 0.5);
+      this.haptics.absorb();
     }
 
     // Player hit
@@ -557,25 +625,35 @@ export class Game {
       case 'pinwheel': this.audio.playSFX('pinwheel'); break;
       case 'triangle': this.audio.playSFX('triangle2'); break;
       case 'octagon': this.audio.playSFX('octagon'); break;
+      case 'blackhole': this.audio.playSFX('deathstar'); break;
     }
   }
 
   private onPlayerDeath(): void {
+    const px = this.player.position.x;
+    const py = this.player.position.y;
+
+    // Primary death explosion — massive
     this.explosions.spawn(
-      this.player.position.x, this.player.position.y,
+      px, py,
       [1, 1, 0.78],
-      this.mobile ? Math.floor(EXPLOSION_PARTICLE_COUNT_DEATH * 0.4) : EXPLOSION_PARTICLE_COUNT_DEATH,
+      this.mobile ? Math.floor(EXPLOSION_PARTICLE_COUNT_DEATH * 0.5) : EXPLOSION_PARTICLE_COUNT_DEATH,
       EXPLOSION_DURATION_DEATH,
       0.2,
     );
-    this.grid.addForce(
-      this.player.position.x, this.player.position.y,
-      GRID_EXPLOSION_STRENGTH * 3,
-      GRID_EXPLOSION_RADIUS * 2,
-      GRID_EXPLOSION_DECAY * 0.3,
+    // Secondary colored explosion ring (slightly delayed feel via slower speed)
+    this.explosions.spawn(
+      px, py,
+      [1, 0.4, 0.1],
+      this.mobile ? 30 : 60,
+      EXPLOSION_DURATION_DEATH * 0.7,
+      0.35,
     );
+
+    // Massive grid shockwave
+    this.grid.addForce(px, py, GRID_EXPLOSION_STRENGTH * 4, GRID_EXPLOSION_RADIUS * 2.5, GRID_EXPLOSION_DECAY * 0.2);
     this.player.active = false;
-    this.camera.shake(SCREEN_SHAKE_DEATH, 0.4);
+    this.camera.shake(SCREEN_SHAKE_DEATH, 0.8);
     this.state = 'gameover';
     this.gameOverTime = 0;
     // Clean up bullet trails only — keep enemy trails for the frozen scene
@@ -585,6 +663,7 @@ export class Game {
     this.bulletTrailIds.clear();
     this.audio.playSFX('die');
     this.audio.stopMusic();
+    this.haptics.death();
     this.hud.drawGameOver(this.player.score, this.player.enemiesKilled, this.gameTime);
   }
 
@@ -595,12 +674,14 @@ export class Game {
       EXPLOSION_PARTICLE_COUNT_LARGE,
       EXPLOSION_DURATION_DEFAULT,
     );
+    // Respawn shockwave — clears the area with visual impact
     this.grid.addForce(
       this.player.position.x, this.player.position.y,
-      GRID_EXPLOSION_STRENGTH * 2,
-      GRID_EXPLOSION_RADIUS * 1.5,
-      GRID_EXPLOSION_DECAY,
+      GRID_EXPLOSION_STRENGTH * 2.5,
+      GRID_EXPLOSION_RADIUS * 2,
+      GRID_EXPLOSION_DECAY * 0.5,
     );
+    this.camera.shake(SCREEN_SHAKE_LARGE, 0.3);
     // Clean up trails
     for (const e of this.enemies) {
       if (e.trailId >= 0) this.trails.unregister(e.trailId);
@@ -613,6 +694,8 @@ export class Game {
     this.deathstars = [];
     this.player.respawn();
     this.audio.playSFX('die1');
+    this.haptics.respawn();
+    if (this.player.lives === 1) this.haptics.warning();
   }
 
   render(): void {
@@ -621,6 +704,10 @@ export class Game {
     const cameraY = this.camera.renderY;
     this.renderer.cameraX = cameraX;
     this.renderer.cameraY = cameraY;
+
+    // Feed shake + time into bloom composite for chromatic aberration + warp
+    this.bloom.shakeIntensity = this.camera.shakeNormalized;
+    this.bloom.time = this.totalTime;
 
     // --- Render to bloom scene FBO ---
     this.bloom.bindSceneFBO();

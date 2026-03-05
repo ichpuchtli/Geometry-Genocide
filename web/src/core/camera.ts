@@ -38,6 +38,13 @@ export class Camera {
   get renderX(): number { return this.position.x + this.shakeX; }
   get renderY(): number { return this.position.y + this.shakeY; }
 
+  /** Normalized shake intensity (0-1) for post-process effects */
+  get shakeNormalized(): number {
+    if (this.shakeIntensity <= 0) return 0;
+    const decay = Math.max(0, 1 - this.shakeElapsed / this.shakeDuration);
+    return Math.min(1, (this.shakeIntensity * decay) / 20);
+  }
+
   follow(target: Vec2, lerpFactor: number = CAMERA_LERP_SPEED): void {
     this.position.x += (target.x - this.position.x) * lerpFactor;
     this.position.y += (target.y - this.position.y) * lerpFactor;

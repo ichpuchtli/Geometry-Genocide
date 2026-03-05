@@ -41,6 +41,7 @@ export const COLORS = {
   triangle: { color: [0.682, 0.796, 0.0] as [number, number, number], color2: [0, 0.502, 0] as [number, number, number] },
   octagon:  { color: [1.0, 0.502, 0.125] as [number, number, number], color2: [1.0, 0.502, 0.251] as [number, number, number] },
   deathstar:{ color: [0.6, 0.2, 0.2] as [number, number, number], color2: [0.9, 0.4, 0.25] as [number, number, number] },
+  blackhole:{ color: [0.5, 0.1, 0.8] as [number, number, number], color2: [0.3, 0.0, 0.6] as [number, number, number] },
 };
 
 // --- Enemy speeds (px/ms) ---
@@ -52,6 +53,7 @@ export const ENEMY_SPEED = {
   circle: 0.35,
   triangle: 0.2,
   octagon: 0.25,
+  blackhole: 0.04,
 };
 
 // --- Enemy scores ---
@@ -63,6 +65,7 @@ export const ENEMY_SCORES = {
   circle: 300,
   triangle: 550,
   octagon: 1650,
+  blackhole: 2000,
 };
 
 // --- Enemy collision radii ---
@@ -74,13 +77,13 @@ export const DEATHSTAR_CIRCLE_SPAWN = 5;
 export const DEATHSTAR_ATTRACT_RADIUS = 50;
 
 // --- Explosion particles ---
-export const EXPLOSION_PARTICLE_COUNT_SMALL = 30;
-export const EXPLOSION_PARTICLE_COUNT_LARGE = 120;
-export const EXPLOSION_PARTICLE_COUNT_DEATH = 200;
-export const EXPLOSION_DURATION_DEFAULT = 1.0; // seconds
-export const EXPLOSION_DURATION_LARGE = 2.0;
+export const EXPLOSION_PARTICLE_COUNT_SMALL = 50;
+export const EXPLOSION_PARTICLE_COUNT_LARGE = 180;
+export const EXPLOSION_PARTICLE_COUNT_DEATH = 350;
+export const EXPLOSION_DURATION_DEFAULT = 1.2; // seconds
+export const EXPLOSION_DURATION_LARGE = 2.5;
 export const EXPLOSION_DURATION_DEATH = 5.0;
-export const EXPLOSION_POOL_SIZE = 50;
+export const EXPLOSION_POOL_SIZE = 60;
 
 // --- Spawner / difficulty ---
 // Phase boundaries in seconds
@@ -130,10 +133,11 @@ export const CLUSTER_BASE_SIZE = 8;
 export const SPAWN_DELAY_BETWEEN = 10; // ms between each enemy in a cluster
 
 // --- Camera ---
+export const DESKTOP_ZOOM = 0.75; // zoom out on desktop to show more environment
 export const CAMERA_LERP_SPEED = 0.08;
-export const SCREEN_SHAKE_SMALL = 3;
-export const SCREEN_SHAKE_LARGE = 6;
-export const SCREEN_SHAKE_DEATH = 12;
+export const SCREEN_SHAKE_SMALL = 5;
+export const SCREEN_SHAKE_LARGE = 10;
+export const SCREEN_SHAKE_DEATH = 20;
 
 // --- HUD ---
 export const HUD_FONT = '24px monospace';
@@ -143,25 +147,25 @@ export const HUD_COLOR = '#20ff20';
 export const OFFSCREEN_INDICATOR_RANGE = 800;
 
 // --- Bloom ---
-export const BLOOM_THRESHOLD = 0.08;
-export const BLOOM_INTENSITY = 1.7;
-export const BLOOM_BLUR_PASSES = 5;
-export const BLOOM_BLUR_RADIUS = 2.0;
+export const BLOOM_THRESHOLD = 0.06;
+export const BLOOM_INTENSITY = 2.2;
+export const BLOOM_BLUR_PASSES = 6;
+export const BLOOM_BLUR_RADIUS = 2.5;
 
 // --- Grid ---
-export const GRID_EXPLOSION_STRENGTH = 40;
-export const GRID_EXPLOSION_RADIUS = 250;
-export const GRID_EXPLOSION_DECAY = 3.0;
-export const GRID_ENEMY_STRENGTH = 5;
-export const GRID_ENEMY_RADIUS = 100;
-export const GRID_ENEMY_DECAY = 8.0;
+export const GRID_EXPLOSION_STRENGTH = 70;
+export const GRID_EXPLOSION_RADIUS = 350;
+export const GRID_EXPLOSION_DECAY = 2.0;
+export const GRID_ENEMY_STRENGTH = 8;
+export const GRID_ENEMY_RADIUS = 140;
+export const GRID_ENEMY_DECAY = 6.0;
 
 // --- Trails ---
 export const TRAIL_LENGTH_ENEMY = 18;
 export const TRAIL_LENGTH_BULLET = 10;
 
 // --- Mobile ---
-export const MOBILE_ZOOM = 0.55; // zoom out on mobile to see more of the world
+export const MOBILE_ZOOM = 0.45; // zoom out on mobile to see more of the world
 export const MOBILE_BLOOM_SCALE = 0.25; // bloom FBO at quarter-res on mobile
 export const MOBILE_MAX_ENEMIES = 80;
 export const MOBILE_MAX_PARTICLES = 30;

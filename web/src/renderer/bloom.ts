@@ -33,6 +33,8 @@ export class BloomPass {
   intensity = 1.4;
   blurPasses = 4;
   blurRadius = 1.5;
+  shakeIntensity = 0; // 0-1, drives chromatic aberration + barrel warp
+  time = 0;
 
   constructor(gl: WebGLRenderingContext) {
     this.gl = gl;
@@ -155,6 +157,8 @@ export class BloomPass {
     gl.bindTexture(gl.TEXTURE_2D, readFBO.texture);
     gl.uniform1i(gl.getUniformLocation(this.compositeProgram, 'u_bloom'), 1);
     gl.uniform1f(gl.getUniformLocation(this.compositeProgram, 'u_bloomIntensity'), this.intensity);
+    gl.uniform1f(gl.getUniformLocation(this.compositeProgram, 'u_shakeIntensity'), this.shakeIntensity);
+    gl.uniform1f(gl.getUniformLocation(this.compositeProgram, 'u_time'), this.time);
     this.drawQuad(this.compositeProgram);
 
     // Re-enable blending for next frame's entity rendering

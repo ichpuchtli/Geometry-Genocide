@@ -92,16 +92,62 @@ export abstract class Enemy extends Entity {
     ]);
   }
 
-  /** Render spawn warp-in effect (shrinking ring + fade in) */
+  /** Render spawn warp-in effect — cranked to 11 */
   renderSpawn(renderer: Renderer): void {
     const progress = 1 - this.spawnTimer / 0.3;
-    const ringR = 40 * (1 - progress);
-    const ringAlpha = 0.6 * (1 - progress);
-    renderer.drawCircle(this.position.x, this.position.y, ringR, this.color, 24, ringAlpha);
-    // Render shape fading in
+    const cx = this.position.x;
+    const cy = this.position.y;
+
+    // Outer shockwave ring — expands and fades
+    const shockR = 60 * progress;
+    const shockAlpha = 0.7 * (1 - progress);
+    renderer.drawCircle(cx, cy, shockR, [1, 1, 1], 32, shockAlpha);
+
+    // Multiple converging rings — shrink inward with staggered timing
+    for (let i = 0; i < 3; i++) {
+      const delay = i * 0.12;
+      const rp = Math.max(0, Math.min(1, (progress - delay) / (1 - delay)));
+      const ringR = 50 * (1 - rp) + 5;
+      const ringAlpha = 0.5 * (1 - rp) * rp;
+      const hue = i * 0.3;
+      renderer.drawCircle(cx, cy, ringR, [
+        this.color[0] * (1 - hue) + hue,
+        this.color[1] * (1 - hue) + hue * 0.5,
+        this.color[2] * (1 - hue) + hue * 0.8,
+      ], 24, ringAlpha);
+    }
+
+    // Bright center flash at peak
+    if (progress > 0.7) {
+      const flashProgress = (progress - 0.7) / 0.3;
+      const flashR = 8 + flashProgress * 15;
+      const flashAlpha = flashProgress * 0.9;
+      renderer.drawFilledCircle(cx, cy, flashR, [1, 1, 1], 16, flashAlpha);
+    }
+
+    // Radial spokes — rotating energy lines converging to center
+    const spokeCount = 6;
+    for (let i = 0; i < spokeCount; i++) {
+      const angle = (i / spokeCount) * Math.PI * 2 + progress * Math.PI;
+      const outerR = 45 * (1 - progress);
+      const innerR = 5;
+      const sx1 = cx + Math.cos(angle) * outerR;
+      const sy1 = cy + Math.sin(angle) * outerR;
+      const sx2 = cx + Math.cos(angle) * innerR;
+      const sy2 = cy + Math.sin(angle) * innerR;
+      renderer.drawLine(sx1, sy1, sx2, sy2,
+        this.color[0], this.color[1], this.color[2], 0.4 * progress);
+    }
+
+    // Render shape fading in with scale pulse
+    const scale = 1 + (1 - progress) * 0.5;
     const points = this.getWorldPoints();
-    renderer.drawLineLoop(points.map(([x, y]) => [x - 1, y]), this.color2, progress * 0.5);
-    renderer.drawLineLoop(points, this.color, progress);
+    const scaledPoints = points.map(([x, y]) => [
+      cx + (x - cx) * scale,
+      cy + (y - cy) * scale,
+    ]);
+    renderer.drawLineLoop(scaledPoints.map(([x, y]) => [x - 1, y]), this.color2, progress * 0.5);
+    renderer.drawLineLoop(scaledPoints, this.color, progress);
   }
 
   /** Default rendering: draw the shape as a colored line loop */
