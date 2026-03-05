@@ -1,0 +1,36 @@
+name: "Audio System (Phase 3)"
+tags: [phase3, audio]
+steps:
+  - action: launch
+    url: "/"
+    waitFor: "canvas#game"
+
+  - action: wait
+    ms: 300
+
+  # TODO Phase 3: Test audio engine loads and plays
+  # - action: evalCheck
+  #   description: "AudioContext created"
+  #   script: |
+  #     return window.__audioCtx && window.__audioCtx.state !== 'closed';
+
+  # - action: click
+  #   selector: "canvas#game"
+  #   x: 0.5
+  #   y: 0.5
+
+  # - action: wait
+  #   ms: 1000
+
+  # - action: evalCheck
+  #   description: "Background music playing"
+  #   script: |
+  #     return window.__audioCtx && window.__audioCtx.state === 'running';
+
+  - action: evalCheck
+    description: "AudioContext API available (placeholder)"
+    script: |
+      return typeof AudioContext !== 'undefined' || typeof webkitAudioContext !== 'undefined';
+
+  - action: screenshot
+    name: "21-audio-placeholder"

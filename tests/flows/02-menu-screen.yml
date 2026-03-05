@@ -1,0 +1,30 @@
+name: "Menu Screen"
+tags: [smoke, phase1]
+steps:
+  - action: launch
+    url: "/"
+    waitFor: "canvas#game"
+
+  - action: wait
+    ms: 500
+
+  - action: evalCheck
+    description: "HUD canvas has rendered menu text"
+    script: |
+      var c = document.getElementById('hud');
+      if (!c) return false;
+      var ctx = c.getContext('2d');
+      if (!ctx) return false;
+      // Sample a small region in the center where menu text should be
+      var cx = Math.floor(c.width / 2);
+      var cy = Math.floor(c.height / 2);
+      var size = Math.min(200, c.width, c.height);
+      var data = ctx.getImageData(cx - size/2, cy - size/2, size, size).data;
+      var nonEmpty = 0;
+      for (var i = 3; i < data.length; i += 4) {
+        if (data[i] > 0) nonEmpty++;
+      }
+      return nonEmpty > 20;
+
+  - action: screenshot
+    name: "02-menu-screen"

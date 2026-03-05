@@ -1,0 +1,59 @@
+name: "Visual Systems Soak"
+tags: [phase2, soak]
+steps:
+  - action: launch
+    url: "/"
+    waitFor: "canvas#game"
+
+  - action: wait
+    ms: 300
+
+  # Start game
+  - action: click
+    selector: "canvas#game"
+    x: 0.5
+    y: 0.5
+
+  - action: wait
+    ms: 200
+
+  # Move and shoot to trigger trails, explosions, grid displacement
+  - action: mouseMove
+    x: 700
+    y: 360
+
+  - action: mouseDown
+
+  - action: keys
+    keys: ["w", "d"]
+    duration: 3000
+
+  - action: screenshot
+    name: "12-visual-trails"
+
+  - action: keys
+    keys: ["s", "a"]
+    duration: 3000
+
+  - action: mouseMove
+    x: 300
+    y: 500
+
+  - action: keys
+    keys: ["w"]
+    duration: 3000
+
+  - action: mouseUp
+
+  - action: screenshot
+    name: "12-visual-soak-end"
+
+  - action: evalCheck
+    description: "GL context survived visual soak with bloom + grid + trails"
+    script: |
+      const c = document.getElementById('game');
+      const gl = c.getContext('webgl', {alpha: false, antialias: true});
+      return gl && gl.getError() === gl.NO_ERROR;
+
+  - action: assertNoErrors
+    description: "No errors during visual soak"

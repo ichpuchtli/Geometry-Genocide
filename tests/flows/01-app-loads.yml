@@ -1,0 +1,26 @@
+name: "App Loads"
+tags: [smoke, phase1]
+steps:
+  - action: launch
+    url: "/"
+    waitFor: "canvas#game"
+
+  - action: assertVisible
+    selector: "canvas#game"
+    description: "Game canvas is visible"
+
+  - action: assertVisible
+    selector: "canvas#hud"
+    description: "HUD canvas is visible"
+
+  - action: evalCheck
+    description: "Game canvas has non-zero dimensions"
+    script: |
+      var c = document.getElementById('game');
+      return c && c.width > 0 && c.height > 0;
+
+  - action: screenshot
+    name: "01-app-loaded"
+
+  - action: assertNoErrors
+    description: "No console errors on load"

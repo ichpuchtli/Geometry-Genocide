@@ -1,0 +1,23 @@
+{
+  "name": "geometry-genocide",
+  "version": "1.0.0",
+  "description": "Geometry Genocide v1.0 ======================",
+  "main": "index.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "http://local_proxy@127.0.0.1:50848/git/ichpuchtli/Geometry-Genocide"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "playwright": "^1.58.2",
+    "yaml": "^2.8.2"
+  }
+}
