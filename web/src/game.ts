@@ -131,8 +131,13 @@ export class Game {
     this.waveManager = new WaveManager();
 
     // Click/touch to start + init audio
+    // Use touchend for iOS Safari reliability (touchstart preventDefault in Input
+    // suppresses synthetic click, and passive/non-passive conflicts cause issues)
     gameCanvas.addEventListener('click', () => this.onInteract());
-    gameCanvas.addEventListener('touchstart', () => this.onInteract(), { passive: true });
+    gameCanvas.addEventListener('touchend', (e) => {
+      e.preventDefault();
+      this.onInteract();
+    }, { passive: false });
 
     // Mute toggle (M key)
     window.addEventListener('keydown', (e) => {
@@ -159,14 +164,20 @@ export class Game {
     if (this.state === 'menu') this.hud.drawMenu();
   }
 
-  private async onInteract(): Promise<void> {
-    // Init audio on first user gesture
+  private onInteract(): void {
+    // Init audio on first user gesture (non-blocking so game start isn't
+    // prevented by audio failures on iOS Safari)
     if (!this.audio.initialized) {
-      await this.audio.init();
+      this.audio.init().catch(() => {});
+    } else {
+      this.audio.resume().catch(() => {});
     }
-    await this.audio.resume();
 
     if (this.state === 'menu' || this.state === 'gameover') {
+      // Request fullscreen on mobile (must be in user gesture handler)
+      if (this.mobile && !document.fullscreenElement) {
+        document.documentElement.requestFullscreen?.().catch(() => {});
+      }
       this.startGame();
     }
   }
