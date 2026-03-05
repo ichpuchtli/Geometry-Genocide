@@ -35,6 +35,7 @@ import {
   TRAIL_LENGTH_BULLET,
   MOBILE_TRAIL_LENGTH_ENEMY,
   MOBILE_TRAIL_LENGTH_BULLET,
+  MOBILE_ZOOM,
   BULLET_COLOR,
   DIFFICULTY_PHASES,
 } from './config';
@@ -108,6 +109,7 @@ export class Game {
     this.trailLenBullet = this.mobile ? MOBILE_TRAIL_LENGTH_BULLET : TRAIL_LENGTH_BULLET;
 
     this.renderer = new Renderer(gameCanvas);
+    if (this.mobile) this.renderer.zoom = MOBILE_ZOOM;
     const gl = this.renderer.getGL();
 
     this.bloom = new BloomPass(gl);
