@@ -3,8 +3,40 @@ import { CAMERA_LERP_SPEED, WORLD_WIDTH, WORLD_HEIGHT } from '../config';
 
 export class Camera {
   position = new Vec2(0, 0);
+  shakeX = 0;
+  shakeY = 0;
+  private shakeIntensity = 0;
+  private shakeDuration = 0;
+  private shakeElapsed = 0;
 
   constructor(public viewportWidth: number, public viewportHeight: number) {}
+
+  shake(intensity: number, duration: number = 0.2): void {
+    this.shakeIntensity = intensity;
+    this.shakeDuration = duration;
+    this.shakeElapsed = 0;
+  }
+
+  updateShake(dt: number): void {
+    if (this.shakeIntensity <= 0) {
+      this.shakeX = 0;
+      this.shakeY = 0;
+      return;
+    }
+    this.shakeElapsed += dt / 1000;
+    if (this.shakeElapsed >= this.shakeDuration) {
+      this.shakeIntensity = 0;
+      this.shakeX = 0;
+      this.shakeY = 0;
+      return;
+    }
+    const decay = 1 - this.shakeElapsed / this.shakeDuration;
+    this.shakeX = (Math.random() * 2 - 1) * this.shakeIntensity * decay;
+    this.shakeY = (Math.random() * 2 - 1) * this.shakeIntensity * decay;
+  }
+
+  get renderX(): number { return this.position.x + this.shakeX; }
+  get renderY(): number { return this.position.y + this.shakeY; }
 
   follow(target: Vec2, lerpFactor: number = CAMERA_LERP_SPEED): void {
     this.position.x += (target.x - this.position.x) * lerpFactor;
@@ -34,7 +66,7 @@ export class Camera {
     this.viewportHeight = h;
   }
 
-  /** Convert screen pixel coordinates to world coordinates */
+  /** Convert screen pixel coordinates to world coordinates (uses unshaken position) */
   screenToWorld(sx: number, sy: number): Vec2 {
     return new Vec2(
       sx - this.viewportWidth / 2 + this.position.x,

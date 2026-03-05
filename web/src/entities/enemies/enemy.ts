@@ -16,6 +16,8 @@ export abstract class Enemy extends Entity {
   shapePoints: number[][] = [];
   rotationSpeed = 0;
   trailId = -1; // assigned by TrailSystem
+  spawnTimer = 0.3; // seconds remaining in spawn warp-in animation
+  get isSpawning(): boolean { return this.spawnTimer > 0; }
   displacer = new Vec2(
     (Math.random() - 0.5) * 64,
     (Math.random() - 0.5) * 64,
@@ -90,14 +92,38 @@ export abstract class Enemy extends Entity {
     ]);
   }
 
+  /** Render spawn warp-in effect (shrinking ring + fade in) */
+  renderSpawn(renderer: Renderer): void {
+    const progress = 1 - this.spawnTimer / 0.3;
+    const ringR = 40 * (1 - progress);
+    const ringAlpha = 0.6 * (1 - progress);
+    renderer.drawCircle(this.position.x, this.position.y, ringR, this.color, 24, ringAlpha);
+    // Render shape fading in
+    const points = this.getWorldPoints();
+    renderer.drawLineLoop(points.map(([x, y]) => [x - 1, y]), this.color2, progress * 0.5);
+    renderer.drawLineLoop(points, this.color, progress);
+  }
+
   /** Default rendering: draw the shape as a colored line loop */
   render(renderer: Renderer): void {
     if (!this.active) return;
+    if (this.isSpawning) { this.renderSpawn(renderer); return; }
     const points = this.getWorldPoints();
     // Outer line (color2)
     renderer.drawLineLoop(points.map(([x, y]) => [x - 1, y]), this.color2);
     // Main line (color)
     renderer.drawLineLoop(points, this.color);
+  }
+
+  /** Render with unique glow effect for game over screen. Override per enemy type. */
+  renderGlow(renderer: Renderer, time: number): void {
+    if (!this.active) return;
+    // Default: render normally + pulsing glow ring
+    this.render(renderer);
+    const pulse = 0.5 + Math.sin(time * 3) * 0.3;
+    const glowR = this.collisionRadius + 8;
+    renderer.drawCircle(this.position.x, this.position.y, glowR,
+      [this.color[0] * pulse, this.color[1] * pulse, this.color[2] * pulse], 24);
   }
 
   /** Override to spawn children on death */

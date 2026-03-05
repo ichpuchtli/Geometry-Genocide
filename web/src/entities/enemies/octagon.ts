@@ -41,6 +41,24 @@ export class Octagon extends Enemy {
     }
   }
 
+  /** Massive gravity glow with concentric warping rings */
+  renderGlow(renderer: Renderer, time: number): void {
+    if (!this.active) return;
+    this.render(renderer);
+    // Concentric gravity rings that pulse outward
+    for (let i = 0; i < 3; i++) {
+      const phase = (time * 1.5 + i * 0.33) % 1.0;
+      const ringR = 35 + phase * 40;
+      const alpha = (1 - phase) * 0.3;
+      renderer.drawCircle(this.position.x, this.position.y, ringR,
+        [this.color[0] * alpha, this.color[1] * alpha, this.color[2] * alpha], 28);
+    }
+    // Bright core glow
+    const core = 0.3 + Math.sin(time * 2) * 0.15;
+    renderer.drawCircle(this.position.x, this.position.y, 20,
+      [this.color[0] * core, this.color[1] * core, this.color[2] * core], 20);
+  }
+
   onDeath(): EnemyDeathResult {
     return {
       spawnEnemies: this.getWorldPoints().map(([x, y]) => ({

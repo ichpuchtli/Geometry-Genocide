@@ -15,6 +15,7 @@ import { HUD } from './ui/hud';
 import { VirtualJoystickRenderer } from './ui/virtual-joystick';
 import { renderOffscreenIndicators } from './ui/offscreen-indicators';
 import { WaveManager } from './spawner/wave-manager';
+import { Starfield } from './renderer/starfield';
 import { checkCollisions, applyDeathStarAttraction } from './core/collision';
 import { Vec2 } from './core/vector';
 import {
@@ -31,6 +32,9 @@ import {
   GRID_EXPLOSION_STRENGTH,
   GRID_EXPLOSION_RADIUS,
   GRID_EXPLOSION_DECAY,
+  GRID_ENEMY_STRENGTH,
+  GRID_ENEMY_RADIUS,
+  GRID_ENEMY_DECAY,
   TRAIL_LENGTH_ENEMY,
   TRAIL_LENGTH_BULLET,
   MOBILE_TRAIL_LENGTH_ENEMY,
@@ -38,6 +42,11 @@ import {
   MOBILE_ZOOM,
   BULLET_COLOR,
   DIFFICULTY_PHASES,
+  SCREEN_SHAKE_SMALL,
+  SCREEN_SHAKE_LARGE,
+  SCREEN_SHAKE_DEATH,
+  WORLD_WIDTH,
+  WORLD_HEIGHT,
 } from './config';
 
 // Enemy factory imports
@@ -91,9 +100,11 @@ export class Game {
   private hud: HUD;
   private joystickRenderer: VirtualJoystickRenderer;
   private waveManager: WaveManager;
+  private starfield: Starfield;
 
   private state: GameState = 'menu';
   private gameTime = 0;
+  private gameOverTime = 0;
   private mobile: boolean;
 
   // Trail IDs for bullets (keyed by bullet index)
@@ -131,6 +142,7 @@ export class Game {
     this.hud = new HUD(hudCanvas);
     this.joystickRenderer = new VirtualJoystickRenderer(hudCanvas);
     this.waveManager = new WaveManager();
+    this.starfield = new Starfield(200, WORLD_WIDTH, WORLD_HEIGHT);
 
     // Click/touch to start + init audio
     // Use touchend for iOS Safari reliability (touchstart preventDefault in Input
@@ -223,12 +235,87 @@ export class Game {
     return Math.min(base + enemyBoost, 1);
   }
 
+  /** Update gravity wells on the grid from large enemies (Octagon, DeathStar) */
+  private updateGravityWells(): void {
+    const wells: { x: number; y: number; mass: number; radius: number }[] = [];
+    for (const e of this.enemies) {
+      if (!e.active) continue;
+      if (e instanceof Octagon) {
+        // Octagon: moderate gravity well (pulls grid inward)
+        wells.push({ x: e.position.x, y: e.position.y, mass: -15, radius: 200 });
+      }
+    }
+    for (const ds of this.deathstars) {
+      if (!ds.active) continue;
+      // DeathStar: strong gravity well
+      wells.push({ x: ds.position.x, y: ds.position.y, mass: -30, radius: 300 });
+    }
+    this.grid.setGravityWells(wells);
+  }
+
+  /** Update during game over: keep enemies alive with idle animation + gravity */
+  private updateGameOver(dt: number): void {
+    this.gameOverTime += dt / 1000;
+
+    // Keep explosions animating
+    this.explosions.update(dt);
+
+    // Gentle idle rotation for enemies (no movement)
+    for (const e of this.enemies) {
+      if (!e.active) continue;
+      e.rotation += dt * 0.001;
+    }
+
+    // DeathStars keep pulsing
+    for (const ds of this.deathstars) {
+      if (ds.active) ds.update(dt);
+    }
+
+    // Gravity: big enemies pull smaller ones slowly during game over
+    for (const e of this.enemies) {
+      if (!e.active) continue;
+      // Pulled by Octagons
+      for (const o of this.enemies) {
+        if (o === e || !o.active || !(o instanceof Octagon)) continue;
+        const dx = o.position.x - e.position.x;
+        const dy = o.position.y - e.position.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist > 10 && dist < 200) {
+          const pull = 0.02 * dt / dist;
+          e.position.x += dx * pull;
+          e.position.y += dy * pull;
+        }
+      }
+      // Pulled by DeathStars
+      for (const ds of this.deathstars) {
+        if (!ds.active) continue;
+        const dx = ds.position.x - e.position.x;
+        const dy = ds.position.y - e.position.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist > 10 && dist < 300) {
+          const pull = 0.04 * dt / dist;
+          e.position.x += dx * pull;
+          e.position.y += dy * pull;
+        }
+      }
+    }
+
+    // Update gravity wells for grid warping
+    this.updateGravityWells();
+  }
+
   update(dt: number): void {
     // Update grid displacement decay regardless of state
     this.grid.update(dt);
+    this.camera.updateShake(dt);
 
     // Update touch mode on HUD
     this.hud.setTouchMode(this.input.mode === 'touch');
+
+    if (this.state === 'gameover') {
+      this.updateGameOver(dt);
+      return;
+    }
 
     if (this.state !== 'playing') return;
 
@@ -285,6 +372,12 @@ export class Game {
     // Enemies
     for (const e of this.enemies) {
       if (!e.active) continue;
+      // Decrement spawn timer
+      if (e.isSpawning) {
+        e.spawnTimer = Math.max(0, e.spawnTimer - dt / 1000);
+        if (e.trailId >= 0) this.trails.update(e.trailId, e.position.x, e.position.y);
+        continue; // skip movement/AI during spawn
+      }
       if (e instanceof Octagon) {
         (e as Octagon).update(dt, this.player.position, this.player.velocity);
       } else {
@@ -312,6 +405,8 @@ export class Game {
         // Register trail for enemy
         enemy.trailId = this.trails.register(enemy.color, this.trailLenEnemy);
         this.enemies.push(enemy);
+        // Grid ripple on spawn
+        this.grid.addForce(enemy.position.x, enemy.position.y, 10, 80, 6);
         // Play spawn SFX for specific enemy types
         this.playEnemySpawnSFX(req.type);
       }
@@ -342,6 +437,9 @@ export class Game {
         GRID_EXPLOSION_RADIUS,
         GRID_EXPLOSION_DECAY,
       );
+
+      // Screen shake on enemy kill
+      this.camera.shake(SCREEN_SHAKE_SMALL);
 
       this.audio.playSFX('crash');
 
@@ -375,6 +473,7 @@ export class Game {
         GRID_EXPLOSION_RADIUS * 1.5,
         GRID_EXPLOSION_DECAY * 0.5,
       );
+      this.camera.shake(SCREEN_SHAKE_LARGE);
       this.audio.playSFX('deathstar2');
       for (let i = 0; i < kill.circleSpawnCount; i++) {
         const offset = Vec2.random().scale(100);
@@ -414,6 +513,36 @@ export class Game {
     // Explosions
     this.explosions.update(dt);
 
+    // Update gravity wells for grid warping during gameplay
+    this.updateGravityWells();
+
+    // Grid micro-forces from moving enemies
+    let gridForceCount = 0;
+    for (const e of this.enemies) {
+      if (!e.active || e.isSpawning) continue;
+      if (gridForceCount >= 8) break;
+      if (!this.camera.isVisible(e.position.x, e.position.y, 50)) continue;
+      const speed = e.velocity.magnitude();
+      if (speed > 0.01) {
+        this.grid.addForce(e.position.x, e.position.y, GRID_ENEMY_STRENGTH * speed * 20, GRID_ENEMY_RADIUS, GRID_ENEMY_DECAY);
+        gridForceCount++;
+      }
+    }
+
+    // Player wake on grid
+    const pSpeed = this.player.velocity.magnitude();
+    if (pSpeed > 0.01) {
+      this.grid.addForce(this.player.position.x, this.player.position.y, 3 * pSpeed * 20, 80, 10);
+    }
+
+    // Bullet grid ripples (very subtle)
+    let bulletForces = 0;
+    for (const b of this.bullets.bullets) {
+      if (!b.active || bulletForces >= 3) break;
+      this.grid.addForce(b.position.x, b.position.y, 2, 50, 12);
+      bulletForces++;
+    }
+
     // Camera
     this.camera.follow(this.player.position);
 
@@ -446,17 +575,14 @@ export class Game {
       GRID_EXPLOSION_DECAY * 0.3,
     );
     this.player.active = false;
+    this.camera.shake(SCREEN_SHAKE_DEATH, 0.4);
     this.state = 'gameover';
-    // Clean up trails
-    for (const e of this.enemies) {
-      if (e.trailId >= 0) this.trails.unregister(e.trailId);
-    }
+    this.gameOverTime = 0;
+    // Clean up bullet trails only — keep enemy trails for the frozen scene
     for (const [, tid] of this.bulletTrailIds) {
       this.trails.unregister(tid);
     }
     this.bulletTrailIds.clear();
-    this.enemies = [];
-    this.deathstars = [];
     this.audio.playSFX('die');
     this.audio.stopMusic();
     this.hud.drawGameOver(this.player.score, this.player.enemiesKilled, this.gameTime);
@@ -490,9 +616,9 @@ export class Game {
   }
 
   render(): void {
-    const gl = this.renderer.getGL();
-    const cameraX = this.camera.position.x;
-    const cameraY = this.camera.position.y;
+    // Use shake-offset camera for rendering
+    const cameraX = this.camera.renderX;
+    const cameraY = this.camera.renderY;
     this.renderer.cameraX = cameraX;
     this.renderer.cameraY = cameraY;
 
@@ -502,12 +628,12 @@ export class Game {
     // 1. Grid (renders directly with its own shader)
     this.grid.render(cameraX, cameraY, this.renderer.width, this.renderer.height);
 
-    // 2. Trails (via sprite batch)
-    this.renderer.begin(false); // don't clear — grid already rendered
-    this.trails.render(this.renderer);
+    // 2. Starfield (faint background dots, before entities)
+    this.renderer.begin(false);
+    this.starfield.render(this.renderer, cameraX, cameraY);
     this.renderer.end();
 
-    // 3. Entities (via sprite batch)
+    // 3. Entities — NORMAL blend
     this.renderer.begin(false);
 
     if (this.state === 'playing') {
@@ -525,9 +651,19 @@ export class Game {
       renderOffscreenIndicators(this.renderer, this.camera, this.enemies, this.deathstars);
     }
 
-    // Explosions render in all states (lingering after death)
-    this.explosions.render(this.renderer);
+    // Game over: render frozen enemies with unique glow effects
+    if (this.state === 'gameover') {
+      const t = this.gameOverTime;
+      for (const e of this.enemies) e.renderGlow(this.renderer, t);
+      for (const ds of this.deathstars) ds.renderGlow(this.renderer, t);
+    }
 
+    // 4. Switch to additive blend for trails, explosions, glow
+    this.renderer.setBlendMode('additive');
+    this.trails.render(this.renderer);
+    this.explosions.render(this.renderer);
+    // setBlendMode('normal') flushes additive batch and restores blend func
+    this.renderer.setBlendMode('normal');
     this.renderer.end();
 
     // --- Bloom post-process: scene FBO -> screen ---

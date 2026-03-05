@@ -56,9 +56,17 @@ export class Explosion {
     for (const p of this.particles) {
       const x1 = this.position.x + p.dir.x * t;
       const y1 = this.position.y + p.dir.y * t;
-      const x2 = this.position.x + p.dir.x * t * 1.1;
-      const y2 = this.position.y + p.dir.y * t * 1.1;
-      renderer.drawLine(x1, y1, x2, y2, r, g, b, alpha);
+      // Motion stretching: longer streak based on distance from center
+      const stretch = 1.15 + t * 0.001;
+      const x2 = this.position.x + p.dir.x * t * stretch;
+      const y2 = this.position.y + p.dir.y * t * stretch;
+      // White-hot center: particles with small direction magnitude are inner (whiter)
+      const dist = Math.sqrt(p.dir.x * p.dir.x + p.dir.y * p.dir.y);
+      const whiteness = Math.max(0, 1 - dist * 2.5);
+      const pr = r + (1 - r) * whiteness;
+      const pg = g + (1 - g) * whiteness;
+      const pb = b + (1 - b) * whiteness;
+      renderer.drawLine(x1, y1, x2, y2, pr, pg, pb, alpha);
     }
   }
 }

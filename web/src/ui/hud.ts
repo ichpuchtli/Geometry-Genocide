@@ -96,8 +96,8 @@ export class HUD {
     this.ctx.textAlign = 'center';
     this.ctx.textBaseline = 'middle';
 
-    // Semi-transparent dark overlay
-    this.ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+    // Light overlay so the frozen chaos is still visible behind
+    this.ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
     this.ctx.fillRect(0, 0, w, h);
 
     // Game Over with red glow
