@@ -18,7 +18,7 @@ export interface GravityWell {
   radius: number;
 }
 
-const GRID_SPACING = 80;
+const GRID_SPACING = 50;
 const MAX_FORCES = 16;
 
 export class GridRenderer {
