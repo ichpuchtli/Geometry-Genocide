@@ -31,6 +31,7 @@ export class Renderer {
   public canvasHeight = 0;
   public cameraX = 0;
   public cameraY = 0;
+  public zoom = 1.0;
 
   getGL(): WebGLRenderingContext { return this.gl; }
 
@@ -66,12 +67,15 @@ export class Renderer {
 
   resize(): void {
     const dpr = window.devicePixelRatio || 1;
-    this.width = this.canvas.clientWidth;
-    this.height = this.canvas.clientHeight;
-    this.canvas.width = this.width * dpr;
-    this.canvas.height = this.height * dpr;
+    const cssW = this.canvas.clientWidth;
+    const cssH = this.canvas.clientHeight;
+    this.canvas.width = cssW * dpr;
+    this.canvas.height = cssH * dpr;
     this.canvasWidth = this.canvas.width;
     this.canvasHeight = this.canvas.height;
+    // Virtual dimensions: zoom < 1 shows more of the world
+    this.width = cssW / this.zoom;
+    this.height = cssH / this.zoom;
     this.gl.viewport(0, 0, this.canvasWidth, this.canvasHeight);
   }
 
