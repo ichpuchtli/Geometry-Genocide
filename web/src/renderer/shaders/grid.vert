@@ -8,9 +8,11 @@ uniform vec3 u_forces[16]; // xy = world position, z = strength
 uniform float u_forceRadii[16];
 
 varying float v_distFromCenter;
+varying float v_displacement; // how much this vertex was displaced (for glow)
 
 void main() {
     vec2 worldPos = a_position;
+    float totalDisplacement = 0.0;
 
     // Apply displacement forces
     for (int i = 0; i < 16; i++) {
@@ -23,7 +25,9 @@ void main() {
         if (dist < radius && dist > 0.0) {
             float falloff = 1.0 - (dist / radius);
             falloff = falloff * falloff; // quadratic falloff
-            worldPos += normalize(diff) * strength * falloff;
+            vec2 offset = normalize(diff) * strength * falloff;
+            worldPos += offset;
+            totalDisplacement += abs(strength) * falloff;
         }
     }
 
@@ -33,4 +37,5 @@ void main() {
     // Pass distance from camera center for fading at edges
     vec2 relPos = (worldPos - u_camera) / u_resolution;
     v_distFromCenter = length(relPos);
+    v_displacement = totalDisplacement;
 }
