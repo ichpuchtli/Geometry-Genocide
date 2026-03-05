@@ -4,6 +4,7 @@ import { GridRenderer } from './renderer/grid';
 import { TrailSystem } from './renderer/trails';
 import { Camera } from './core/camera';
 import { Input } from './core/input';
+import { AudioManager } from './core/audio';
 import { Player } from './entities/player';
 import { BulletPool, Bullet } from './entities/bullet';
 import { Enemy } from './entities/enemies/enemy';
@@ -11,6 +12,7 @@ import { DeathStar } from './entities/enemies/deathstar';
 import { ExplosionPool } from './entities/explosion';
 import { Crosshair } from './entities/crosshair';
 import { HUD } from './ui/hud';
+import { VirtualJoystickRenderer } from './ui/virtual-joystick';
 import { renderOffscreenIndicators } from './ui/offscreen-indicators';
 import { WaveManager } from './spawner/wave-manager';
 import { checkCollisions, applyDeathStarAttraction } from './core/collision';
@@ -31,7 +33,10 @@ import {
   GRID_EXPLOSION_DECAY,
   TRAIL_LENGTH_ENEMY,
   TRAIL_LENGTH_BULLET,
+  MOBILE_TRAIL_LENGTH_ENEMY,
+  MOBILE_TRAIL_LENGTH_BULLET,
   BULLET_COLOR,
+  DIFFICULTY_PHASES,
 } from './config';
 
 // Enemy factory imports
@@ -64,6 +69,10 @@ function createEnemy(type: string, pos?: Vec2): Enemy {
   return e;
 }
 
+function isMobile(): boolean {
+  return 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+}
+
 export class Game {
   private renderer: Renderer;
   private bloom: BloomPass;
@@ -71,6 +80,7 @@ export class Game {
   private trails: TrailSystem;
   private camera: Camera;
   private input: Input;
+  private audio: AudioManager;
   private player: Player;
   private bullets: BulletPool;
   private enemies: Enemy[] = [];
@@ -78,22 +88,32 @@ export class Game {
   private explosions: ExplosionPool;
   private crosshair: Crosshair;
   private hud: HUD;
+  private joystickRenderer: VirtualJoystickRenderer;
   private waveManager: WaveManager;
 
   private state: GameState = 'menu';
   private gameTime = 0;
+  private mobile: boolean;
 
   // Trail IDs for bullets (keyed by bullet index)
   private bulletTrailIds = new Map<Bullet, number>();
 
-  constructor(gameCanvas: HTMLCanvasElement, hudCanvas: HTMLCanvasElement) {
+  // Track trail lengths (adjusted for mobile)
+  private trailLenEnemy: number;
+  private trailLenBullet: number;
+
+  constructor(private gameCanvas: HTMLCanvasElement, hudCanvas: HTMLCanvasElement) {
+    this.mobile = isMobile();
+    this.trailLenEnemy = this.mobile ? MOBILE_TRAIL_LENGTH_ENEMY : TRAIL_LENGTH_ENEMY;
+    this.trailLenBullet = this.mobile ? MOBILE_TRAIL_LENGTH_BULLET : TRAIL_LENGTH_BULLET;
+
     this.renderer = new Renderer(gameCanvas);
     const gl = this.renderer.getGL();
 
     this.bloom = new BloomPass(gl);
     this.bloom.threshold = BLOOM_THRESHOLD;
     this.bloom.intensity = BLOOM_INTENSITY;
-    this.bloom.blurPasses = BLOOM_BLUR_PASSES;
+    this.bloom.blurPasses = this.mobile ? 2 : BLOOM_BLUR_PASSES;
     this.bloom.blurRadius = BLOOM_BLUR_RADIUS;
 
     this.grid = new GridRenderer(gl);
@@ -101,16 +121,32 @@ export class Game {
     this.camera = new Camera(this.renderer.width, this.renderer.height);
     this.input = new Input(gameCanvas);
     this.input.setCamera(this.camera);
+    this.audio = new AudioManager();
     this.player = new Player(this.input);
     this.bullets = new BulletPool();
     this.explosions = new ExplosionPool();
     this.crosshair = new Crosshair();
     this.hud = new HUD(hudCanvas);
+    this.joystickRenderer = new VirtualJoystickRenderer(hudCanvas);
     this.waveManager = new WaveManager();
 
-    gameCanvas.addEventListener('click', () => this.onClick());
+    // Click/touch to start + init audio
+    gameCanvas.addEventListener('click', () => this.onInteract());
+    gameCanvas.addEventListener('touchstart', () => this.onInteract(), { passive: true });
+
+    // Mute toggle (M key)
+    window.addEventListener('keydown', (e) => {
+      if (e.code === 'KeyM') {
+        this.audio.toggleMute();
+      }
+    });
+
     window.addEventListener('resize', () => this.resize());
+    window.addEventListener('orientationchange', () => {
+      setTimeout(() => this.resize(), 100);
+    });
     this.resize();
+    this.hud.setTouchMode(this.mobile);
     this.hud.drawMenu();
   }
 
@@ -119,10 +155,17 @@ export class Game {
     this.camera.resize(this.renderer.width, this.renderer.height);
     this.bloom.resize(this.renderer.canvasWidth, this.renderer.canvasHeight);
     this.hud.resize();
+    this.input.updateCanvasSize(this.gameCanvas.clientWidth);
     if (this.state === 'menu') this.hud.drawMenu();
   }
 
-  private onClick(): void {
+  private async onInteract(): Promise<void> {
+    // Init audio on first user gesture
+    if (!this.audio.initialized) {
+      await this.audio.init();
+    }
+    await this.audio.resume();
+
     if (this.state === 'menu' || this.state === 'gameover') {
       this.startGame();
     }
@@ -142,11 +185,37 @@ export class Game {
     this.gameTime = 0;
     this.camera.snapTo(this.player.position);
     this.hud.clear();
+
+    this.audio.playSFX('start');
+    this.audio.startMusic();
+    this.audio.setMusicIntensity(0);
+  }
+
+  /** Compute a 0-1 intensity value from current game state for adaptive music */
+  private computeIntensity(): number {
+    // Base intensity from time phase
+    let base = 0;
+    if (this.gameTime < DIFFICULTY_PHASES.tutorial.end) base = 0.05;
+    else if (this.gameTime < DIFFICULTY_PHASES.rampUp.end) base = 0.25;
+    else if (this.gameTime < DIFFICULTY_PHASES.midGame.end) base = 0.5;
+    else if (this.gameTime < DIFFICULTY_PHASES.intense.end) base = 0.75;
+    else base = 0.9;
+
+    // Boost for boss presence
+    const hasBoss = this.deathstars.some(d => d.active);
+    if (hasBoss) base = Math.max(base, 0.8);
+
+    // Boost for enemy count
+    const enemyBoost = Math.min(this.enemies.length / 40, 0.3);
+    return Math.min(base + enemyBoost, 1);
   }
 
   update(dt: number): void {
     // Update grid displacement decay regardless of state
     this.grid.update(dt);
+
+    // Update touch mode on HUD
+    this.hud.setTouchMode(this.input.mode === 'touch');
 
     if (this.state !== 'playing') return;
 
@@ -161,8 +230,10 @@ export class Game {
     // Player
     this.player.update(dt);
 
-    // Crosshair follows mouse
-    this.crosshair.position.copyFrom(this.input.getMouseWorldPos());
+    // Crosshair follows mouse (only in keyboard mode)
+    if (this.input.mode === 'keyboard') {
+      this.crosshair.position.copyFrom(this.input.getMouseWorldPos());
+    }
 
     // Shooting
     const shots = this.player.tryShoot();
@@ -170,7 +241,7 @@ export class Game {
       for (const angle of shots) {
         const b = this.bullets.spawn(this.player.position.x, this.player.position.y, angle);
         if (b) {
-          const tid = this.trails.register(BULLET_COLOR, TRAIL_LENGTH_BULLET);
+          const tid = this.trails.register(BULLET_COLOR, this.trailLenBullet);
           this.bulletTrailIds.set(b, tid);
         }
       }
@@ -222,11 +293,14 @@ export class Game {
     for (const req of spawns) {
       if (req.type === 'deathstar') {
         this.deathstars.push(new DeathStar(this.player.position));
+        this.audio.playSFX('deathstar');
       } else {
         const enemy = createEnemy(req.type);
         // Register trail for enemy
-        enemy.trailId = this.trails.register(enemy.color, TRAIL_LENGTH_ENEMY);
+        enemy.trailId = this.trails.register(enemy.color, this.trailLenEnemy);
         this.enemies.push(enemy);
+        // Play spawn SFX for specific enemy types
+        this.playEnemySpawnSFX(req.type);
       }
     }
 
@@ -244,7 +318,7 @@ export class Game {
       if (kill.scoreValue > 0) this.player.enemiesKilled++;
       this.explosions.spawn(
         kill.position.x, kill.position.y, kill.color,
-        EXPLOSION_PARTICLE_COUNT_SMALL,
+        this.mobile ? Math.floor(EXPLOSION_PARTICLE_COUNT_SMALL * 0.6) : EXPLOSION_PARTICLE_COUNT_SMALL,
         EXPLOSION_DURATION_DEFAULT,
       );
 
@@ -256,6 +330,8 @@ export class Game {
         GRID_EXPLOSION_DECAY,
       );
 
+      this.audio.playSFX('crash');
+
       // Unregister trail
       if (kill.enemy.trailId >= 0) {
         this.trails.unregister(kill.enemy.trailId);
@@ -266,7 +342,7 @@ export class Game {
       if (deathResult.spawnEnemies) {
         for (const child of deathResult.spawnEnemies) {
           const ce = createEnemy(child.type, child.position);
-          ce.trailId = this.trails.register(ce.color, TRAIL_LENGTH_ENEMY);
+          ce.trailId = this.trails.register(ce.color, this.trailLenEnemy);
           this.enemies.push(ce);
         }
       }
@@ -277,7 +353,7 @@ export class Game {
       this.explosions.spawn(
         kill.position.x, kill.position.y,
         [0.92, 0.38, 0.24],
-        EXPLOSION_PARTICLE_COUNT_LARGE,
+        this.mobile ? Math.floor(EXPLOSION_PARTICLE_COUNT_LARGE * 0.5) : EXPLOSION_PARTICLE_COUNT_LARGE,
         EXPLOSION_DURATION_LARGE,
       );
       this.grid.addForce(
@@ -286,10 +362,11 @@ export class Game {
         GRID_EXPLOSION_RADIUS * 1.5,
         GRID_EXPLOSION_DECAY * 0.5,
       );
+      this.audio.playSFX('deathstar2');
       for (let i = 0; i < kill.circleSpawnCount; i++) {
         const offset = Vec2.random().scale(100);
         const ce = createEnemy('circle', kill.position.add(offset));
-        ce.trailId = this.trails.register(ce.color, TRAIL_LENGTH_ENEMY);
+        ce.trailId = this.trails.register(ce.color, this.trailLenEnemy);
         this.enemies.push(ce);
       }
     }
@@ -326,13 +403,26 @@ export class Game {
 
     // Camera
     this.camera.follow(this.player.position);
+
+    // Music intensity
+    this.audio.setMusicIntensity(this.computeIntensity());
+  }
+
+  private playEnemySpawnSFX(type: string): void {
+    switch (type) {
+      case 'rhombus': this.audio.playSFX('rhombus'); break;
+      case 'square': this.audio.playSFX('square'); break;
+      case 'pinwheel': this.audio.playSFX('pinwheel'); break;
+      case 'triangle': this.audio.playSFX('triangle2'); break;
+      case 'octagon': this.audio.playSFX('octagon'); break;
+    }
   }
 
   private onPlayerDeath(): void {
     this.explosions.spawn(
       this.player.position.x, this.player.position.y,
       [1, 1, 0.78],
-      EXPLOSION_PARTICLE_COUNT_DEATH,
+      this.mobile ? Math.floor(EXPLOSION_PARTICLE_COUNT_DEATH * 0.4) : EXPLOSION_PARTICLE_COUNT_DEATH,
       EXPLOSION_DURATION_DEATH,
       0.2,
     );
@@ -348,12 +438,14 @@ export class Game {
     for (const e of this.enemies) {
       if (e.trailId >= 0) this.trails.unregister(e.trailId);
     }
-    for (const [b, tid] of this.bulletTrailIds) {
+    for (const [, tid] of this.bulletTrailIds) {
       this.trails.unregister(tid);
     }
     this.bulletTrailIds.clear();
     this.enemies = [];
     this.deathstars = [];
+    this.audio.playSFX('die');
+    this.audio.stopMusic();
     this.hud.drawGameOver(this.player.score, this.player.enemiesKilled, this.gameTime);
   }
 
@@ -374,13 +466,14 @@ export class Game {
     for (const e of this.enemies) {
       if (e.trailId >= 0) this.trails.unregister(e.trailId);
     }
-    for (const [b, tid] of this.bulletTrailIds) {
+    for (const [, tid] of this.bulletTrailIds) {
       this.trails.unregister(tid);
     }
     this.bulletTrailIds.clear();
     this.enemies = [];
     this.deathstars = [];
     this.player.respawn();
+    this.audio.playSFX('die1');
   }
 
   render(): void {
@@ -409,7 +502,11 @@ export class Game {
       for (const ds of this.deathstars) ds.render(this.renderer);
       this.bullets.render(this.renderer);
       this.player.render(this.renderer);
-      this.crosshair.render(this.renderer);
+
+      // Only show crosshair in keyboard mode
+      if (this.input.mode === 'keyboard') {
+        this.crosshair.render(this.renderer);
+      }
 
       // Off-screen indicators
       renderOffscreenIndicators(this.renderer, this.camera, this.enemies, this.deathstars);
@@ -425,7 +522,20 @@ export class Game {
 
     // --- HUD (drawn on separate 2D canvas, unaffected by bloom) ---
     if (this.state === 'playing') {
-      this.hud.drawPlaying(this.player.score, this.player.lives);
+      this.hud.drawPlaying(this.player.score, this.player.lives, this.audio.muted);
+
+      // Virtual joysticks (drawn on HUD canvas)
+      this.joystickRenderer.render(this.input);
     }
+  }
+
+  /** Called when tab is hidden */
+  onPause(): void {
+    // Nothing special needed — game loop already stops
+  }
+
+  /** Called when tab is visible again */
+  onResume(): void {
+    this.audio.resume();
   }
 }

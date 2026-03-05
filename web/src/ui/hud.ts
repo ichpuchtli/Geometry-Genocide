@@ -3,12 +3,17 @@ import { HUD_FONT, HUD_COLOR } from '../config';
 export class HUD {
   private ctx: CanvasRenderingContext2D;
   private canvas: HTMLCanvasElement;
+  private touchMode = false;
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
     const ctx = canvas.getContext('2d');
     if (!ctx) throw new Error('Failed to get 2d context for HUD');
     this.ctx = ctx;
+  }
+
+  setTouchMode(touch: boolean): void {
+    this.touchMode = touch;
   }
 
   resize(): void {
@@ -36,7 +41,7 @@ export class HUD {
     this.ctx.restore();
   }
 
-  drawPlaying(score: number, lives: number): void {
+  drawPlaying(score: number, lives: number, muted?: boolean): void {
     this.clear();
     this.ctx.textBaseline = 'top';
 
@@ -47,6 +52,15 @@ export class HUD {
     // Lives top-right with glow
     this.ctx.textAlign = 'right';
     this.drawGlowText(`LIVES: ${lives}`, this.canvas.clientWidth - 20, 20, HUD_FONT, HUD_COLOR, '#0a550a', 8);
+
+    // Audio mute indicator (top-center)
+    if (muted !== undefined) {
+      this.ctx.textAlign = 'center';
+      const icon = muted ? 'MUTED [M]' : '';
+      if (icon) {
+        this.drawGlowText(icon, this.canvas.clientWidth / 2, 20, '14px monospace', '#aa3030', '#aa3030', 5);
+      }
+    }
   }
 
   drawMenu(): void {
@@ -61,14 +75,14 @@ export class HUD {
     this.drawGlowText('GENOCIDE', w / 2, h / 2 - 20, 'bold 56px monospace', '#20ff20', '#20ff20', 25);
 
     // Subtitle
-    this.drawGlowText('Click to Play', w / 2, h / 2 + 50, '22px monospace', '#10dd10', '#10dd10', 15);
+    const playText = this.touchMode ? 'Tap to Play' : 'Click to Play';
+    this.drawGlowText(playText, w / 2, h / 2 + 50, '22px monospace', '#10dd10', '#10dd10', 15);
 
     // Controls hint
-    this.drawGlowText(
-      'WASD to move  |  Mouse to aim  |  Click to shoot  |  ESC to quit',
-      w / 2, h / 2 + 100,
-      '13px monospace', '#0a770a', '#0a770a', 5,
-    );
+    const controlsText = this.touchMode
+      ? 'Left stick: move  |  Right stick: aim & shoot'
+      : 'WASD to move  |  Mouse to aim  |  Click to shoot  |  ESC to quit';
+    this.drawGlowText(controlsText, w / 2, h / 2 + 100, '13px monospace', '#0a770a', '#0a770a', 5);
 
     // Credit
     this.ctx.textBaseline = 'bottom';
@@ -103,7 +117,8 @@ export class HUD {
     );
 
     // Play again
-    this.drawGlowText('Click to Play Again', w / 2, h / 2 + 110, '20px monospace', '#10dd10', '#10dd10', 12);
+    const replayText = this.touchMode ? 'Tap to Play Again' : 'Click to Play Again';
+    this.drawGlowText(replayText, w / 2, h / 2 + 110, '20px monospace', '#10dd10', '#10dd10', 12);
   }
 
   drawLoading(progress: number): void {

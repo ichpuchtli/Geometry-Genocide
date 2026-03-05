@@ -6,15 +6,30 @@ const hudCanvas = document.getElementById('hud') as HTMLCanvasElement;
 const game = new Game(gameCanvas, hudCanvas);
 
 let lastTime = performance.now();
+let paused = false;
 
 function loop(time: number): void {
-  const dt = Math.min(time - lastTime, 50); // cap at 50ms to avoid spiral
-  lastTime = time;
-
-  game.update(dt);
-  game.render();
-
+  if (!paused) {
+    const dt = Math.min(time - lastTime, 50);
+    lastTime = time;
+    game.update(dt);
+    game.render();
+  } else {
+    lastTime = time;
+  }
   requestAnimationFrame(loop);
 }
+
+// Pause when tab is hidden
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) {
+    paused = true;
+    game.onPause();
+  } else {
+    paused = false;
+    lastTime = performance.now();
+    game.onResume();
+  }
+});
 
 requestAnimationFrame(loop);

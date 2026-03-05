@@ -156,3 +156,28 @@ export const GRID_ENEMY_DECAY = 8.0;
 // --- Trails ---
 export const TRAIL_LENGTH_ENEMY = 10;
 export const TRAIL_LENGTH_BULLET = 6;
+
+// --- Mobile ---
+export const MOBILE_BLOOM_SCALE = 0.25; // bloom FBO at quarter-res on mobile
+export const MOBILE_MAX_ENEMIES = 80;
+export const MOBILE_MAX_PARTICLES = 30;
+export const MOBILE_TRAIL_LENGTH_ENEMY = 5;
+export const MOBILE_TRAIL_LENGTH_BULLET = 3;
+
+// --- Virtual Joystick ---
+export const JOYSTICK_MAX_RADIUS = 60; // max knob displacement from center
+export const JOYSTICK_DEAD_ZONE = 0.15; // fraction of radius before registering input
+export const JOYSTICK_BASE_RADIUS = 60; // visual radius of outer circle
+export const JOYSTICK_KNOB_RADIUS = 22; // visual radius of inner knob
+export const JOYSTICK_OPACITY = 0.3;
+export const JOYSTICK_ACTIVE_OPACITY = 0.55;
+
+// --- Audio ---
+export const SFX_NAMES = [
+  'start', 'die', 'die1', 'crash', 'square', 'rhombus',
+  'triangle2', 'octagon', 'pinwheel', 'deathstar', 'deathstar2',
+] as const;
+export type SFXName = typeof SFX_NAMES[number];
+export const MASTER_VOLUME = 0.5;
+export const SFX_VOLUME = 0.6;
+export const MUSIC_VOLUME = 0.35;
