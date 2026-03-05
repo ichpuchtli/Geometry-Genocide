@@ -156,9 +156,9 @@ export const BLOOM_BLUR_PASSES = 6;
 export const BLOOM_BLUR_RADIUS = 2.5;
 
 // --- Grid ---
-export const GRID_EXPLOSION_STRENGTH = 70;
-export const GRID_EXPLOSION_RADIUS = 350;
-export const GRID_EXPLOSION_DECAY = 2.0;
+export const GRID_EXPLOSION_STRENGTH = 90;
+export const GRID_EXPLOSION_RADIUS = 380;
+export const GRID_EXPLOSION_DECAY = 1.5;
 export const GRID_ENEMY_STRENGTH = 8;
 export const GRID_ENEMY_RADIUS = 140;
 export const GRID_ENEMY_DECAY = 6.0;

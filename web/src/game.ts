@@ -369,19 +369,21 @@ export class Game {
   update(dt: number): void {
     this.totalTime += dt / 1000;
 
-    // Update grid displacement decay regardless of state
-    this.grid.update(dt);
     this.camera.updateShake(dt);
 
     // Update touch mode on HUD
     this.hud.setTouchMode(this.input.mode === 'touch');
 
     if (this.state === 'gameover') {
+      this.grid.update(dt);
       this.updateGameOver(dt);
       return;
     }
 
-    if (this.state !== 'playing') return;
+    if (this.state !== 'playing') {
+      this.grid.update(dt);
+      return;
+    }
 
     if (this.input.isKeyDown('Escape')) {
       this.player.lives = 0;
@@ -655,6 +657,9 @@ export class Game {
       this.grid.addForce(b.position.x, b.position.y, 2, 50, 12);
       bulletForces++;
     }
+
+    // Decay grid forces after all new forces have been added this frame
+    this.grid.update(dt);
 
     // Camera
     this.camera.follow(this.player.position);

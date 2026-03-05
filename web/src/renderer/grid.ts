@@ -101,8 +101,8 @@ export class GridRenderer {
     // Uniforms
     gl.uniform2f(this.uResolution, viewW, viewH);
     gl.uniform2f(this.uCamera, cameraX, cameraY);
-    // Purple space-time continuum grid (brightened for mobile visibility)
-    gl.uniform3f(this.uGridColor, 0.22, 0.08, 0.45);
+    // Purple space-time continuum grid — vibrant for mobile visibility
+    gl.uniform3f(this.uGridColor, 0.38, 0.14, 0.72);
 
     // Combine explosion forces + gravity wells
     const combined: { x: number; y: number; strength: number; radius: number }[] = [];
