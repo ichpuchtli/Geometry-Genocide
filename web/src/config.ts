@@ -138,3 +138,21 @@ export const HUD_COLOR = '#20ff20';
 
 // --- Offscreen indicator ---
 export const OFFSCREEN_INDICATOR_RANGE = 800;
+
+// --- Bloom ---
+export const BLOOM_THRESHOLD = 0.15;
+export const BLOOM_INTENSITY = 1.4;
+export const BLOOM_BLUR_PASSES = 4;
+export const BLOOM_BLUR_RADIUS = 1.5;
+
+// --- Grid ---
+export const GRID_EXPLOSION_STRENGTH = 40;
+export const GRID_EXPLOSION_RADIUS = 250;
+export const GRID_EXPLOSION_DECAY = 3.0;
+export const GRID_ENEMY_STRENGTH = 5;
+export const GRID_ENEMY_RADIUS = 100;
+export const GRID_ENEMY_DECAY = 8.0;
+
+// --- Trails ---
+export const TRAIL_LENGTH_ENEMY = 10;
+export const TRAIL_LENGTH_BULLET = 6;

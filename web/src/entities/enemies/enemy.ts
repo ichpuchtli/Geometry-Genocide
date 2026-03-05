@@ -15,6 +15,7 @@ export abstract class Enemy extends Entity {
   /** Base shape vertices (unrotated, unscaled) */
   shapePoints: number[][] = [];
   rotationSpeed = 0;
+  trailId = -1; // assigned by TrailSystem
   displacer = new Vec2(
     (Math.random() - 0.5) * 64,
     (Math.random() - 0.5) * 64,

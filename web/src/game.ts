@@ -1,12 +1,17 @@
 import { Renderer } from './renderer/sprite-batch';
+import { BloomPass } from './renderer/bloom';
+import { GridRenderer } from './renderer/grid';
+import { TrailSystem } from './renderer/trails';
 import { Camera } from './core/camera';
 import { Input } from './core/input';
 import { Player } from './entities/player';
-import { BulletPool } from './entities/bullet';
+import { BulletPool, Bullet } from './entities/bullet';
 import { Enemy } from './entities/enemies/enemy';
 import { DeathStar } from './entities/enemies/deathstar';
 import { ExplosionPool } from './entities/explosion';
+import { Crosshair } from './entities/crosshair';
 import { HUD } from './ui/hud';
+import { renderOffscreenIndicators } from './ui/offscreen-indicators';
 import { WaveManager } from './spawner/wave-manager';
 import { checkCollisions, applyDeathStarAttraction } from './core/collision';
 import { Vec2 } from './core/vector';
@@ -17,6 +22,16 @@ import {
   EXPLOSION_DURATION_DEFAULT,
   EXPLOSION_DURATION_LARGE,
   EXPLOSION_DURATION_DEATH,
+  BLOOM_THRESHOLD,
+  BLOOM_INTENSITY,
+  BLOOM_BLUR_PASSES,
+  BLOOM_BLUR_RADIUS,
+  GRID_EXPLOSION_STRENGTH,
+  GRID_EXPLOSION_RADIUS,
+  GRID_EXPLOSION_DECAY,
+  TRAIL_LENGTH_ENEMY,
+  TRAIL_LENGTH_BULLET,
+  BULLET_COLOR,
 } from './config';
 
 // Enemy factory imports
@@ -51,6 +66,9 @@ function createEnemy(type: string, pos?: Vec2): Enemy {
 
 export class Game {
   private renderer: Renderer;
+  private bloom: BloomPass;
+  private grid: GridRenderer;
+  private trails: TrailSystem;
   private camera: Camera;
   private input: Input;
   private player: Player;
@@ -58,37 +76,48 @@ export class Game {
   private enemies: Enemy[] = [];
   private deathstars: DeathStar[] = [];
   private explosions: ExplosionPool;
+  private crosshair: Crosshair;
   private hud: HUD;
   private waveManager: WaveManager;
 
   private state: GameState = 'menu';
-  private gameTime = 0; // seconds survived
+  private gameTime = 0;
+
+  // Trail IDs for bullets (keyed by bullet index)
+  private bulletTrailIds = new Map<Bullet, number>();
 
   constructor(gameCanvas: HTMLCanvasElement, hudCanvas: HTMLCanvasElement) {
     this.renderer = new Renderer(gameCanvas);
+    const gl = this.renderer.getGL();
+
+    this.bloom = new BloomPass(gl);
+    this.bloom.threshold = BLOOM_THRESHOLD;
+    this.bloom.intensity = BLOOM_INTENSITY;
+    this.bloom.blurPasses = BLOOM_BLUR_PASSES;
+    this.bloom.blurRadius = BLOOM_BLUR_RADIUS;
+
+    this.grid = new GridRenderer(gl);
+    this.trails = new TrailSystem();
     this.camera = new Camera(this.renderer.width, this.renderer.height);
     this.input = new Input(gameCanvas);
     this.input.setCamera(this.camera);
     this.player = new Player(this.input);
     this.bullets = new BulletPool();
     this.explosions = new ExplosionPool();
+    this.crosshair = new Crosshair();
     this.hud = new HUD(hudCanvas);
     this.waveManager = new WaveManager();
 
-    // Handle clicks for menu/gameover
     gameCanvas.addEventListener('click', () => this.onClick());
-
-    // Handle resize
     window.addEventListener('resize', () => this.resize());
     this.resize();
-
-    // Show menu
     this.hud.drawMenu();
   }
 
   private resize(): void {
     this.renderer.resize();
     this.camera.resize(this.renderer.width, this.renderer.height);
+    this.bloom.resize(this.renderer.canvasWidth, this.renderer.canvasHeight);
     this.hud.resize();
     if (this.state === 'menu') this.hud.drawMenu();
   }
@@ -106,6 +135,9 @@ export class Game {
     this.enemies = [];
     this.deathstars = [];
     this.explosions.clear();
+    this.trails.clear();
+    this.grid.clear();
+    this.bulletTrailIds.clear();
     this.waveManager.reset();
     this.gameTime = 0;
     this.camera.snapTo(this.player.position);
@@ -113,9 +145,11 @@ export class Game {
   }
 
   update(dt: number): void {
+    // Update grid displacement decay regardless of state
+    this.grid.update(dt);
+
     if (this.state !== 'playing') return;
 
-    // Check ESC
     if (this.input.isKeyDown('Escape')) {
       this.player.lives = 0;
       this.onPlayerDeath();
@@ -127,18 +161,38 @@ export class Game {
     // Player
     this.player.update(dt);
 
+    // Crosshair follows mouse
+    this.crosshair.position.copyFrom(this.input.getMouseWorldPos());
+
     // Shooting
     const shots = this.player.tryShoot();
     if (shots) {
       for (const angle of shots) {
-        this.bullets.spawn(this.player.position.x, this.player.position.y, angle);
+        const b = this.bullets.spawn(this.player.position.x, this.player.position.y, angle);
+        if (b) {
+          const tid = this.trails.register(BULLET_COLOR, TRAIL_LENGTH_BULLET);
+          this.bulletTrailIds.set(b, tid);
+        }
       }
     }
 
     // Bullets
     this.bullets.update(dt);
 
-    // DeathStar attraction redirects enemies
+    // Update bullet trails + clean up inactive
+    for (const b of this.bullets.bullets) {
+      const tid = this.bulletTrailIds.get(b);
+      if (tid !== undefined) {
+        if (b.active) {
+          this.trails.update(tid, b.position.x, b.position.y);
+        } else {
+          this.trails.unregister(tid);
+          this.bulletTrailIds.delete(b);
+        }
+      }
+    }
+
+    // DeathStar attraction
     const activeDeathstars = this.deathstars.filter(d => d.active);
     if (activeDeathstars.length > 0) {
       applyDeathStarAttraction(this.enemies, activeDeathstars);
@@ -147,12 +201,14 @@ export class Game {
     // Enemies
     for (const e of this.enemies) {
       if (!e.active) continue;
-      // Most enemies have different update signatures, but we pass player info
       if (e instanceof Octagon) {
         (e as Octagon).update(dt, this.player.position, this.player.velocity);
-      } else if ('update' in e) {
-        // Enemies that follow player
+      } else {
         (e as { update(dt: number, playerPos?: Vec2): void }).update(dt, this.player.position);
+      }
+      // Update enemy trails
+      if (e.trailId >= 0) {
+        this.trails.update(e.trailId, e.position.x, e.position.y);
       }
     }
 
@@ -167,7 +223,10 @@ export class Game {
       if (req.type === 'deathstar') {
         this.deathstars.push(new DeathStar(this.player.position));
       } else {
-        this.enemies.push(createEnemy(req.type));
+        const enemy = createEnemy(req.type);
+        // Register trail for enemy
+        enemy.trailId = this.trails.register(enemy.color, TRAIL_LENGTH_ENEMY);
+        this.enemies.push(enemy);
       }
     }
 
@@ -189,11 +248,26 @@ export class Game {
         EXPLOSION_DURATION_DEFAULT,
       );
 
+      // Grid displacement from explosion
+      this.grid.addForce(
+        kill.position.x, kill.position.y,
+        GRID_EXPLOSION_STRENGTH,
+        GRID_EXPLOSION_RADIUS,
+        GRID_EXPLOSION_DECAY,
+      );
+
+      // Unregister trail
+      if (kill.enemy.trailId >= 0) {
+        this.trails.unregister(kill.enemy.trailId);
+      }
+
       // Spawn children
       const deathResult = kill.enemy.onDeath();
       if (deathResult.spawnEnemies) {
         for (const child of deathResult.spawnEnemies) {
-          this.enemies.push(createEnemy(child.type, child.position));
+          const ce = createEnemy(child.type, child.position);
+          ce.trailId = this.trails.register(ce.color, TRAIL_LENGTH_ENEMY);
+          this.enemies.push(ce);
         }
       }
     }
@@ -206,20 +280,25 @@ export class Game {
         EXPLOSION_PARTICLE_COUNT_LARGE,
         EXPLOSION_DURATION_LARGE,
       );
-      // Spawn circles
+      this.grid.addForce(
+        kill.position.x, kill.position.y,
+        GRID_EXPLOSION_STRENGTH * 2,
+        GRID_EXPLOSION_RADIUS * 1.5,
+        GRID_EXPLOSION_DECAY * 0.5,
+      );
       for (let i = 0; i < kill.circleSpawnCount; i++) {
         const offset = Vec2.random().scale(100);
-        this.enemies.push(createEnemy('circle', kill.position.add(offset)));
+        const ce = createEnemy('circle', kill.position.add(offset));
+        ce.trailId = this.trails.register(ce.color, TRAIL_LENGTH_ENEMY);
+        this.enemies.push(ce);
       }
     }
 
     // Process absorbed enemies
     for (const { enemy, deathstar } of result.absorbedEnemies) {
       deathstar.absorbEnemy();
-      this.explosions.spawn(
-        enemy.position.x, enemy.position.y, enemy.color,
-        8, 0.5,
-      );
+      if (enemy.trailId >= 0) this.trails.unregister(enemy.trailId);
+      this.explosions.spawn(enemy.position.x, enemy.position.y, enemy.color, 8, 0.5);
     }
 
     // Player hit
@@ -233,8 +312,13 @@ export class Game {
       }
     }
 
-    // Clean up inactive
-    this.enemies = this.enemies.filter(e => e.active);
+    // Clean up inactive enemies
+    this.enemies = this.enemies.filter(e => {
+      if (!e.active && e.trailId >= 0) {
+        this.trails.unregister(e.trailId);
+      }
+      return e.active;
+    });
     this.deathstars = this.deathstars.filter(d => d.active);
 
     // Explosions
@@ -252,8 +336,22 @@ export class Game {
       EXPLOSION_DURATION_DEATH,
       0.2,
     );
+    this.grid.addForce(
+      this.player.position.x, this.player.position.y,
+      GRID_EXPLOSION_STRENGTH * 3,
+      GRID_EXPLOSION_RADIUS * 2,
+      GRID_EXPLOSION_DECAY * 0.3,
+    );
     this.player.active = false;
     this.state = 'gameover';
+    // Clean up trails
+    for (const e of this.enemies) {
+      if (e.trailId >= 0) this.trails.unregister(e.trailId);
+    }
+    for (const [b, tid] of this.bulletTrailIds) {
+      this.trails.unregister(tid);
+    }
+    this.bulletTrailIds.clear();
     this.enemies = [];
     this.deathstars = [];
     this.hud.drawGameOver(this.player.score, this.player.enemiesKilled, this.gameTime);
@@ -266,31 +364,68 @@ export class Game {
       EXPLOSION_PARTICLE_COUNT_LARGE,
       EXPLOSION_DURATION_DEFAULT,
     );
+    this.grid.addForce(
+      this.player.position.x, this.player.position.y,
+      GRID_EXPLOSION_STRENGTH * 2,
+      GRID_EXPLOSION_RADIUS * 1.5,
+      GRID_EXPLOSION_DECAY,
+    );
+    // Clean up trails
+    for (const e of this.enemies) {
+      if (e.trailId >= 0) this.trails.unregister(e.trailId);
+    }
+    for (const [b, tid] of this.bulletTrailIds) {
+      this.trails.unregister(tid);
+    }
+    this.bulletTrailIds.clear();
     this.enemies = [];
     this.deathstars = [];
     this.player.respawn();
   }
 
   render(): void {
-    this.renderer.cameraX = this.camera.position.x;
-    this.renderer.cameraY = this.camera.position.y;
-    this.renderer.begin();
+    const gl = this.renderer.getGL();
+    const cameraX = this.camera.position.x;
+    const cameraY = this.camera.position.y;
+    this.renderer.cameraX = cameraX;
+    this.renderer.cameraY = cameraY;
+
+    // --- Render to bloom scene FBO ---
+    this.bloom.bindSceneFBO();
+
+    // 1. Grid (renders directly with its own shader)
+    this.grid.render(cameraX, cameraY, this.renderer.width, this.renderer.height);
+
+    // 2. Trails (via sprite batch)
+    this.renderer.begin(false); // don't clear — grid already rendered
+    this.trails.render(this.renderer);
+    this.renderer.end();
+
+    // 3. Entities (via sprite batch)
+    this.renderer.begin(false);
 
     if (this.state === 'playing') {
-      // Render all game entities
       for (const e of this.enemies) e.render(this.renderer);
       for (const ds of this.deathstars) ds.render(this.renderer);
       this.bullets.render(this.renderer);
       this.player.render(this.renderer);
-      this.explosions.render(this.renderer);
+      this.crosshair.render(this.renderer);
 
-      // HUD
-      this.hud.drawPlaying(this.player.score, this.player.lives);
-    } else {
-      // Render lingering explosions (game over / menu)
-      this.explosions.render(this.renderer);
+      // Off-screen indicators
+      renderOffscreenIndicators(this.renderer, this.camera, this.enemies, this.deathstars);
     }
 
+    // Explosions render in all states (lingering after death)
+    this.explosions.render(this.renderer);
+
     this.renderer.end();
+
+    // --- Bloom post-process: scene FBO -> screen ---
+    this.bloom.apply(this.renderer.canvasWidth, this.renderer.canvasHeight);
+
+    // --- HUD (drawn on separate 2D canvas, unaffected by bloom) ---
+    if (this.state === 'playing') {
+      this.hud.drawPlaying(this.player.score, this.player.lives);
+    }
   }
 }

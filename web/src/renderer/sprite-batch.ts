@@ -27,8 +27,12 @@ export class Renderer {
 
   public width = 0;
   public height = 0;
+  public canvasWidth = 0;
+  public canvasHeight = 0;
   public cameraX = 0;
   public cameraY = 0;
+
+  getGL(): WebGLRenderingContext { return this.gl; }
 
   constructor(private canvas: HTMLCanvasElement) {
     const gl = canvas.getContext('webgl', { alpha: false, antialias: true })
@@ -66,15 +70,19 @@ export class Renderer {
     this.height = this.canvas.clientHeight;
     this.canvas.width = this.width * dpr;
     this.canvas.height = this.height * dpr;
-    this.gl.viewport(0, 0, this.canvas.width, this.canvas.height);
+    this.canvasWidth = this.canvas.width;
+    this.canvasHeight = this.canvas.height;
+    this.gl.viewport(0, 0, this.canvasWidth, this.canvasHeight);
   }
 
-  begin(): void {
+  begin(clear: boolean = true): void {
     this.vertexCount = 0;
     this.batches.length = 0;
     this.currentMode = 0;
-    this.gl.clearColor(0, 0, 0, 1);
-    this.gl.clear(this.gl.COLOR_BUFFER_BIT);
+    if (clear) {
+      this.gl.clearColor(0, 0, 0, 1);
+      this.gl.clear(this.gl.COLOR_BUFFER_BIT);
+    }
   }
 
   private pushVertex(x: number, y: number, r: number, g: number, b: number, a: number): void {
