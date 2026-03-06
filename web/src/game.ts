@@ -168,7 +168,7 @@ export class Game {
       // Auto-fit: compute zoom so full arena fits with slight padding
       const cssW = gameCanvas.clientWidth;
       const cssH = gameCanvas.clientHeight;
-      this.renderer.zoom = Math.min(cssW / WORLD_WIDTH, cssH / WORLD_HEIGHT) * 0.95;
+      this.renderer.zoom = Math.min(cssW / WORLD_WIDTH, cssH / WORLD_HEIGHT);
     }
     const gl = this.renderer.getGL();
 
@@ -223,7 +223,7 @@ export class Game {
     if (!this.mobile) {
       const cssW = this.gameCanvas.clientWidth;
       const cssH = this.gameCanvas.clientHeight;
-      this.renderer.zoom = Math.min(cssW / WORLD_WIDTH, cssH / WORLD_HEIGHT) * 0.95;
+      this.renderer.zoom = Math.min(cssW / WORLD_WIDTH, cssH / WORLD_HEIGHT);
     }
     this.renderer.resize();
     this.camera.resize(this.renderer.width, this.renderer.height);
