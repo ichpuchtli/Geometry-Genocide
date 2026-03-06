@@ -1,6 +1,6 @@
 import { Renderer } from './renderer/sprite-batch';
 import { BloomPass } from './renderer/bloom';
-import { GridRenderer } from './renderer/grid';
+import { SpringMassGrid } from './renderer/grid';
 import { TrailSystem } from './renderer/trails';
 import { Camera } from './core/camera';
 import { Input } from './core/input';
@@ -10,7 +10,7 @@ import { BulletPool, Bullet } from './entities/bullet';
 import { Enemy } from './entities/enemies/enemy';
 import { DeathStar } from './entities/enemies/deathstar';
 import { ExplosionPool } from './entities/explosion';
-import { Crosshair } from './entities/crosshair';
+// Crosshair removed — desktop uses pointer-lock rotational aim
 import { HUD } from './ui/hud';
 import { VirtualJoystickRenderer } from './ui/virtual-joystick';
 import { renderOffscreenIndicators } from './ui/offscreen-indicators';
@@ -30,18 +30,11 @@ import {
   BLOOM_INTENSITY,
   BLOOM_BLUR_PASSES,
   BLOOM_BLUR_RADIUS,
-  GRID_EXPLOSION_STRENGTH,
-  GRID_EXPLOSION_RADIUS,
-  GRID_EXPLOSION_DECAY,
-  GRID_ENEMY_STRENGTH,
-  GRID_ENEMY_RADIUS,
-  GRID_ENEMY_DECAY,
   TRAIL_LENGTH_ENEMY,
   TRAIL_LENGTH_BULLET,
   MOBILE_TRAIL_LENGTH_ENEMY,
   MOBILE_TRAIL_LENGTH_BULLET,
   MOBILE_ZOOM,
-  DESKTOP_ZOOM,
   BULLET_COLOR,
   DIFFICULTY_PHASES,
   SCREEN_SHAKE_SMALL,
@@ -124,7 +117,7 @@ function isMobile(): boolean {
 export class Game {
   private renderer: Renderer;
   private bloom: BloomPass;
-  private grid: GridRenderer;
+  private grid: SpringMassGrid;
   private trails: TrailSystem;
   private camera: Camera;
   private input: Input;
@@ -134,7 +127,7 @@ export class Game {
   private enemies: Enemy[] = [];
   private deathstars: DeathStar[] = [];
   private explosions: ExplosionPool;
-  private crosshair: Crosshair;
+  // crosshair removed — desktop uses pointer-lock rotational aim
   private hud: HUD;
   private joystickRenderer: VirtualJoystickRenderer;
   private waveManager: WaveManager;
@@ -168,7 +161,14 @@ export class Game {
     this.trailLenBullet = this.mobile ? MOBILE_TRAIL_LENGTH_BULLET : TRAIL_LENGTH_BULLET;
 
     this.renderer = new Renderer(gameCanvas);
-    this.renderer.zoom = this.mobile ? MOBILE_ZOOM : DESKTOP_ZOOM;
+    if (this.mobile) {
+      this.renderer.zoom = MOBILE_ZOOM;
+    } else {
+      // Auto-fit: compute zoom so full arena fits with slight padding
+      const cssW = gameCanvas.clientWidth;
+      const cssH = gameCanvas.clientHeight;
+      this.renderer.zoom = Math.min(cssW / WORLD_WIDTH, cssH / WORLD_HEIGHT) * 0.95;
+    }
     const gl = this.renderer.getGL();
 
     this.bloom = new BloomPass(gl);
@@ -177,20 +177,20 @@ export class Game {
     this.bloom.blurPasses = this.mobile ? 2 : BLOOM_BLUR_PASSES;
     this.bloom.blurRadius = BLOOM_BLUR_RADIUS;
 
-    this.grid = new GridRenderer(gl);
+    this.grid = new SpringMassGrid(gl, this.mobile);
     this.trails = new TrailSystem();
     this.camera = new Camera(this.renderer.width, this.renderer.height);
+    this.camera.fixedView = !this.mobile;
     this.input = new Input(gameCanvas);
     this.input.setCamera(this.camera);
     this.audio = new AudioManager();
     this.player = new Player(this.input);
     this.bullets = new BulletPool();
     this.explosions = new ExplosionPool();
-    this.crosshair = new Crosshair();
     this.hud = new HUD(hudCanvas);
     this.joystickRenderer = new VirtualJoystickRenderer(hudCanvas);
     this.waveManager = new WaveManager();
-    this.starfield = new Starfield(200, WORLD_WIDTH, WORLD_HEIGHT);
+    this.starfield = new Starfield(80, WORLD_WIDTH, WORLD_HEIGHT);
     this.haptics = new HapticsManager();
 
     // Click/touch to start + init audio
@@ -219,6 +219,11 @@ export class Game {
   }
 
   private resize(): void {
+    if (!this.mobile) {
+      const cssW = this.gameCanvas.clientWidth;
+      const cssH = this.gameCanvas.clientHeight;
+      this.renderer.zoom = Math.min(cssW / WORLD_WIDTH, cssH / WORLD_HEIGHT) * 0.95;
+    }
     this.renderer.resize();
     this.camera.resize(this.renderer.width, this.renderer.height);
     this.bloom.resize(this.renderer.canvasWidth, this.renderer.canvasHeight);
@@ -266,6 +271,12 @@ export class Game {
     this.camera.snapTo(this.player.position);
     this.hud.clear();
 
+    // Reset aim angle and request pointer lock on desktop
+    this.input.setAimAngle(0);
+    if (!this.mobile) {
+      this.input.requestPointerLock();
+    }
+
     this.audio.playSFX('start');
     this.audio.startMusic();
     this.audio.setMusicIntensity(0);
@@ -290,29 +301,23 @@ export class Game {
     return Math.min(base + enemyBoost, 1);
   }
 
-  /** Update gravity wells on the grid from large enemies (Octagon, DeathStar) */
+  /** Apply gravity wells on the grid from large enemies (Octagon, DeathStar) */
   private updateGravityWells(): void {
-    const wells: { x: number; y: number; mass: number; radius: number }[] = [];
     for (const e of this.enemies) {
       if (!e.active) continue;
       if (e instanceof Octagon) {
-        // Octagon: heavy gravity well (pulls grid inward hard)
-        wells.push({ x: e.position.x, y: e.position.y, mass: -30, radius: 280 });
+        this.grid.applyGravityWell(e.position.x, e.position.y, -30, 280);
       } else if (e instanceof BlackHole) {
-        // BlackHole: massive gravity well, grows aggressively with absorbed enemies
         const mass = -(45 + e.absorbedCount * 10);
-        wells.push({ x: e.position.x, y: e.position.y, mass, radius: BlackHole.ATTRACT_RADIUS * 1.3 });
+        this.grid.applyGravityWell(e.position.x, e.position.y, mass, BlackHole.ATTRACT_RADIUS * 1.3);
       } else if (e instanceof HyperbolicDisc) {
-        // HyperbolicDisc: 3x stronger grid warp (space distortion)
-        wells.push({ x: e.position.x, y: e.position.y, mass: -24, radius: HYPERBOLICDISC_WARP_RADIUS });
+        this.grid.applyGravityWell(e.position.x, e.position.y, -24, HYPERBOLICDISC_WARP_RADIUS);
       }
     }
     for (const ds of this.deathstars) {
       if (!ds.active) continue;
-      // DeathStar: crushing gravity well
-      wells.push({ x: ds.position.x, y: ds.position.y, mass: -55, radius: 400 });
+      this.grid.applyGravityWell(ds.position.x, ds.position.y, -55, 400);
     }
-    this.grid.setGravityWells(wells);
   }
 
   /** Apply BlackHole gravitational attraction to nearby enemies + absorb on contact */
@@ -342,7 +347,7 @@ export class Game {
           bh.absorbEnemy();
           if (e.trailId >= 0) this.trails.unregister(e.trailId);
           this.explosions.spawn(e.position.x, e.position.y, e.color, 15, 0.6);
-          this.grid.addForce(e.position.x, e.position.y, -20, 120, 4);
+          this.grid.applyImpulse(e.position.x, e.position.y, -20, 120);
           this.haptics.absorb();
           continue;
         }
@@ -411,6 +416,7 @@ export class Game {
 
   update(dt: number): void {
     this.totalTime += dt / 1000;
+    this.hud.updateFps(dt);
 
     this.camera.updateShake(dt);
 
@@ -443,11 +449,6 @@ export class Game {
 
     // Player
     this.player.update(dt);
-
-    // Crosshair follows mouse (only in keyboard mode)
-    if (this.input.mode === 'keyboard') {
-      this.crosshair.position.copyFrom(this.input.getMouseWorldPos());
-    }
 
     // Shooting
     const shots = this.player.tryShoot();
@@ -525,8 +526,8 @@ export class Game {
         // Register trail for enemy
         enemy.trailId = this.trails.register(enemy.color, this.trailLenEnemy);
         this.enemies.push(enemy);
-        // Grid ripple on spawn — cranked up
-        this.grid.addForce(enemy.position.x, enemy.position.y, 18, 120, 5);
+        // Grid ripple on spawn
+        this.grid.applyImpulse(enemy.position.x, enemy.position.y, 80, 120);
         // Play spawn SFX for specific enemy types
         this.playEnemySpawnSFX(req.type);
         this.haptics.medium();
@@ -597,12 +598,7 @@ export class Game {
       );
 
       // Grid displacement from explosion
-      this.grid.addForce(
-        kill.position.x, kill.position.y,
-        GRID_EXPLOSION_STRENGTH,
-        GRID_EXPLOSION_RADIUS,
-        GRID_EXPLOSION_DECAY,
-      );
+      this.grid.applyImpulse(kill.position.x, kill.position.y, 400, 200);
 
       // Screen shake on enemy kill
       this.camera.shake(SCREEN_SHAKE_SMALL);
@@ -660,12 +656,7 @@ export class Game {
         this.mobile ? Math.floor(EXPLOSION_PARTICLE_COUNT_LARGE * 0.5) : EXPLOSION_PARTICLE_COUNT_LARGE,
         EXPLOSION_DURATION_LARGE,
       );
-      this.grid.addForce(
-        kill.position.x, kill.position.y,
-        GRID_EXPLOSION_STRENGTH * 2,
-        GRID_EXPLOSION_RADIUS * 1.5,
-        GRID_EXPLOSION_DECAY * 0.5,
-      );
+      this.grid.applyImpulse(kill.position.x, kill.position.y, 800, 350);
       this.camera.shake(SCREEN_SHAKE_LARGE);
       this.audio.playSFX('deathstar2');
       this.haptics.heavy();
@@ -705,14 +696,14 @@ export class Game {
         this.enemies.push(ce);
         // Mini flash per spawn
         this.explosions.spawn(ps.position.x, ps.position.y, [1, 0.6, 0.2], 12, 0.3);
-        this.grid.addForce(ps.position.x, ps.position.y, GRID_EXPLOSION_STRENGTH * 0.5, GRID_EXPLOSION_RADIUS * 0.4, GRID_EXPLOSION_DECAY);
+        this.grid.applyImpulse(ps.position.x, ps.position.y, 200, 150);
         this.haptics.light();
       }
     }
     // Emit a pulsing warning ring at the origin while spawns are pending
     if (this.pendingSpawns.length > 0) {
       const origin = this.pendingSpawns[0].origin;
-      this.grid.addForce(origin.x, origin.y, GRID_EXPLOSION_STRENGTH * 0.3, GRID_EXPLOSION_RADIUS * 0.6, GRID_EXPLOSION_DECAY * 2);
+      this.grid.applyImpulse(origin.x, origin.y, 120, 200);
     }
     this.pendingSpawns = this.pendingSpawns.filter(ps => ps.delay > 0);
 
@@ -732,33 +723,27 @@ export class Game {
     this.updateGravityWells();
 
     // Grid micro-forces from moving enemies
-    let gridForceCount = 0;
     for (const e of this.enemies) {
       if (!e.active || e.isSpawning) continue;
-      if (gridForceCount >= 8) break;
-      if (!this.camera.isVisible(e.position.x, e.position.y, 50)) continue;
       const speed = e.velocity.magnitude();
       if (speed > 0.01) {
-        this.grid.addForce(e.position.x, e.position.y, GRID_ENEMY_STRENGTH * speed * 20, GRID_ENEMY_RADIUS, GRID_ENEMY_DECAY);
-        gridForceCount++;
+        this.grid.applyImpulse(e.position.x, e.position.y, speed * 2, 80);
       }
     }
 
     // Player wake on grid
     const pSpeed = this.player.velocity.magnitude();
     if (pSpeed > 0.01) {
-      this.grid.addForce(this.player.position.x, this.player.position.y, 3 * pSpeed * 20, 80, 10);
+      this.grid.applyImpulse(this.player.position.x, this.player.position.y, pSpeed * 3, 60);
     }
 
     // Bullet grid ripples (very subtle)
-    let bulletForces = 0;
     for (const b of this.bullets.bullets) {
-      if (!b.active || bulletForces >= 3) break;
-      this.grid.addForce(b.position.x, b.position.y, 2, 50, 12);
-      bulletForces++;
+      if (!b.active) continue;
+      this.grid.applyImpulse(b.position.x, b.position.y, 0.5, 40);
     }
 
-    // Decay grid forces after all new forces have been added this frame
+    // Run spring-mass physics
     this.grid.update(dt);
 
     // Camera
@@ -808,7 +793,7 @@ export class Game {
     );
 
     // Massive grid shockwave
-    this.grid.addForce(px, py, GRID_EXPLOSION_STRENGTH * 4, GRID_EXPLOSION_RADIUS * 2.5, GRID_EXPLOSION_DECAY * 0.2);
+    this.grid.applyImpulse(px, py, 1600, 500);
     this.player.active = false;
     this.camera.shake(SCREEN_SHAKE_DEATH, 0.8);
     this.state = 'gameover';
@@ -821,6 +806,7 @@ export class Game {
     this.audio.playSFX('die');
     this.audio.stopMusic();
     this.haptics.death();
+    if (!this.mobile) this.input.releasePointerLock();
     this.hud.drawGameOver(this.player.score, this.player.enemiesKilled, this.gameTime);
   }
 
@@ -839,12 +825,7 @@ export class Game {
       EXPLOSION_PARTICLE_COUNT_LARGE,
       EXPLOSION_DURATION_DEFAULT,
     );
-    this.grid.addForce(
-      this.player.position.x, this.player.position.y,
-      GRID_EXPLOSION_STRENGTH * 3,
-      GRID_EXPLOSION_RADIUS * 2,
-      GRID_EXPLOSION_DECAY * 0.3,
-    );
+    this.grid.applyImpulse(this.player.position.x, this.player.position.y, 1200, 400);
     this.camera.shake(SCREEN_SHAKE_LARGE, 0.5);
 
     // Clean up bullet trails
@@ -882,12 +863,7 @@ export class Game {
           this.mobile ? 40 : 80,
           EXPLOSION_DURATION_LARGE * 0.6,
         );
-        this.grid.addForce(
-          e.position.x, e.position.y,
-          GRID_EXPLOSION_STRENGTH * 1.5,
-          GRID_EXPLOSION_RADIUS * 0.8,
-          GRID_EXPLOSION_DECAY * 0.8,
-        );
+        this.grid.applyImpulse(e.position.x, e.position.y, 400, 200);
         this.camera.shake(SCREEN_SHAKE_SMALL * 0.5, 0.1);
         this.audio.playSFX('crash');
         if (e.trailId >= 0) this.trails.unregister(e.trailId);
@@ -908,12 +884,7 @@ export class Game {
           this.mobile ? 60 : 120,
           EXPLOSION_DURATION_LARGE,
         );
-        this.grid.addForce(
-          ds.position.x, ds.position.y,
-          GRID_EXPLOSION_STRENGTH * 3,
-          GRID_EXPLOSION_RADIUS * 1.5,
-          GRID_EXPLOSION_DECAY * 0.3,
-        );
+        this.grid.applyImpulse(ds.position.x, ds.position.y, 800, 350);
         this.camera.shake(SCREEN_SHAKE_LARGE, 0.2);
       }
     }
@@ -930,11 +901,9 @@ export class Game {
     }
 
     // Pulsing shockwave ring on grid
-    this.grid.addForce(
+    this.grid.applyImpulse(
       this.slowmoOrigin.x, this.slowmoOrigin.y,
-      GRID_EXPLOSION_STRENGTH * 0.5,
-      this.slowmoShockwaveRadius,
-      GRID_EXPLOSION_DECAY * 3,
+      120, this.slowmoShockwaveRadius,
     );
 
     // Clean up dead enemies
@@ -994,11 +963,6 @@ export class Game {
       if (this.state === 'playing') {
         this.bullets.render(this.renderer);
         this.player.render(this.renderer);
-
-        // Only show crosshair in keyboard mode
-        if (this.input.mode === 'keyboard') {
-          this.crosshair.render(this.renderer);
-        }
       }
 
       // Shockwave ring during death slowmo
@@ -1037,7 +1001,7 @@ export class Game {
 
     // --- HUD (drawn on separate 2D canvas, unaffected by bloom) ---
     if (this.state === 'playing' || this.state === 'death_slowmo') {
-      this.hud.drawPlaying(this.player.score, this.player.lives, this.audio.muted);
+      this.hud.drawPlaying(this.player.score, this.player.lives, this.audio.muted, this.enemies.length);
 
       // Virtual joysticks (drawn on HUD canvas, not during slowmo)
       if (this.state === 'playing') {

@@ -4,8 +4,8 @@
 // ============================================================
 
 // --- World ---
-export const WORLD_WIDTH = 4800;
-export const WORLD_HEIGHT = 3600;
+export const WORLD_WIDTH = 1600;
+export const WORLD_HEIGHT = 1000;
 
 // --- Player ---
 export const PLAYER_SPEED = 0.35; // px/ms
@@ -161,8 +161,10 @@ export const DIFFICULTY_PHASES = {
 
 export const SPAWN_DELAY_BETWEEN = 10; // ms between each enemy in a cluster
 
+// --- Mouse aim (desktop) ---
+export const MOUSE_AIM_SENSITIVITY = 0.004; // radians per pixel of mouse delta
+
 // --- Camera ---
-export const DESKTOP_ZOOM = 0.75; // zoom out on desktop to show more environment
 export const CAMERA_LERP_SPEED = 0.08;
 export const SCREEN_SHAKE_SMALL = 5;
 export const SCREEN_SHAKE_LARGE = 10;
@@ -181,13 +183,17 @@ export const BLOOM_INTENSITY = 2.2;
 export const BLOOM_BLUR_PASSES = 6;
 export const BLOOM_BLUR_RADIUS = 2.5;
 
-// --- Grid ---
-export const GRID_EXPLOSION_STRENGTH = 90;
-export const GRID_EXPLOSION_RADIUS = 380;
-export const GRID_EXPLOSION_DECAY = 1.5;
-export const GRID_ENEMY_STRENGTH = 8;
-export const GRID_ENEMY_RADIUS = 140;
-export const GRID_ENEMY_DECAY = 6.0;
+// --- Spring-mass grid ---
+export const GRID_SPACING = 40;
+export const GRID_SPRING_STIFFNESS = 800;
+export const GRID_SPRING_DAMPING = 12;
+export const GRID_ANCHOR_STIFFNESS = 50;
+export const GRID_MAX_DISPLACEMENT = 60;
+export const GRID_SUBSTEPS = 3;
+export const GRID_MOBILE_SUBSTEPS = 2;
+export const GRID_COLOR_BASE: [number, number, number] = [0.38, 0.14, 0.72];
+export const GRID_COLOR_STRETCH: [number, number, number] = [0.0, 0.8, 1.0];
+export const GRID_COLOR_COMPRESS: [number, number, number] = [1.0, 0.2, 0.8];
 
 // --- Trails ---
 export const TRAIL_LENGTH_ENEMY = 18;

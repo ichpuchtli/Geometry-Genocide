@@ -1,6 +1,6 @@
 import { Vec2 } from './vector';
 import { Camera } from './camera';
-import { JOYSTICK_MAX_RADIUS, JOYSTICK_DEAD_ZONE } from '../config';
+import { JOYSTICK_MAX_RADIUS, JOYSTICK_DEAD_ZONE, MOUSE_AIM_SENSITIVITY } from '../config';
 
 export type InputMode = 'keyboard' | 'touch';
 
@@ -13,9 +13,12 @@ interface TouchStick {
 
 export class Input {
   private keys = new Map<string, boolean>();
-  private mouseScreenPos = new Vec2(0, 0);
   private mouseDown = false;
   private camera: Camera | null = null;
+
+  // Pointer-lock aim angle (desktop) — mouse deltas rotate this
+  private _aimAngle = 0;
+  private pointerLocked = false;
 
   // Touch state
   mode: InputMode = 'keyboard';
@@ -42,10 +45,13 @@ export class Input {
       this.keys.set(e.code, false);
     });
 
-    // Mouse
+    // Mouse — use movementX/Y for aim rotation (works with and without pointer lock)
     canvas.addEventListener('mousemove', (e) => {
-      this.mouseScreenPos.set(e.clientX, e.clientY);
       this.mode = 'keyboard';
+      // Accumulate mouse delta into aim angle
+      this._aimAngle += e.movementX * MOUSE_AIM_SENSITIVITY;
+      // Vertical movement also contributes (inverted because screen Y is down)
+      this._aimAngle += e.movementY * MOUSE_AIM_SENSITIVITY * 0.5;
     });
     canvas.addEventListener('mousedown', (e) => {
       if (e.button === 0) this.mouseDown = true;
@@ -56,11 +62,34 @@ export class Input {
     });
     canvas.addEventListener('contextmenu', (e) => e.preventDefault());
 
+    // Track pointer lock state
+    document.addEventListener('pointerlockchange', () => {
+      this.pointerLocked = document.pointerLockElement === canvas;
+    });
+
     // Touch
     canvas.addEventListener('touchstart', (e) => this.onTouchStart(e), { passive: false });
     canvas.addEventListener('touchmove', (e) => this.onTouchMove(e), { passive: false });
     canvas.addEventListener('touchend', (e) => this.onTouchEnd(e), { passive: false });
     canvas.addEventListener('touchcancel', (e) => this.onTouchEnd(e), { passive: false });
+  }
+
+  /** Request pointer lock to hide cursor and get raw mouse deltas */
+  requestPointerLock(): void {
+    if (!this.pointerLocked && this.mode === 'keyboard') {
+      this.canvas.requestPointerLock?.();
+    }
+  }
+
+  /** Release pointer lock */
+  releasePointerLock(): void {
+    if (this.pointerLocked) {
+      document.exitPointerLock?.();
+    }
+  }
+
+  get isPointerLocked(): boolean {
+    return this.pointerLocked;
   }
 
   private onTouchStart(e: TouchEvent): void {
@@ -145,31 +174,22 @@ export class Input {
     return this.mode === 'touch';
   }
 
-  getMouseScreenPos(): Vec2 {
-    return this.mouseScreenPos;
-  }
-
-  getMouseWorldPos(): Vec2 {
+  /** Get the current aim angle (radians). Desktop: accumulated from mouse deltas. Touch: from right stick. */
+  getAimAngle(): number {
     if (this.mode === 'touch') {
-      // Right stick direction determines aim
-      return this.getRightStickAimWorld();
+      const rv = this.getStickVector(this.rightStick);
+      if (rv.magnitudeSq() > 0) {
+        // Right stick direction — screen Y inverted to world Y
+        return Math.atan2(-rv.y, rv.x);
+      }
+      return this._aimAngle; // fallback to last known angle
     }
-    if (!this.camera) return this.mouseScreenPos.clone();
-    return this.camera.screenToWorld(this.mouseScreenPos.x, this.mouseScreenPos.y);
+    return this._aimAngle;
   }
 
-  private getRightStickAimWorld(): Vec2 {
-    // If right stick is deflected, aim in that direction from player
-    // We return a world position far in the stick direction
-    const rv = this.getStickVector(this.rightStick);
-    if (rv.magnitudeSq() === 0 || !this.camera) {
-      // Default: aim straight ahead (right)
-      return this.camera ? this.camera.screenToWorld(this.canvasWidth, this.canvas.clientHeight / 2) : new Vec2(1000, 0);
-    }
-    // Return a point far in the direction of the stick relative to camera center
-    const camPos = this.camera.position;
-    // Note: screen Y is inverted (down=positive) but our world Y is up=positive
-    return new Vec2(camPos.x + rv.x * 1000, camPos.y - rv.y * 1000);
+  /** Set the aim angle (used on player reset) */
+  setAimAngle(angle: number): void {
+    this._aimAngle = angle;
   }
 
   /** Get movement direction from WASD / arrow keys / left joystick */

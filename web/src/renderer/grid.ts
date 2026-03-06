@@ -1,143 +1,360 @@
 import { createProgram } from './webgl-context';
 import gridVert from './shaders/grid.vert';
 import gridFrag from './shaders/grid.frag';
-import { WORLD_WIDTH, WORLD_HEIGHT } from '../config';
+import {
+  WORLD_WIDTH, WORLD_HEIGHT,
+  GRID_SPACING, GRID_SPRING_STIFFNESS, GRID_SPRING_DAMPING,
+  GRID_ANCHOR_STIFFNESS, GRID_MAX_DISPLACEMENT, GRID_SUBSTEPS,
+  GRID_MOBILE_SUBSTEPS, GRID_COLOR_BASE, GRID_COLOR_STRETCH, GRID_COLOR_COMPRESS,
+} from '../config';
 
-export interface GridForce {
-  x: number;
-  y: number;
-  strength: number;
-  radius: number;
-  decay: number; // strength units per second
-}
+const cols = Math.floor(WORLD_WIDTH / GRID_SPACING) + 1;
+const rows = Math.floor(WORLD_HEIGHT / GRID_SPACING) + 1;
+const totalPoints = cols * rows;
 
-export interface GravityWell {
-  x: number;
-  y: number;
-  mass: number;   // negative strength = pull grid inward
-  radius: number;
-}
-
-const GRID_SPACING = 50;
-const MAX_FORCES = 16;
-
-export class GridRenderer {
+export class SpringMassGrid {
   private gl: WebGLRenderingContext;
   private program: WebGLProgram;
-  private vertexBuffer: WebGLBuffer;
-  private vertexCount = 0;
 
-  private forces: GridForce[] = [];
-  private gravityWells: GravityWell[] = [];
+  // SoA physics data
+  private restX: Float32Array;
+  private restY: Float32Array;
+  private posX: Float32Array;
+  private posY: Float32Array;
+  private velX: Float32Array;
+  private velY: Float32Array;
+  private accX: Float32Array;
+  private accY: Float32Array;
+  private anchored: Uint8Array;
+
+  // Rendering
+  private vertexData: Float32Array;
+  private vertexBuffer: WebGLBuffer;
+  private indexBuffer: WebGLBuffer;
+  private indexCount: number;
+
+  private substeps: number;
+
+  // Gravity wells accumulated per frame
+  private wellX: number[] = [];
+  private wellY: number[] = [];
+  private wellStr: number[] = [];
+  private wellRad: number[] = [];
 
   // Uniform locations
   private uResolution: WebGLUniformLocation;
   private uCamera: WebGLUniformLocation;
-  private uForceCount: WebGLUniformLocation;
-  private uForces: WebGLUniformLocation;
-  private uForceRadii: WebGLUniformLocation;
-  private uGridColor: WebGLUniformLocation;
+  private uColorBase: WebGLUniformLocation;
+  private uColorStretch: WebGLUniformLocation;
+  private uColorCompress: WebGLUniformLocation;
 
-  constructor(gl: WebGLRenderingContext) {
+  constructor(gl: WebGLRenderingContext, mobile: boolean) {
     this.gl = gl;
+    this.substeps = mobile ? GRID_MOBILE_SUBSTEPS : GRID_SUBSTEPS;
     this.program = createProgram(gl, gridVert, gridFrag);
 
     this.uResolution = gl.getUniformLocation(this.program, 'u_resolution')!;
     this.uCamera = gl.getUniformLocation(this.program, 'u_camera')!;
-    this.uForceCount = gl.getUniformLocation(this.program, 'u_forceCount')!;
-    this.uForces = gl.getUniformLocation(this.program, 'u_forces')!;
-    this.uForceRadii = gl.getUniformLocation(this.program, 'u_forceRadii')!;
-    this.uGridColor = gl.getUniformLocation(this.program, 'u_gridColor')!;
+    this.uColorBase = gl.getUniformLocation(this.program, 'u_colorBase')!;
+    this.uColorStretch = gl.getUniformLocation(this.program, 'u_colorStretch')!;
+    this.uColorCompress = gl.getUniformLocation(this.program, 'u_colorCompress')!;
 
-    // Build grid vertex data
-    const vertices: number[] = [];
+    // Allocate SoA arrays
+    this.restX = new Float32Array(totalPoints);
+    this.restY = new Float32Array(totalPoints);
+    this.posX = new Float32Array(totalPoints);
+    this.posY = new Float32Array(totalPoints);
+    this.velX = new Float32Array(totalPoints);
+    this.velY = new Float32Array(totalPoints);
+    this.accX = new Float32Array(totalPoints);
+    this.accY = new Float32Array(totalPoints);
+    this.anchored = new Uint8Array(totalPoints);
+
+    // Compute rest positions centered at origin
     const hw = WORLD_WIDTH / 2;
     const hh = WORLD_HEIGHT / 2;
-
-    // Horizontal lines
-    for (let y = -hh; y <= hh; y += GRID_SPACING) {
-      for (let x = -hw; x <= hw - GRID_SPACING; x += GRID_SPACING) {
-        vertices.push(x, y, x + GRID_SPACING, y);
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        const idx = r * cols + c;
+        const x = -hw + c * GRID_SPACING;
+        const y = -hh + r * GRID_SPACING;
+        this.restX[idx] = x;
+        this.restY[idx] = y;
+        this.posX[idx] = x;
+        this.posY[idx] = y;
+        // Border points are anchored
+        if (r === 0 || r === rows - 1 || c === 0 || c === cols - 1) {
+          this.anchored[idx] = 1;
+        }
       }
     }
-    // Vertical lines
-    for (let x = -hw; x <= hw; x += GRID_SPACING) {
-      for (let y = -hh; y <= hh - GRID_SPACING; y += GRID_SPACING) {
-        vertices.push(x, y, x, y + GRID_SPACING);
+
+    // Build static index buffer for GL_LINES
+    const indices: number[] = [];
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        const idx = r * cols + c;
+        // Right neighbor
+        if (c < cols - 1) {
+          indices.push(idx, idx + 1);
+        }
+        // Up neighbor
+        if (r < rows - 1) {
+          indices.push(idx, idx + cols);
+        }
       }
     }
+    this.indexCount = indices.length;
 
-    this.vertexCount = vertices.length / 2;
-    const buf = gl.createBuffer()!;
-    gl.bindBuffer(gl.ARRAY_BUFFER, buf);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
-    this.vertexBuffer = buf;
+    this.indexBuffer = gl.createBuffer()!;
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.indexBuffer);
+    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indices), gl.STATIC_DRAW);
+
+    // Vertex data: [posX, posY, displacement, velocityMag] per point
+    this.vertexData = new Float32Array(totalPoints * 4);
+    this.vertexBuffer = gl.createBuffer()!;
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.vertexBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, this.vertexData.byteLength, gl.DYNAMIC_DRAW);
   }
 
-  addForce(x: number, y: number, strength: number, radius: number, decay: number): void {
-    this.forces.push({ x, y, strength, radius, decay });
+  /** One-shot radial impulse — directly modifies velocities */
+  applyImpulse(x: number, y: number, strength: number, radius: number): void {
+    const r2 = radius * radius;
+    for (let i = 0; i < totalPoints; i++) {
+      if (this.anchored[i]) continue;
+      const dx = this.posX[i] - x;
+      const dy = this.posY[i] - y;
+      const dist2 = dx * dx + dy * dy;
+      if (dist2 < r2 && dist2 > 0.01) {
+        const dist = Math.sqrt(dist2);
+        const falloff = 1 - dist / radius;
+        const f = strength * falloff * falloff;
+        this.velX[i] += (dx / dist) * f;
+        this.velY[i] += (dy / dist) * f;
+      }
+    }
   }
 
-  /** Set gravity wells (persistent forces that warp the grid inward). Call each frame. */
-  setGravityWells(wells: GravityWell[]): void {
-    this.gravityWells = wells;
+  /** Continuous inward pull — queued for physics step */
+  applyGravityWell(x: number, y: number, strength: number, radius: number): void {
+    this.wellX.push(x);
+    this.wellY.push(y);
+    this.wellStr.push(strength);
+    this.wellRad.push(radius);
   }
 
+  /** Run spring-mass physics */
   update(dt: number): void {
-    const dtSec = dt / 1000;
-    for (let i = this.forces.length - 1; i >= 0; i--) {
-      const f = this.forces[i];
-      f.strength *= Math.max(0, 1 - f.decay * dtSec);
-      if (Math.abs(f.strength) < 0.5) {
-        this.forces.splice(i, 1);
+    const substeps = this.substeps;
+    const subDt = dt / 1000 / substeps;
+    const k = GRID_SPRING_STIFFNESS;
+    const anchorK = GRID_ANCHOR_STIFFNESS;
+    const damping = GRID_SPRING_DAMPING;
+    const maxDisp = GRID_MAX_DISPLACEMENT;
+    const spacing = GRID_SPACING;
+
+    for (let s = 0; s < substeps; s++) {
+      // Zero accelerations
+      this.accX.fill(0);
+      this.accY.fill(0);
+
+      // Spring forces from 4 neighbors
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          const i = r * cols + c;
+          if (this.anchored[i]) continue;
+
+          let ax = 0, ay = 0;
+
+          // Right neighbor
+          if (c < cols - 1) {
+            const j = i + 1;
+            const dx = this.posX[j] - this.posX[i];
+            const dy = this.posY[j] - this.posY[i];
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist > 0.001) {
+              const stretch = dist - spacing;
+              const f = k * stretch / dist;
+              ax += f * dx;
+              ay += f * dy;
+            }
+          }
+          // Left neighbor
+          if (c > 0) {
+            const j = i - 1;
+            const dx = this.posX[j] - this.posX[i];
+            const dy = this.posY[j] - this.posY[i];
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist > 0.001) {
+              const stretch = dist - spacing;
+              const f = k * stretch / dist;
+              ax += f * dx;
+              ay += f * dy;
+            }
+          }
+          // Up neighbor
+          if (r < rows - 1) {
+            const j = i + cols;
+            const dx = this.posX[j] - this.posX[i];
+            const dy = this.posY[j] - this.posY[i];
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist > 0.001) {
+              const stretch = dist - spacing;
+              const f = k * stretch / dist;
+              ax += f * dx;
+              ay += f * dy;
+            }
+          }
+          // Down neighbor
+          if (r > 0) {
+            const j = i - cols;
+            const dx = this.posX[j] - this.posX[i];
+            const dy = this.posY[j] - this.posY[i];
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist > 0.001) {
+              const stretch = dist - spacing;
+              const f = k * stretch / dist;
+              ax += f * dx;
+              ay += f * dy;
+            }
+          }
+
+          // Anchor spring (return to rest)
+          ax += anchorK * (this.restX[i] - this.posX[i]);
+          ay += anchorK * (this.restY[i] - this.posY[i]);
+
+          // Damping
+          ax -= damping * this.velX[i];
+          ay -= damping * this.velY[i];
+
+          this.accX[i] = ax;
+          this.accY[i] = ay;
+        }
+      }
+
+      // Apply gravity wells into accelerations
+      for (let w = 0; w < this.wellX.length; w++) {
+        const wx = this.wellX[w];
+        const wy = this.wellY[w];
+        const wStr = this.wellStr[w];
+        const wRad = this.wellRad[w];
+        const wR2 = wRad * wRad;
+        for (let i = 0; i < totalPoints; i++) {
+          if (this.anchored[i]) continue;
+          const dx = wx - this.posX[i];
+          const dy = wy - this.posY[i];
+          const dist2 = dx * dx + dy * dy;
+          if (dist2 < wR2 && dist2 > 0.01) {
+            const dist = Math.sqrt(dist2);
+            const falloff = 1 - dist / wRad;
+            const f = wStr * falloff;
+            this.accX[i] += (dx / dist) * f;
+            this.accY[i] += (dy / dist) * f;
+          }
+        }
+      }
+
+      // Symplectic Euler integration + displacement clamping
+      for (let i = 0; i < totalPoints; i++) {
+        if (this.anchored[i]) continue;
+        this.velX[i] += this.accX[i] * subDt;
+        this.velY[i] += this.accY[i] * subDt;
+        this.posX[i] += this.velX[i] * subDt;
+        this.posY[i] += this.velY[i] * subDt;
+
+        // Clamp displacement
+        const dx = this.posX[i] - this.restX[i];
+        const dy = this.posY[i] - this.restY[i];
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist > maxDisp) {
+          const scale = maxDisp / dist;
+          this.posX[i] = this.restX[i] + dx * scale;
+          this.posY[i] = this.restY[i] + dy * scale;
+          // Also reduce velocity component along displacement
+          const nx = dx / dist;
+          const ny = dy / dist;
+          const dot = this.velX[i] * nx + this.velY[i] * ny;
+          if (dot > 0) {
+            this.velX[i] -= dot * nx;
+            this.velY[i] -= dot * ny;
+          }
+        }
       }
     }
+
+    // Clear gravity wells for next frame
+    this.wellX.length = 0;
+    this.wellY.length = 0;
+    this.wellStr.length = 0;
+    this.wellRad.length = 0;
   }
 
   render(cameraX: number, cameraY: number, viewW: number, viewH: number): void {
     const gl = this.gl;
+
+    // Fill vertex data
+    const vd = this.vertexData;
+    for (let i = 0; i < totalPoints; i++) {
+      const off = i * 4;
+      vd[off] = this.posX[i];
+      vd[off + 1] = this.posY[i];
+      // displacement magnitude
+      const dx = this.posX[i] - this.restX[i];
+      const dy = this.posY[i] - this.restY[i];
+      vd[off + 2] = Math.sqrt(dx * dx + dy * dy);
+      // velocity magnitude
+      vd[off + 3] = Math.sqrt(this.velX[i] * this.velX[i] + this.velY[i] * this.velY[i]);
+    }
+
+    // Upload
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.vertexBuffer);
+    gl.bufferSubData(gl.ARRAY_BUFFER, 0, this.vertexData);
+
     gl.useProgram(this.program);
 
     // Uniforms
     gl.uniform2f(this.uResolution, viewW, viewH);
     gl.uniform2f(this.uCamera, cameraX, cameraY);
-    // Purple space-time continuum grid — vibrant for mobile visibility
-    gl.uniform3f(this.uGridColor, 0.38, 0.14, 0.72);
+    gl.uniform3f(this.uColorBase, GRID_COLOR_BASE[0], GRID_COLOR_BASE[1], GRID_COLOR_BASE[2]);
+    gl.uniform3f(this.uColorStretch, GRID_COLOR_STRETCH[0], GRID_COLOR_STRETCH[1], GRID_COLOR_STRETCH[2]);
+    gl.uniform3f(this.uColorCompress, GRID_COLOR_COMPRESS[0], GRID_COLOR_COMPRESS[1], GRID_COLOR_COMPRESS[2]);
 
-    // Combine explosion forces + gravity wells
-    const combined: { x: number; y: number; strength: number; radius: number }[] = [];
-    for (const f of this.forces) combined.push(f);
-    for (const w of this.gravityWells) combined.push({ x: w.x, y: w.y, strength: w.mass, radius: w.radius });
+    // Vertex attribs (stride = 16 bytes: 4 floats)
+    const aPos = gl.getAttribLocation(this.program, 'a_position');
+    const aDisp = gl.getAttribLocation(this.program, 'a_displacement');
+    const aVel = gl.getAttribLocation(this.program, 'a_velocity');
 
-    const count = Math.min(combined.length, MAX_FORCES);
-    gl.uniform1i(this.uForceCount, count);
-
-    const forceData = new Float32Array(MAX_FORCES * 3);
-    const radiiData = new Float32Array(MAX_FORCES);
-    for (let i = 0; i < count; i++) {
-      const f = combined[i];
-      forceData[i * 3] = f.x;
-      forceData[i * 3 + 1] = f.y;
-      forceData[i * 3 + 2] = f.strength;
-      radiiData[i] = f.radius;
+    gl.enableVertexAttribArray(aPos);
+    gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 16, 0);
+    if (aDisp >= 0) {
+      gl.enableVertexAttribArray(aDisp);
+      gl.vertexAttribPointer(aDisp, 1, gl.FLOAT, false, 16, 8);
     }
-    gl.uniform3fv(this.uForces, forceData);
-    gl.uniform1fv(this.uForceRadii, radiiData);
+    if (aVel >= 0) {
+      gl.enableVertexAttribArray(aVel);
+      gl.vertexAttribPointer(aVel, 1, gl.FLOAT, false, 16, 12);
+    }
 
     // Draw
-    gl.bindBuffer(gl.ARRAY_BUFFER, this.vertexBuffer);
-    const aPos = gl.getAttribLocation(this.program, 'a_position');
-    gl.enableVertexAttribArray(aPos);
-    gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.indexBuffer);
+    gl.drawElements(gl.LINES, this.indexCount, gl.UNSIGNED_SHORT, 0);
 
-    gl.drawArrays(gl.LINES, 0, this.vertexCount);
-
-    // Clean up GL state to prevent conflicts on iOS Safari
+    // Clean up
     gl.disableVertexAttribArray(aPos);
+    if (aDisp >= 0) gl.disableVertexAttribArray(aDisp);
+    if (aVel >= 0) gl.disableVertexAttribArray(aVel);
   }
 
   clear(): void {
-    this.forces.length = 0;
-    this.gravityWells.length = 0;
+    for (let i = 0; i < totalPoints; i++) {
+      this.posX[i] = this.restX[i];
+      this.posY[i] = this.restY[i];
+      this.velX[i] = 0;
+      this.velY[i] = 0;
+    }
+    this.wellX.length = 0;
+    this.wellY.length = 0;
+    this.wellStr.length = 0;
+    this.wellRad.length = 0;
   }
 }

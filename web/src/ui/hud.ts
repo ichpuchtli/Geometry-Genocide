@@ -4,6 +4,9 @@ export class HUD {
   private ctx: CanvasRenderingContext2D;
   private canvas: HTMLCanvasElement;
   private touchMode = false;
+  private fpsFrames = 0;
+  private fpsTime = 0;
+  private fpsDisplay = 0;
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
@@ -41,7 +44,17 @@ export class HUD {
     this.ctx.restore();
   }
 
-  drawPlaying(score: number, lives: number, muted?: boolean): void {
+  updateFps(dt: number): void {
+    this.fpsFrames++;
+    this.fpsTime += dt;
+    if (this.fpsTime >= 500) {
+      this.fpsDisplay = Math.round(this.fpsFrames / (this.fpsTime / 1000));
+      this.fpsFrames = 0;
+      this.fpsTime = 0;
+    }
+  }
+
+  drawPlaying(score: number, lives: number, muted?: boolean, enemyCount?: number): void {
     this.clear();
     this.ctx.textBaseline = 'top';
 
@@ -52,6 +65,15 @@ export class HUD {
     // Lives top-right with glow
     this.ctx.textAlign = 'right';
     this.drawGlowText(`LIVES: ${lives}`, this.canvas.clientWidth - 20, 20, HUD_FONT, HUD_COLOR, '#0a550a', 8);
+
+    // FPS + enemy count bottom-left
+    this.ctx.textAlign = 'left';
+    this.ctx.textBaseline = 'bottom';
+    const fpsColor = this.fpsDisplay >= 55 ? '#20ff20' : this.fpsDisplay >= 30 ? '#ffff20' : '#ff3030';
+    let debugText = `FPS: ${this.fpsDisplay}`;
+    if (enemyCount !== undefined) debugText += `  ENEMIES: ${enemyCount}`;
+    this.drawGlowText(debugText, 20, this.canvas.clientHeight - 10, '14px monospace', fpsColor, fpsColor, 5);
+    this.ctx.textBaseline = 'top';
 
     // Audio mute indicator (top-center)
     if (muted !== undefined) {

@@ -87,10 +87,8 @@ export class Player extends Entity {
     if (this.position.y < -hh) this.position.y = -hh;
     if (this.position.y > hh) this.position.y = hh;
 
-    // Aim toward mouse
-    const mouseWorld = this.input.getMouseWorldPos();
-    const diff = mouseWorld.sub(this.position);
-    this.aimAngle = diff.angle();
+    // Aim angle from input (mouse deltas on desktop, right stick on touch)
+    this.aimAngle = this.input.getAimAngle();
 
     // Shooting
     this.shooting = this.input.isMouseDown();

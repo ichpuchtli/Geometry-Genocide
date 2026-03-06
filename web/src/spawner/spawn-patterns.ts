@@ -123,7 +123,7 @@ export function generateSwarm(pool: EnemyType[], count: number): FormationSpawn[
   const spawns: FormationSpawn[] = [];
   for (let i = 0; i < count; i++) {
     let x: number, y: number;
-    const spread = 400; // how tightly packed along the edge
+    const spread = 200; // how tightly packed along the edge
     const center = (Math.random() - 0.5) * spread;
     switch (side) {
       case 0: x = center; y = hh - 10; break;   // top
@@ -137,7 +137,7 @@ export function generateSwarm(pool: EnemyType[], count: number): FormationSpawn[
 }
 
 /** Surround: enemies in a ring around the player */
-export function generateSurround(pool: EnemyType[], count: number, playerPos: Vec2, radius = 500): FormationSpawn[] {
+export function generateSurround(pool: EnemyType[], count: number, playerPos: Vec2, radius = 300): FormationSpawn[] {
   const spawns: FormationSpawn[] = [];
   for (let i = 0; i < count; i++) {
     const angle = (i / count) * Math.PI * 2;
@@ -176,7 +176,7 @@ export function generatePincer(pool: EnemyType[], count: number, playerPos: Vec2
   const half = Math.floor(count / 2);
   for (let i = 0; i < count; i++) {
     const group = i < half ? -1 : 1;
-    const jitter = (Math.random() - 0.5) * 200;
+    const jitter = (Math.random() - 0.5) * 100;
     let x: number, y: number;
     if (useVertical) {
       x = playerPos.x + jitter;
@@ -197,7 +197,7 @@ export function generateAmbush(pool: EnemyType[], count: number, playerPos: Vec2
   const spawns: FormationSpawn[] = [];
   for (let i = 0; i < count; i++) {
     const angle = Math.random() * Math.PI * 2;
-    const dist = randRange(300, 500);
+    const dist = randRange(150, 300);
     const x = Math.max(-hw + 20, Math.min(hw - 20, playerPos.x + Math.cos(angle) * dist));
     const y = Math.max(-hh + 20, Math.min(hh - 20, playerPos.y + Math.sin(angle) * dist));
     spawns.push({ type: pickRandom(pool), position: new Vec2(x, y), delay: i * 50, isAmbush: true });

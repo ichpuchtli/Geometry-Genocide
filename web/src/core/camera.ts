@@ -5,6 +5,7 @@ export class Camera {
   position = new Vec2(0, 0);
   shakeX = 0;
   shakeY = 0;
+  fixedView = false;
   private shakeIntensity = 0;
   private shakeDuration = 0;
   private shakeElapsed = 0;
@@ -46,12 +47,22 @@ export class Camera {
   }
 
   follow(target: Vec2, lerpFactor: number = CAMERA_LERP_SPEED): void {
+    if (this.fixedView) {
+      this.position.x = 0;
+      this.position.y = 0;
+      return;
+    }
     this.position.x += (target.x - this.position.x) * lerpFactor;
     this.position.y += (target.y - this.position.y) * lerpFactor;
     this.clamp();
   }
 
   snapTo(target: Vec2): void {
+    if (this.fixedView) {
+      this.position.x = 0;
+      this.position.y = 0;
+      return;
+    }
     this.position.copyFrom(target);
     this.clamp();
   }
