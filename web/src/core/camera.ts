@@ -6,6 +6,7 @@ export class Camera {
   shakeX = 0;
   shakeY = 0;
   fixedView = false;
+  clampToArena = true;
   private shakeIntensity = 0;
   private shakeDuration = 0;
   private shakeElapsed = 0;
@@ -68,6 +69,7 @@ export class Camera {
   }
 
   private clamp(): void {
+    if (!this.clampToArena) return;
     const halfW = this.viewportWidth / 2;
     const halfH = this.viewportHeight / 2;
     const hw = WORLD_WIDTH / 2;

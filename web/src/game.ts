@@ -181,6 +181,7 @@ export class Game {
     this.trails = new TrailSystem();
     this.camera = new Camera(this.renderer.width, this.renderer.height);
     this.camera.fixedView = !this.mobile;
+    this.camera.clampToArena = !this.mobile;
     this.input = new Input(gameCanvas);
     this.input.setCamera(this.camera);
     this.audio = new AudioManager();
