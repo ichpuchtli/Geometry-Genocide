@@ -40,6 +40,10 @@ export class Octagon extends Enemy {
     this.move(dt);
   }
 
+  override renderSpawn(renderer: Renderer): void {
+    this.renderSpawnGravity(renderer);
+  }
+
   render(renderer: Renderer): void {
     if (!this.active) return;
     if (this.isSpawning) { this.renderSpawn(renderer); return; }

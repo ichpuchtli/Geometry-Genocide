@@ -17,7 +17,7 @@ export type EnemyType =
   | 'penrose'
   | 'mengerdust'
   | 'hyperbolicdisc'
-  | 'fibspiral'
+  // fibspiral removed
   | 'tesseract'
   | 'mandelbrot'
   | 'klein'
@@ -38,7 +38,6 @@ export const RAMPUP_POOL: EnemyType[] = [
   'rhombus', 'rhombus', 'rhombus', 'rhombus', 'rhombus',
   'pinwheel', 'pinwheel', 'pinwheel', 'pinwheel',
   'square',
-  'fibspiral',
   'mobius',
 ];
 
@@ -47,11 +46,11 @@ export const MIDGAME_POOL: EnemyType[] = [
   'pinwheel', 'pinwheel', 'pinwheel',
   'square', 'square',
   'triangle',
-  'fibspiral', 'fibspiral',
   'mobius',
   'koch',
   'penrose',
   'sierpinski',
+  'blackhole',
 ];
 
 export const INTENSE_POOL: EnemyType[] = [
@@ -60,7 +59,6 @@ export const INTENSE_POOL: EnemyType[] = [
   'square', 'square',
   'triangle', 'triangle',
   'octagon',
-  'fibspiral', 'fibspiral',
   'mobius',
   'koch',
   'penrose',
@@ -77,7 +75,6 @@ export const CHAOS_POOL: EnemyType[] = [
   'triangle', 'triangle',
   'octagon', 'octagon',
   'circle', 'circle',
-  'fibspiral', 'fibspiral',
   'sierpinski',
   'tesseract',
   'klein',
@@ -91,7 +88,6 @@ export const CHAOS_POOL: EnemyType[] = [
 export const SWARM_POOL: EnemyType[] = [
   'rhombus', 'rhombus', 'rhombus',
   'pinwheel', 'pinwheel',
-  'fibspiral',
 ];
 
 export function pickRandom<T>(arr: T[]): T {
@@ -197,7 +193,7 @@ export function generateAmbush(pool: EnemyType[], count: number, playerPos: Vec2
   const spawns: FormationSpawn[] = [];
   for (let i = 0; i < count; i++) {
     const angle = Math.random() * Math.PI * 2;
-    const dist = randRange(150, 300);
+    const dist = randRange(250, 400);
     const x = Math.max(-hw + 20, Math.min(hw - 20, playerPos.x + Math.cos(angle) * dist));
     const y = Math.max(-hh + 20, Math.min(hh - 20, playerPos.y + Math.sin(angle) * dist));
     spawns.push({ type: pickRandom(pool), position: new Vec2(x, y), delay: i * 50, isAmbush: true });

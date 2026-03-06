@@ -49,6 +49,8 @@ import {
   DEATH_SLOWMO_DURATION,
   DEATH_SLOWMO_TIME_SCALE,
   DEATH_SLOWMO_SHOCKWAVE_SPEED,
+  MIN_SPAWN_DISTANCE,
+  SPAWN_DURATION_AMBUSH,
 } from './config';
 
 // Enemy factory imports
@@ -60,7 +62,7 @@ import { Triangle } from './entities/enemies/triangle';
 import { Octagon } from './entities/enemies/octagon';
 import { BlackHole } from './entities/enemies/blackhole';
 // --- New fractal/topology enemies ---
-import { FibSpiral } from './entities/enemies/fibspiral';
+// FibSpiral removed
 import { Mobius } from './entities/enemies/mobius';
 import { Koch } from './entities/enemies/koch';
 import { Penrose } from './entities/enemies/penrose';
@@ -88,7 +90,6 @@ function createEnemy(type: string, pos?: Vec2): Enemy {
     case 'octagon': e = new Octagon(); break;
     case 'blackhole': e = new BlackHole(); break;
     // --- New fractal/topology enemies ---
-    case 'fibspiral': e = new FibSpiral(); break;
     case 'mobius': e = new Mobius(); break;
     case 'koch': e = new Koch(); break;
     case 'penrose': e = new Penrose(); break;
@@ -536,7 +537,13 @@ export class Game {
       } else {
         const enemy = createEnemy(req.type, req.position);
         // If ambush spawn, use longer spawn animation
-        if (req.isAmbush) enemy.spawnTimer = 0.8;
+        if (req.isAmbush) { enemy.spawnDuration = enemy.spawnTimer = SPAWN_DURATION_AMBUSH; }
+        // Push enemies that spawn too close to the player to the edge
+        const dx = enemy.position.x - this.player.position.x;
+        const dy = enemy.position.y - this.player.position.y;
+        if (dx * dx + dy * dy < MIN_SPAWN_DISTANCE * MIN_SPAWN_DISTANCE) {
+          enemy.spawnAtEdge();
+        }
         // Register trail for enemy
         enemy.trailId = this.trails.register(enemy.color, this.trailLenEnemy);
         this.enemies.push(enemy);
@@ -778,7 +785,7 @@ export class Game {
       // New enemies — reuse existing SFX
       case 'sierpinski': case 'koch': case 'mengerdust':
         this.audio.playSFX('octagon'); break;
-      case 'mobius': case 'fibspiral': case 'penrose': case 'klein':
+      case 'mobius': case 'penrose': case 'klein':
         this.audio.playSFX('rhombus'); break;
       case 'tesseract': case 'hyperbolicdisc': case 'mandelbrot':
         this.audio.playSFX('deathstar'); break;

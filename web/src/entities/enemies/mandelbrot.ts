@@ -99,6 +99,10 @@ export class Mandelbrot extends Enemy {
     }
   }
 
+  override renderSpawn(renderer: Renderer): void {
+    this.renderSpawnGravity(renderer);
+  }
+
   render(renderer: Renderer): void {
     if (!this.active) return;
     if (this.isSpawning) { this.renderSpawn(renderer); return; }

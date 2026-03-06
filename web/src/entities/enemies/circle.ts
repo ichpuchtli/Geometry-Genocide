@@ -1,7 +1,7 @@
 import { Enemy } from './enemy';
 import { Vec2 } from '../../core/vector';
 import { Renderer } from '../../renderer/sprite-batch';
-import { COLORS, ENEMY_SPEED, ENEMY_SCORES } from '../../config';
+import { COLORS, ENEMY_SPEED, ENEMY_SCORES, SPAWN_DURATION_CHILD } from '../../config';
 
 export class CircleEnemy extends Enemy {
   radius = 10;
@@ -14,7 +14,10 @@ export class CircleEnemy extends Enemy {
     this.speed = ENEMY_SPEED.circle;
     this.scoreValue = ENEMY_SCORES.circle;
     this.collisionRadius = radius + 5;
-    if (pos) this.position.copyFrom(pos);
+    if (pos) {
+      this.position.copyFrom(pos);
+      this.spawnDuration = this.spawnTimer = SPAWN_DURATION_CHILD;
+    }
     this.displacer = Vec2.random().scale(25);
   }
 

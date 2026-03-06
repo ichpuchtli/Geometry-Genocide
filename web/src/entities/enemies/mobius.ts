@@ -6,7 +6,7 @@ import { COLORS, ENEMY_SPEED, ENEMY_SCORES, MOBIUS_HP } from '../../config';
 /** Mobius strip — orbits player, phase-shifts immune every orbit */
 export class Mobius extends Enemy {
   private orbitAngle = Math.random() * Math.PI * 2;
-  private orbitRadius = 200;
+  private orbitRadius = 280;
   private orbitTarget = new Vec2(0, 0);
   private orbitCount = 0;
   private lastOrbitCount = 0;
@@ -14,8 +14,8 @@ export class Mobius extends Enemy {
   private immuneTimer = 0;
   private dotT = 0; // traveling dot parameter
 
-  static readonly IMMUNE_DURATION = 1.5; // seconds
-  static readonly ORBIT_RADIUS = 200;
+  static readonly IMMUNE_DURATION = 0.8; // seconds
+  static readonly ORBIT_RADIUS = 280;
 
   constructor() {
     super();
@@ -83,6 +83,10 @@ export class Mobius extends Enemy {
     this.rotation += dt * 0.002;
     this.move(dt);
     this.bounce();
+  }
+
+  override renderSpawn(renderer: Renderer): void {
+    this.renderSpawnRift(renderer);
   }
 
   render(renderer: Renderer): void {

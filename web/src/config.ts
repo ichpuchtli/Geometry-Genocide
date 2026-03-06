@@ -110,7 +110,7 @@ export const ENEMY_SCORES = {
 // --- Enemy HP ---
 export const OCTAGON_HP = 3;
 export const SIERPINSKI_HP = 3;
-export const MOBIUS_HP = 2;
+export const MOBIUS_HP = 1;
 export const KOCH_HP = 2;
 export const PENROSE_HP = 2;
 export const MENGERDUST_HP = 5;
@@ -160,6 +160,10 @@ export const DIFFICULTY_PHASES = {
 };
 
 export const SPAWN_DELAY_BETWEEN = 10; // ms between each enemy in a cluster
+export const SPAWN_DURATION_DEFAULT = 1.5;   // seconds (was 0.3)
+export const SPAWN_DURATION_CHILD = 0.5;     // for Shard, MiniMandel, Circle, Square2
+export const SPAWN_DURATION_AMBUSH = 2.0;    // ambush spawns get extra warning time
+export const MIN_SPAWN_DISTANCE = 200;       // px — enemies closer than this get pushed to edge
 
 // --- Mouse aim (desktop) ---
 export const MOUSE_AIM_SENSITIVITY = 0.004; // radians per pixel of mouse delta

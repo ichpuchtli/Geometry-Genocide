@@ -1,7 +1,7 @@
 import { Enemy, EnemyDeathResult } from './enemy';
 import { Vec2 } from '../../core/vector';
 import { Renderer } from '../../renderer/sprite-batch';
-import { COLORS, ENEMY_SPEED, ENEMY_SCORES } from '../../config';
+import { COLORS, ENEMY_SPEED, ENEMY_SCORES, SPAWN_DURATION_CHILD } from '../../config';
 
 export class Square extends Enemy {
   constructor() {
@@ -54,6 +54,7 @@ export class Square2 extends Enemy {
     this.color2 = COLORS.square.color2;
     this.speed = ENEMY_SPEED.square2;
     this.scoreValue = ENEMY_SCORES.square2;
+    this.spawnDuration = this.spawnTimer = SPAWN_DURATION_CHILD;
     if (pos) this.position.copyFrom(pos);
     this.velocity = Vec2.random().scale(this.speed);
   }

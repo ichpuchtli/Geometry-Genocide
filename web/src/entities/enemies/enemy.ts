@@ -1,7 +1,7 @@
 import { Entity } from '../entity';
 import { Vec2 } from '../../core/vector';
 import { Renderer } from '../../renderer/sprite-batch';
-import { WORLD_WIDTH, WORLD_HEIGHT, ENEMY_COLLISION_RADIUS } from '../../config';
+import { WORLD_WIDTH, WORLD_HEIGHT, ENEMY_COLLISION_RADIUS, SPAWN_DURATION_DEFAULT } from '../../config';
 
 export type EnemyDeathResult = {
   spawnEnemies?: { type: string; position: Vec2 }[];
@@ -20,7 +20,8 @@ export abstract class Enemy extends Entity {
   shapePoints: number[][] = [];
   rotationSpeed = 0;
   trailId = -1; // assigned by TrailSystem
-  spawnTimer = 0.3; // seconds remaining in spawn warp-in animation
+  spawnDuration = SPAWN_DURATION_DEFAULT;
+  spawnTimer = SPAWN_DURATION_DEFAULT; // seconds remaining in spawn warp-in animation
   get isSpawning(): boolean { return this.spawnTimer > 0; }
   displacer = new Vec2(
     (Math.random() - 0.5) * 64,
@@ -98,12 +99,12 @@ export abstract class Enemy extends Entity {
 
   /** Render spawn warp-in effect — cranked to 11 */
   renderSpawn(renderer: Renderer): void {
-    const progress = 1 - this.spawnTimer / 0.3;
+    const progress = 1 - this.spawnTimer / this.spawnDuration;
     const cx = this.position.x;
     const cy = this.position.y;
 
     // Outer shockwave ring — expands and fades
-    const shockR = 60 * progress;
+    const shockR = 80 * progress;
     const shockAlpha = 0.7 * (1 - progress);
     renderer.drawCircle(cx, cy, shockR, [1, 1, 1], 32, shockAlpha);
 
@@ -111,7 +112,7 @@ export abstract class Enemy extends Entity {
     for (let i = 0; i < 3; i++) {
       const delay = i * 0.12;
       const rp = Math.max(0, Math.min(1, (progress - delay) / (1 - delay)));
-      const ringR = 50 * (1 - rp) + 5;
+      const ringR = 70 * (1 - rp) + 5;
       const ringAlpha = 0.5 * (1 - rp) * rp;
       const hue = i * 0.3;
       renderer.drawCircle(cx, cy, ringR, [
@@ -152,6 +153,131 @@ export abstract class Enemy extends Entity {
     ]);
     renderer.drawLineLoop(scaledPoints.map(([x, y]) => [x - 1, y]), this.color2, progress * 0.5);
     renderer.drawLineLoop(scaledPoints, this.color, progress);
+  }
+
+  /** Style B: Fractal Crystallization — shape fragments coalesce inward */
+  protected renderSpawnCrystallize(renderer: Renderer): void {
+    const progress = 1 - this.spawnTimer / this.spawnDuration;
+    const cx = this.position.x;
+    const cy = this.position.y;
+
+    // Shape fragments scattered outward, lerping to final position
+    const points = this.getWorldPoints();
+    const scatter = (1 - progress) * 80;
+    const fragAlpha = progress * 0.8;
+
+    for (let i = 0; i < points.length; i++) {
+      const seed = (i * 7919 + 1) % 97 / 97; // deterministic pseudo-random per vertex
+      const angle = seed * Math.PI * 2;
+      const ox = Math.cos(angle) * scatter;
+      const oy = Math.sin(angle) * scatter;
+      const fx = points[i][0] + ox * (1 - progress);
+      const fy = points[i][1] + oy * (1 - progress);
+      const nx = points[(i + 1) % points.length][0] + Math.cos((seed + 0.3) * Math.PI * 2) * scatter * (1 - progress);
+      const ny = points[(i + 1) % points.length][1] + Math.sin((seed + 0.3) * Math.PI * 2) * scatter * (1 - progress);
+      renderer.drawLine(fx, fy, nx, ny,
+        this.color[0], this.color[1], this.color[2], fragAlpha);
+    }
+
+    // Crystalline sparkle lines between fragments
+    if (progress > 0.3) {
+      const sparkAlpha = (progress - 0.3) * 0.6;
+      for (let i = 0; i < points.length; i += 2) {
+        const j = (i + Math.floor(points.length / 2)) % points.length;
+        renderer.drawLine(points[i][0], points[i][1], points[j][0], points[j][1],
+          1, 1, 1, sparkAlpha * (1 - progress));
+      }
+    }
+
+    // Converging ring
+    const ringR = 60 * (1 - progress) + 5;
+    renderer.drawCircle(cx, cy, ringR, this.color, 20, 0.4 * (1 - progress));
+  }
+
+  /** Style C: Dimensional Rift — vertical slit tears open into ellipse */
+  protected renderSpawnRift(renderer: Renderer): void {
+    const progress = 1 - this.spawnTimer / this.spawnDuration;
+    const cx = this.position.x;
+    const cy = this.position.y;
+
+    // Vertical slit that widens into ellipse
+    const slitHeight = 50;
+    const width = progress * 40;
+    const segs = 16;
+
+    for (let i = 0; i < segs; i++) {
+      const a1 = (i / segs) * Math.PI * 2;
+      const a2 = ((i + 1) / segs) * Math.PI * 2;
+      const x1 = cx + Math.cos(a1) * width;
+      const y1 = cy + Math.sin(a1) * slitHeight * (0.2 + progress * 0.8);
+      const x2 = cx + Math.cos(a2) * width;
+      const y2 = cy + Math.sin(a2) * slitHeight * (0.2 + progress * 0.8);
+      const alpha = 0.6 * progress;
+      renderer.drawLine(x1, y1, x2, y2,
+        this.color[0], this.color[1], this.color[2], alpha);
+    }
+
+    // Horizontal distortion lines
+    const lineCount = 5;
+    for (let i = 0; i < lineCount; i++) {
+      const t = (i / (lineCount - 1)) - 0.5;
+      const ly = cy + t * slitHeight * progress;
+      const lw = width * (1 - Math.abs(t) * 0.5);
+      const alpha = 0.3 * progress * (1 - Math.abs(t));
+      renderer.drawLine(cx - lw, ly, cx + lw, ly,
+        1, 1, 1, alpha);
+    }
+
+    // Entity fading in at center
+    if (progress > 0.5) {
+      const fadeIn = (progress - 0.5) * 2;
+      const scale = 1 + (1 - fadeIn) * 0.3;
+      const points = this.getWorldPoints();
+      const scaledPoints = points.map(([x, y]) => [
+        cx + (x - cx) * scale,
+        cy + (y - cy) * scale,
+      ]);
+      renderer.drawLineLoop(scaledPoints, this.color, fadeIn * 0.8);
+    }
+  }
+
+  /** Style D: Gravity Well — concentric rings contracting inward, dark center expands */
+  protected renderSpawnGravity(renderer: Renderer): void {
+    const progress = 1 - this.spawnTimer / this.spawnDuration;
+    const cx = this.position.x;
+    const cy = this.position.y;
+
+    // Concentric rings contracting inward
+    const ringCount = 5;
+    for (let i = 0; i < ringCount; i++) {
+      const phase = (i / ringCount + progress * 0.5) % 1;
+      const ringR = 80 * (1 - phase);
+      const alpha = 0.4 * phase * (1 - phase);
+      renderer.drawCircle(cx, cy, ringR,
+        [this.color[0] * 0.7, this.color[1] * 0.7, this.color[2] * 0.7], 24, alpha);
+    }
+
+    // Dark center that expands
+    const darkR = progress * 25;
+    renderer.drawFilledCircle(cx, cy, darkR, [0.02, 0.0, 0.04], 16, 0.7 * progress);
+
+    // Core glow pulse
+    if (progress > 0.4) {
+      const coreProgress = (progress - 0.4) / 0.6;
+      renderer.drawCircle(cx, cy, darkR + 5, this.color, 16, coreProgress * 0.6);
+    }
+
+    // Entity emerges at end
+    if (progress > 0.6) {
+      const fadeIn = (progress - 0.6) / 0.4;
+      const points = this.getWorldPoints();
+      const scale = 0.5 + fadeIn * 0.5;
+      const scaledPoints = points.map(([x, y]) => [
+        cx + (x - cx) * scale,
+        cy + (y - cy) * scale,
+      ]);
+      renderer.drawLineLoop(scaledPoints, this.color, fadeIn);
+    }
   }
 
   /** Default rendering: draw the shape as a colored line loop */

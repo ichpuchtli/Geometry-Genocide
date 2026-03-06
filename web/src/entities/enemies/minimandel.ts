@@ -1,7 +1,7 @@
 import { Enemy } from './enemy';
 import { Vec2 } from '../../core/vector';
 import { Renderer } from '../../renderer/sprite-batch';
-import { COLORS, ENEMY_SPEED, ENEMY_SCORES } from '../../config';
+import { COLORS, ENEMY_SPEED, ENEMY_SCORES, SPAWN_DURATION_CHILD } from '../../config';
 import { Mandelbrot } from './mandelbrot';
 
 /** MiniMandel — small cardioid minion spawned by Mandelbrot */
@@ -15,6 +15,7 @@ export class MiniMandel extends Enemy {
     this.speed = ENEMY_SPEED.minimandel;
     this.scoreValue = ENEMY_SCORES.minimandel;
     this.collisionRadius = 16;
+    this.spawnDuration = this.spawnTimer = SPAWN_DURATION_CHILD;
 
     // Small cardioid shape
     this.shapePoints = [];

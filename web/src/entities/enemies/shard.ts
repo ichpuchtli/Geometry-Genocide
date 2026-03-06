@@ -1,7 +1,7 @@
 import { Enemy } from './enemy';
 import { Vec2 } from '../../core/vector';
 import { Renderer } from '../../renderer/sprite-batch';
-import { COLORS, ENEMY_SPEED, ENEMY_SCORES } from '../../config';
+import { COLORS, ENEMY_SPEED, ENEMY_SCORES, SPAWN_DURATION_CHILD } from '../../config';
 
 /** Shard — tiny fast triangle spawned by Sierpinski death */
 export class Shard extends Enemy {
@@ -17,6 +17,7 @@ export class Shard extends Enemy {
     this.speed = ENEMY_SPEED.shard;
     this.scoreValue = ENEMY_SCORES.shard;
     this.collisionRadius = 12;
+    this.spawnDuration = this.spawnTimer = SPAWN_DURATION_CHILD;
     this.velocity = Vec2.random().scale(this.speed);
 
     if (pos) {

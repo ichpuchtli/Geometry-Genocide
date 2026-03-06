@@ -47,6 +47,10 @@ export class Sierpinski extends Enemy {
     this.bounce();
   }
 
+  override renderSpawn(renderer: Renderer): void {
+    this.renderSpawnCrystallize(renderer);
+  }
+
   render(renderer: Renderer): void {
     if (!this.active) return;
     if (this.isSpawning) { this.renderSpawn(renderer); return; }

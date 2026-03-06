@@ -42,6 +42,10 @@ export class HyperbolicDisc extends Enemy {
     this.bounce();
   }
 
+  override renderSpawn(renderer: Renderer): void {
+    this.renderSpawnRift(renderer);
+  }
+
   render(renderer: Renderer): void {
     if (!this.active) return;
     if (this.isSpawning) { this.renderSpawn(renderer); return; }
