@@ -1,25 +1,37 @@
 import { Renderer } from '../renderer/sprite-batch';
-import { Vec2 } from '../core/vector';
+import {
+  AIM_CHEVRON_RADIUS,
+  AIM_CHEVRON_SIZE,
+  AIM_CHEVRON_COLOR,
+  AIM_CHEVRON_ALPHA,
+} from '../config';
 
-const CROSSHAIR_SIZE = 12;
-const GAP = 4;
+// Chevron local vertices (unit scale, facing right)
+const CHEV_VERTS: [number, number][] = [
+  [-0.5,  0.5],  // back-top
+  [ 0.5,  0.0],  // tip
+  [-0.5, -0.5],  // back-bottom
+];
 
-export class Crosshair {
-  position = new Vec2(0, 0);
+export class AimIndicator {
+  render(renderer: Renderer, playerX: number, playerY: number, aimAngle: number): void {
+    const cx = playerX + Math.cos(aimAngle) * AIM_CHEVRON_RADIUS;
+    const cy = playerY + Math.sin(aimAngle) * AIM_CHEVRON_RADIUS;
+    const s = AIM_CHEVRON_SIZE;
+    const cos = Math.cos(aimAngle);
+    const sin = Math.sin(aimAngle);
 
-  render(renderer: Renderer): void {
-    const x = this.position.x;
-    const y = this.position.y;
-    const s = CROSSHAIR_SIZE;
-    const g = GAP;
+    // Transform chevron vertices
+    const wx: number[] = [];
+    const wy: number[] = [];
+    for (const [lx, ly] of CHEV_VERTS) {
+      wx.push(cx + (lx * cos - ly * sin) * s);
+      wy.push(cy + (lx * sin + ly * cos) * s);
+    }
 
-    // Four lines with a gap in the center
-    renderer.drawLine(x - s, y, x - g, y, 0.1, 1.0, 0.1, 0.8);
-    renderer.drawLine(x + g, y, x + s, y, 0.1, 1.0, 0.1, 0.8);
-    renderer.drawLine(x, y - s, x, y - g, 0.1, 1.0, 0.1, 0.8);
-    renderer.drawLine(x, y + g, x, y + s, 0.1, 1.0, 0.1, 0.8);
-
-    // Small center dot
-    renderer.drawCircle(x, y, 2, [0.1, 1.0, 0.1], 8, 0.5);
+    // Two line segments: back-top → tip, tip → back-bottom
+    const [r, g, b] = AIM_CHEVRON_COLOR;
+    renderer.drawLine(wx[0], wy[0], wx[1], wy[1], r, g, b, AIM_CHEVRON_ALPHA);
+    renderer.drawLine(wx[1], wy[1], wx[2], wy[2], r, g, b, AIM_CHEVRON_ALPHA);
   }
 }

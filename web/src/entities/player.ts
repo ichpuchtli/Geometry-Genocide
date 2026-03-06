@@ -8,11 +8,37 @@ import {
   PLAYER_STARTING_LIVES,
   PLAYER_INVULN_DURATION,
   PLAYER_SHIP_SCALE,
+  PLAYER_ROTATION_LERP,
+  PLAYER_SHIP_COLOR,
+  PLAYER_SHIP_COLOR2,
+  PLAYER_SHIP_FILL_COLOR,
+  PLAYER_SHIP_FILL_ALPHA,
   WORLD_WIDTH,
   WORLD_HEIGHT,
   WEAPON_STAGES,
 } from '../config';
 import { gameSettings } from '../settings';
+
+function lerpAngle(from: number, to: number, t: number): number {
+  let diff = to - from;
+  // Normalize to [-PI, PI]
+  while (diff > Math.PI) diff -= Math.PI * 2;
+  while (diff < -Math.PI) diff += Math.PI * 2;
+  return from + diff * t;
+}
+
+// Claw/pincer vertices (unit scale, facing right at angle=0)
+const SHIP_VERTS: [number, number][] = [
+  [ 1.4,  0.55],  // 0: left prong tip
+  [ 0.5,  0.85],  // 1: left prong outer
+  [-0.4,  0.6],   // 2: left body
+  [-1.0,  0.3],   // 3: left rear
+  [-0.6,  0.0],   // 4: rear center
+  [-1.0, -0.3],   // 5: right rear
+  [-0.4, -0.6],   // 6: right body
+  [ 0.5, -0.85],  // 7: right prong outer
+  [ 1.4, -0.55],  // 8: right prong tip
+];
 
 export class Player extends Entity {
   lives = PLAYER_STARTING_LIVES;
@@ -22,6 +48,7 @@ export class Player extends Entity {
   shotTimer = 0;
   invulnTimer = 0;
   aimAngle = 0;
+  facingAngle = 0;
   private slowTimer = 0;
   private slowFactor = 1;
 
@@ -52,6 +79,7 @@ export class Player extends Entity {
     this.shotTimer = 0;
     this.invulnTimer = PLAYER_INVULN_DURATION;
     this.active = true;
+    this.facingAngle = 0;
   }
 
   respawn(): void {
@@ -60,6 +88,7 @@ export class Player extends Entity {
     this.invulnTimer = PLAYER_INVULN_DURATION;
     this.shooting = false;
     this.shotTimer = 0;
+    this.facingAngle = 0;
   }
 
   update(dt: number): void {
@@ -87,6 +116,14 @@ export class Player extends Entity {
     if (this.position.x > hw) this.position.x = hw;
     if (this.position.y < -hh) this.position.y = -hh;
     if (this.position.y > hh) this.position.y = hh;
+
+    // Facing angle follows movement direction
+    const mag = Math.sqrt(dir.x * dir.x + dir.y * dir.y);
+    if (mag > 0.01) {
+      const targetAngle = Math.atan2(dir.y, dir.x);
+      const t = 1 - Math.pow(1 - PLAYER_ROTATION_LERP, dt);
+      this.facingAngle = lerpAngle(this.facingAngle, targetAngle, t);
+    }
 
     // Aim angle: desktop computes from mouse world position, touch from right stick
     this.input.updateAimFromPlayer(this.position);
@@ -117,32 +154,43 @@ export class Player extends Entity {
     if (this.isInvulnerable && Math.floor(this.invulnTimer / 100) % 2 === 0) return;
 
     const s = PLAYER_SHIP_SCALE;
-    const cos = Math.cos(this.aimAngle);
-    const sin = Math.sin(this.aimAngle);
+    const cos = Math.cos(this.facingAngle);
+    const sin = Math.sin(this.facingAngle);
     const px = this.position.x;
     const py = this.position.y;
 
-    // Ship shape: pointed arrow
-    // Tip (forward)
-    const tipX = px + cos * s * 1.5;
-    const tipY = py + sin * s * 1.5;
-    // Left wing
-    const lwX = px + (-cos * s - sin * s);
-    const lwY = py + (-sin * s + cos * s);
-    // Right wing
-    const rwX = px + (-cos * s + sin * s);
-    const rwY = py + (-sin * s - cos * s);
-    // Rear notch
-    const rrX = px + (-cos * s * 0.5);
-    const rrY = py + (-sin * s * 0.5);
+    // Transform local vertices to world space
+    const wx: number[] = [];
+    const wy: number[] = [];
+    for (const [lx, ly] of SHIP_VERTS) {
+      wx.push(px + (lx * cos - ly * sin) * s);
+      wy.push(py + (lx * sin + ly * cos) * s);
+    }
 
-    // Fill
-    renderer.drawTriangle(tipX, tipY, lwX, lwY, rrX, rrY, 0.2, 0.9, 0.2, 0.8);
-    renderer.drawTriangle(tipX, tipY, rrX, rrY, rwX, rwY, 0.2, 0.9, 0.2, 0.8);
-    // Outline
-    renderer.drawLine(tipX, tipY, lwX, lwY, 0.1, 1, 0.1);
-    renderer.drawLine(lwX, lwY, rrX, rrY, 0.1, 1, 0.1);
-    renderer.drawLine(rrX, rrY, rwX, rwY, 0.1, 1, 0.1);
-    renderer.drawLine(rwX, rwY, tipX, tipY, 0.1, 1, 0.1);
+    // Fill: triangle fan from rear center (index 4) through all vertices
+    const cx = wx[4], cy = wy[4];
+    for (let i = 0; i < SHIP_VERTS.length - 1; i++) {
+      renderer.drawTriangle(
+        cx, cy, wx[i], wy[i], wx[i + 1], wy[i + 1],
+        PLAYER_SHIP_FILL_COLOR[0], PLAYER_SHIP_FILL_COLOR[1], PLAYER_SHIP_FILL_COLOR[2],
+        PLAYER_SHIP_FILL_ALPHA,
+      );
+    }
+
+    // Outer line (darker, slightly inward offset for depth)
+    for (let i = 0; i < SHIP_VERTS.length - 1; i++) {
+      renderer.drawLine(
+        wx[i], wy[i], wx[i + 1], wy[i + 1],
+        PLAYER_SHIP_COLOR2[0], PLAYER_SHIP_COLOR2[1], PLAYER_SHIP_COLOR2[2],
+      );
+    }
+
+    // Main bright outline — open polyline (gap between prong tips)
+    for (let i = 0; i < SHIP_VERTS.length - 1; i++) {
+      renderer.drawLine(
+        wx[i], wy[i], wx[i + 1], wy[i + 1],
+        PLAYER_SHIP_COLOR[0], PLAYER_SHIP_COLOR[1], PLAYER_SHIP_COLOR[2],
+      );
+    }
   }
 }

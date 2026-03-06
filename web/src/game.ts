@@ -10,7 +10,7 @@ import { BulletPool, Bullet } from './entities/bullet';
 import { Enemy } from './entities/enemies/enemy';
 import { DeathStar } from './entities/enemies/deathstar';
 import { ExplosionPool } from './entities/explosion';
-import { Crosshair } from './entities/crosshair';
+import { AimIndicator } from './entities/crosshair';
 import { HUD } from './ui/hud';
 import { VirtualJoystickRenderer } from './ui/virtual-joystick';
 import { renderOffscreenIndicators } from './ui/offscreen-indicators';
@@ -129,7 +129,7 @@ export class Game {
   private enemies: Enemy[] = [];
   private deathstars: DeathStar[] = [];
   private explosions: ExplosionPool;
-  private crosshair: Crosshair;
+  private aimIndicator: AimIndicator;
   private hud: HUD;
   private joystickRenderer: VirtualJoystickRenderer;
   private waveManager: WaveManager;
@@ -192,7 +192,7 @@ export class Game {
     this.player = new Player(this.input);
     this.bullets = new BulletPool();
     this.explosions = new ExplosionPool();
-    this.crosshair = new Crosshair();
+    this.aimIndicator = new AimIndicator();
     this.hud = new HUD(hudCanvas);
     this.joystickRenderer = new VirtualJoystickRenderer(hudCanvas);
     this.waveManager = new WaveManager();
@@ -998,11 +998,13 @@ export class Game {
       if (this.state === 'playing') {
         this.bullets.render(this.renderer);
         this.player.render(this.renderer);
-        // Crosshair at mouse world position (desktop only)
-        if (!this.mobile) {
-          this.crosshair.position = this.input.getMouseWorldPos();
-          this.crosshair.render(this.renderer);
-        }
+        // Aim chevron orbiting player (desktop + mobile)
+        this.aimIndicator.render(
+          this.renderer,
+          this.player.position.x,
+          this.player.position.y,
+          this.player.aimAngle,
+        );
       }
 
       // Shockwave ring during death slowmo

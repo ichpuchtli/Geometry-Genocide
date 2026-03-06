@@ -13,6 +13,17 @@ export const PLAYER_COLLISION_RADIUS = 24;
 export const PLAYER_STARTING_LIVES = 5;
 export const PLAYER_INVULN_DURATION = 2000; // ms of invulnerability after respawn
 export const PLAYER_SHIP_SCALE = 18;
+export const PLAYER_ROTATION_LERP = 0.012; // per-ms lerp factor for facing angle
+export const PLAYER_SHIP_COLOR: [number, number, number] = [0.1, 1.0, 0.1];
+export const PLAYER_SHIP_COLOR2: [number, number, number] = [0.05, 0.6, 0.05];
+export const PLAYER_SHIP_FILL_COLOR: [number, number, number] = [0.15, 0.8, 0.15];
+export const PLAYER_SHIP_FILL_ALPHA = 0.7;
+
+// --- Aim chevron ---
+export const AIM_CHEVRON_RADIUS = 38;
+export const AIM_CHEVRON_SIZE = 8;
+export const AIM_CHEVRON_COLOR: [number, number, number] = [0.5, 1.0, 0.5];
+export const AIM_CHEVRON_ALPHA = 0.9;
 
 // --- Bullets ---
 export const BULLET_SPEED = 1.0; // px/ms
