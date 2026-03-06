@@ -19,15 +19,16 @@ export type EnemyType =
 // Comment out any line to remove that enemy from that phase.
 
 export const TUTORIAL_POOL: EnemyType[] = [
-  'rhombus', 'rhombus', 'rhombus', 'rhombus',
+  'rhombus', 'rhombus', 'rhombus', 'rhombus', 'rhombus',
   'pinwheel', 'pinwheel', 'pinwheel',
+  'blackhole',  // rare early terrain hazard
 ];
 
 export const RAMPUP_POOL: EnemyType[] = [
   'rhombus', 'rhombus', 'rhombus', 'rhombus', 'rhombus',
   'pinwheel', 'pinwheel', 'pinwheel', 'pinwheel',
   'square', 'square',
-  'blackhole', 'blackhole',
+  'blackhole',
 ];
 
 export const MIDGAME_POOL: EnemyType[] = [
@@ -36,7 +37,7 @@ export const MIDGAME_POOL: EnemyType[] = [
   'square', 'square', 'square',
   'triangle', 'triangle',
   'sierpinski',
-  'blackhole', 'blackhole', 'blackhole',
+  'blackhole',
 ];
 
 export const INTENSE_POOL: EnemyType[] = [
@@ -46,7 +47,7 @@ export const INTENSE_POOL: EnemyType[] = [
   'triangle', 'triangle', 'triangle',
   'octagon', 'octagon',
   'sierpinski', 'sierpinski',
-  'blackhole', 'blackhole', 'blackhole',
+  'blackhole', 'blackhole',
 ];
 
 export const CHAOS_POOL: EnemyType[] = [
@@ -57,7 +58,7 @@ export const CHAOS_POOL: EnemyType[] = [
   'octagon', 'octagon', 'octagon',
   'circle', 'circle', 'circle',
   'sierpinski', 'sierpinski',
-  'blackhole', 'blackhole', 'blackhole',
+  'blackhole', 'blackhole',
 ];
 
 // Only simple enemies for mass swarm events

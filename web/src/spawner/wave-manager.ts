@@ -100,47 +100,47 @@ export class WaveManager {
 
     switch (phase) {
       case 'tutorial':
-        this.addEvent('trickle', 2.0, 0.5, 1, 3, (_count, _pp) => {
-          return this.spawnFromPool(pickCount(1, 3));
+        this.addEvent('trickle', 2.5, 0.5, 1, 2, (_count, _pp) => {
+          return this.spawnFromPool(pickCount(1, 2));
         });
         // One-shot swarm at 15s handled in update
         break;
 
       case 'rampUp':
-        this.addEvent('trickle', 1.5, 0.3, 2, 4, (_count) => {
-          return this.spawnFromPool(pickCount(2, 4));
+        this.addEvent('trickle', 2.0, 0.4, 1, 3, (_count) => {
+          return this.spawnFromPool(pickCount(1, 3));
         });
-        this.addEvent('swarm', 12, 3, 20, 30, (count) => {
+        this.addEvent('swarm', 14, 3, 12, 20, (count) => {
           return formationToRequests(generateSwarm(SWARM_POOL, count));
         });
-        this.addEvent('wall', 20, 4, 12, 18, (count) => {
+        this.addEvent('wall', 22, 4, 8, 14, (count) => {
           return formationToRequests(generateWall(SWARM_POOL, count));
         });
-        this.addEvent('squad', 10, 2, 4, 6, (_count) => {
-          return this.spawnFromPool(pickCount(4, 6));
+        this.addEvent('squad', 12, 2, 3, 5, (_count) => {
+          return this.spawnFromPool(pickCount(3, 5));
         });
         break;
 
       case 'midGame':
-        this.addEvent('trickle', 1.2, 0.3, 3, 5, () => {
-          return this.spawnFromPool(pickCount(3, 5));
+        this.addEvent('trickle', 1.5, 0.3, 2, 4, () => {
+          return this.spawnFromPool(pickCount(2, 4));
         });
-        this.addEvent('swarm', 10, 2, 25, 35, (count) => {
+        this.addEvent('swarm', 12, 2, 18, 28, (count) => {
           return formationToRequests(generateSwarm(SWARM_POOL, count));
         });
-        this.addEvent('surround', 16, 3, 10, 16, (count, pp) => {
+        this.addEvent('surround', 18, 3, 8, 14, (count, pp) => {
           return formationToRequests(generateSurround(this.getPool(), count, pp));
         });
-        this.addEvent('pincer', 14, 3, 12, 20, (count, pp) => {
+        this.addEvent('pincer', 16, 3, 10, 16, (count, pp) => {
           return formationToRequests(generatePincer(this.getPool(), count, pp));
         });
-        this.addEvent('wall', 16, 3, 15, 24, (count) => {
+        this.addEvent('wall', 18, 3, 12, 20, (count) => {
           return formationToRequests(generateWall(SWARM_POOL, count));
         });
-        this.addEvent('squad', 6, 1.5, 5, 8, () => {
-          return this.spawnFromPool(pickCount(5, 8));
+        this.addEvent('squad', 8, 1.5, 4, 6, () => {
+          return this.spawnFromPool(pickCount(4, 6));
         });
-        this.addEvent('boss', 40, 5, 1, 1, () => {
+        this.addEvent('boss', 45, 5, 1, 1, () => {
           return [{ type: 'deathstar' as const }];
         });
         break;
@@ -230,7 +230,7 @@ export class WaveManager {
     // Tutorial one-shot swarm at 20s
     if (!this.tutorialSwarmFired && this.elapsedTime >= 15) {
       this.tutorialSwarmFired = true;
-      const swarm = generateSwarm(TUTORIAL_POOL, 12);
+      const swarm = generateSwarm(TUTORIAL_POOL, 8);
       for (const s of swarm) {
         this.spawnQueue.push({ type: s.type, position: s.position, delay: s.delay });
       }
