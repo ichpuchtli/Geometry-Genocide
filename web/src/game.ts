@@ -51,6 +51,12 @@ import {
   WORLD_HEIGHT,
   HYPERBOLICDISC_WARP_RADIUS,
   HYPERBOLICDISC_WARP_FORCE,
+  ARENA_BORDER_COLOR,
+  ARENA_BORDER_CORNER_COLOR,
+  ARENA_BORDER_ALPHA,
+  DEATH_SLOWMO_DURATION,
+  DEATH_SLOWMO_TIME_SCALE,
+  DEATH_SLOWMO_SHOCKWAVE_SPEED,
 } from './config';
 
 // Enemy factory imports
@@ -75,7 +81,7 @@ import { Mandelbrot } from './entities/enemies/mandelbrot';
 import { MiniMandel } from './entities/enemies/minimandel';
 import { Klein } from './entities/enemies/klein';
 
-type GameState = 'menu' | 'playing' | 'gameover';
+type GameState = 'menu' | 'playing' | 'death_slowmo' | 'gameover';
 
 function createEnemy(type: string, pos?: Vec2): Enemy {
   let e: Enemy;
@@ -150,6 +156,11 @@ export class Game {
 
   // Staggered spawn queue for theatrical enemy deaths (e.g. Octagon)
   private pendingSpawns: { type: string; position: Vec2; delay: number; origin: Vec2 }[] = [];
+
+  // Death slowmo state
+  private slowmoTimer = 0;
+  private slowmoShockwaveRadius = 0;
+  private slowmoOrigin = new Vec2(0, 0);
 
   constructor(private gameCanvas: HTMLCanvasElement, hudCanvas: HTMLCanvasElement) {
     this.mobile = isMobile();
@@ -236,6 +247,7 @@ export class Game {
       }
       this.startGame();
     }
+    // death_slowmo: ignore interactions
   }
 
   private startGame(): void {
@@ -408,6 +420,11 @@ export class Game {
     if (this.state === 'gameover') {
       this.grid.update(dt);
       this.updateGameOver(dt);
+      return;
+    }
+
+    if (this.state === 'death_slowmo') {
+      this.updateDeathSlowmo(dt);
       return;
     }
 
@@ -808,34 +825,141 @@ export class Game {
   }
 
   private onPlayerRespawn(): void {
+    // Enter death slowmo — time slows, shockwave expands, enemies explode on contact
+    this.state = 'death_slowmo';
+    this.slowmoTimer = 0;
+    this.slowmoShockwaveRadius = 0;
+    this.slowmoOrigin = this.player.position.clone();
+    this.player.active = false;
+
+    // Initial hit explosion
     this.explosions.spawn(
       this.player.position.x, this.player.position.y,
       [1, 1, 0.78],
       EXPLOSION_PARTICLE_COUNT_LARGE,
       EXPLOSION_DURATION_DEFAULT,
     );
-    // Respawn shockwave — clears the area with visual impact
     this.grid.addForce(
       this.player.position.x, this.player.position.y,
-      GRID_EXPLOSION_STRENGTH * 2.5,
+      GRID_EXPLOSION_STRENGTH * 3,
       GRID_EXPLOSION_RADIUS * 2,
-      GRID_EXPLOSION_DECAY * 0.5,
+      GRID_EXPLOSION_DECAY * 0.3,
     );
-    this.camera.shake(SCREEN_SHAKE_LARGE, 0.3);
-    // Clean up trails
-    for (const e of this.enemies) {
-      if (e.trailId >= 0) this.trails.unregister(e.trailId);
-    }
+    this.camera.shake(SCREEN_SHAKE_LARGE, 0.5);
+
+    // Clean up bullet trails
     for (const [, tid] of this.bulletTrailIds) {
       this.trails.unregister(tid);
     }
     this.bulletTrailIds.clear();
-    this.enemies = [];
-    this.deathstars = [];
-    this.player.respawn();
+    this.bullets.clear();
+
     this.audio.playSFX('die1');
     this.haptics.respawn();
     if (this.player.lives === 1) this.haptics.warning();
+  }
+
+  private updateDeathSlowmo(dt: number): void {
+    this.slowmoTimer += dt;
+
+    // Scale game time very slowly during slowmo
+    const gameDt = dt * DEATH_SLOWMO_TIME_SCALE;
+
+    // Expand shockwave
+    this.slowmoShockwaveRadius += DEATH_SLOWMO_SHOCKWAVE_SPEED * dt;
+
+    // Kill enemies caught by shockwave with spectacular explosions
+    for (const e of this.enemies) {
+      if (!e.active) continue;
+      const dx = e.position.x - this.slowmoOrigin.x;
+      const dy = e.position.y - this.slowmoOrigin.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist <= this.slowmoShockwaveRadius) {
+        e.active = false;
+        // Spectacular explosion per enemy
+        this.explosions.spawn(
+          e.position.x, e.position.y, e.color,
+          this.mobile ? 40 : 80,
+          EXPLOSION_DURATION_LARGE * 0.6,
+        );
+        this.grid.addForce(
+          e.position.x, e.position.y,
+          GRID_EXPLOSION_STRENGTH * 1.5,
+          GRID_EXPLOSION_RADIUS * 0.8,
+          GRID_EXPLOSION_DECAY * 0.8,
+        );
+        this.camera.shake(SCREEN_SHAKE_SMALL * 0.5, 0.1);
+        this.audio.playSFX('crash');
+        if (e.trailId >= 0) this.trails.unregister(e.trailId);
+      }
+    }
+
+    // Kill deathstars caught by shockwave
+    for (const ds of this.deathstars) {
+      if (!ds.active) continue;
+      const dx = ds.position.x - this.slowmoOrigin.x;
+      const dy = ds.position.y - this.slowmoOrigin.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist <= this.slowmoShockwaveRadius) {
+        ds.active = false;
+        this.explosions.spawn(
+          ds.position.x, ds.position.y,
+          [0.92, 0.38, 0.24],
+          this.mobile ? 60 : 120,
+          EXPLOSION_DURATION_LARGE,
+        );
+        this.grid.addForce(
+          ds.position.x, ds.position.y,
+          GRID_EXPLOSION_STRENGTH * 3,
+          GRID_EXPLOSION_RADIUS * 1.5,
+          GRID_EXPLOSION_DECAY * 0.3,
+        );
+        this.camera.shake(SCREEN_SHAKE_LARGE, 0.2);
+      }
+    }
+
+    // Update explosions (at slowed rate)
+    this.explosions.update(gameDt);
+    this.grid.update(gameDt);
+    this.camera.updateShake(gameDt);
+
+    // Gentle enemy movement during slowmo
+    for (const e of this.enemies) {
+      if (!e.active) continue;
+      e.rotation += gameDt * 0.002;
+    }
+
+    // Pulsing shockwave ring on grid
+    this.grid.addForce(
+      this.slowmoOrigin.x, this.slowmoOrigin.y,
+      GRID_EXPLOSION_STRENGTH * 0.5,
+      this.slowmoShockwaveRadius,
+      GRID_EXPLOSION_DECAY * 3,
+    );
+
+    // Clean up dead enemies
+    this.enemies = this.enemies.filter(e => {
+      if (!e.active && e.trailId >= 0) {
+        this.trails.unregister(e.trailId);
+      }
+      return e.active;
+    });
+    this.deathstars = this.deathstars.filter(d => d.active);
+
+    // End slowmo
+    if (this.slowmoTimer >= DEATH_SLOWMO_DURATION) {
+      this.state = 'playing';
+      // Clear any remaining enemies
+      for (const e of this.enemies) {
+        if (e.trailId >= 0) this.trails.unregister(e.trailId);
+      }
+      this.enemies = [];
+      this.deathstars = [];
+      this.pendingSpawns = [];
+      this.player.respawn();
+      this.player.active = true;
+      this.camera.snapTo(this.player.position);
+    }
   }
 
   render(): void {
@@ -860,18 +984,33 @@ export class Game {
     this.starfield.render(this.renderer, cameraX, cameraY);
     this.renderer.end();
 
-    // 3. Entities — NORMAL blend
+    // 3. Arena border + Entities — NORMAL blend
     this.renderer.begin(false);
+    this.renderArenaBorder();
 
-    if (this.state === 'playing') {
+    if (this.state === 'playing' || this.state === 'death_slowmo') {
       for (const e of this.enemies) e.render(this.renderer);
       for (const ds of this.deathstars) ds.render(this.renderer);
-      this.bullets.render(this.renderer);
-      this.player.render(this.renderer);
+      if (this.state === 'playing') {
+        this.bullets.render(this.renderer);
+        this.player.render(this.renderer);
 
-      // Only show crosshair in keyboard mode
-      if (this.input.mode === 'keyboard') {
-        this.crosshair.render(this.renderer);
+        // Only show crosshair in keyboard mode
+        if (this.input.mode === 'keyboard') {
+          this.crosshair.render(this.renderer);
+        }
+      }
+
+      // Shockwave ring during death slowmo
+      if (this.state === 'death_slowmo') {
+        const pulse = 0.7 + 0.3 * Math.sin(this.slowmoTimer * 0.01);
+        this.renderer.drawCircle(
+          this.slowmoOrigin.x, this.slowmoOrigin.y,
+          this.slowmoShockwaveRadius,
+          [1.0 * pulse, 0.8 * pulse, 0.3 * pulse],
+          48,
+          0.6 * (1 - this.slowmoTimer / DEATH_SLOWMO_DURATION),
+        );
       }
 
       // Off-screen indicators
@@ -897,12 +1036,53 @@ export class Game {
     this.bloom.apply(this.renderer.canvasWidth, this.renderer.canvasHeight);
 
     // --- HUD (drawn on separate 2D canvas, unaffected by bloom) ---
-    if (this.state === 'playing') {
+    if (this.state === 'playing' || this.state === 'death_slowmo') {
       this.hud.drawPlaying(this.player.score, this.player.lives, this.audio.muted);
 
-      // Virtual joysticks (drawn on HUD canvas)
-      this.joystickRenderer.render(this.input);
+      // Virtual joysticks (drawn on HUD canvas, not during slowmo)
+      if (this.state === 'playing') {
+        this.joystickRenderer.render(this.input);
+      }
     }
+  }
+
+  /** Render the arena border — solid neon lines at world edges */
+  private renderArenaBorder(): void {
+    const hw = WORLD_WIDTH / 2;
+    const hh = WORLD_HEIGHT / 2;
+    const [br, bg, bb] = ARENA_BORDER_COLOR;
+    const [cr, cg, cb] = ARENA_BORDER_CORNER_COLOR;
+    const a = ARENA_BORDER_ALPHA;
+
+    // Main border lines
+    this.renderer.drawLine(-hw, -hh, hw, -hh, br, bg, bb, a); // bottom
+    this.renderer.drawLine(hw, -hh, hw, hh, br, bg, bb, a);   // right
+    this.renderer.drawLine(hw, hh, -hw, hh, br, bg, bb, a);   // top
+    this.renderer.drawLine(-hw, hh, -hw, -hh, br, bg, bb, a); // left
+
+    // Inner glow line (slightly inset, dimmer)
+    const inset = 3;
+    const ga = a * 0.4;
+    this.renderer.drawLine(-hw + inset, -hh + inset, hw - inset, -hh + inset, br, bg, bb, ga);
+    this.renderer.drawLine(hw - inset, -hh + inset, hw - inset, hh - inset, br, bg, bb, ga);
+    this.renderer.drawLine(hw - inset, hh - inset, -hw + inset, hh - inset, br, bg, bb, ga);
+    this.renderer.drawLine(-hw + inset, hh - inset, -hw + inset, -hh + inset, br, bg, bb, ga);
+
+    // Corner accents — brighter L-shapes at each corner
+    const cornerLen = 80;
+    const ca = a * 1.0;
+    // Bottom-left
+    this.renderer.drawLine(-hw, -hh, -hw + cornerLen, -hh, cr, cg, cb, ca);
+    this.renderer.drawLine(-hw, -hh, -hw, -hh + cornerLen, cr, cg, cb, ca);
+    // Bottom-right
+    this.renderer.drawLine(hw, -hh, hw - cornerLen, -hh, cr, cg, cb, ca);
+    this.renderer.drawLine(hw, -hh, hw, -hh + cornerLen, cr, cg, cb, ca);
+    // Top-right
+    this.renderer.drawLine(hw, hh, hw - cornerLen, hh, cr, cg, cb, ca);
+    this.renderer.drawLine(hw, hh, hw, hh - cornerLen, cr, cg, cb, ca);
+    // Top-left
+    this.renderer.drawLine(-hw, hh, -hw + cornerLen, hh, cr, cg, cb, ca);
+    this.renderer.drawLine(-hw, hh, -hw, hh - cornerLen, cr, cg, cb, ca);
   }
 
   /** Called when tab is hidden */
@@ -913,5 +1093,16 @@ export class Game {
   /** Called when tab is visible again */
   onResume(): void {
     this.audio.resume();
+  }
+
+  /** Called when device rotates to portrait */
+  onOrientationPause(): void {
+    // Game loop stops via index.ts — game state stays intact
+  }
+
+  /** Called when device rotates back to landscape */
+  onOrientationResume(): void {
+    this.audio.resume().catch(() => {});
+    this.resize();
   }
 }

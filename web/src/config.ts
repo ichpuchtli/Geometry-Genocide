@@ -209,6 +209,16 @@ export const JOYSTICK_KNOB_RADIUS = 22; // visual radius of inner knob
 export const JOYSTICK_OPACITY = 0.3;
 export const JOYSTICK_ACTIVE_OPACITY = 0.55;
 
+// --- Arena border ---
+export const ARENA_BORDER_COLOR: [number, number, number] = [0.0, 0.6, 1.0]; // Geometry Wars-style blue
+export const ARENA_BORDER_CORNER_COLOR: [number, number, number] = [0.0, 1.0, 1.0]; // brighter corners
+export const ARENA_BORDER_ALPHA = 0.9;
+
+// --- Death slowmo ---
+export const DEATH_SLOWMO_DURATION = 1800; // ms of real time
+export const DEATH_SLOWMO_TIME_SCALE = 0.12; // how slow game runs during slowmo
+export const DEATH_SLOWMO_SHOCKWAVE_SPEED = 0.8; // px/ms expansion speed of kill shockwave
+
 // --- Audio ---
 export const SFX_NAMES = [
   'start', 'die', 'die1', 'crash', 'square', 'rhombus',
