@@ -1,6 +1,6 @@
 import { Vec2 } from './vector';
 import { Camera } from './camera';
-import { JOYSTICK_MAX_RADIUS, JOYSTICK_DEAD_ZONE, MOUSE_AIM_SENSITIVITY } from '../config';
+import { JOYSTICK_MAX_RADIUS, JOYSTICK_DEAD_ZONE } from '../config';
 
 export type InputMode = 'keyboard' | 'touch';
 
@@ -16,15 +16,18 @@ export class Input {
   private mouseDown = false;
   private camera: Camera | null = null;
 
-  // Pointer-lock aim angle (desktop) — mouse deltas rotate this
+  // Mouse position aim (desktop) — screen CSS coordinates
+  private mouseScreenX = 0;
+  private mouseScreenY = 0;
   private _aimAngle = 0;
-  private pointerLocked = false;
 
   // Touch state
   mode: InputMode = 'keyboard';
   private leftStick: TouchStick = { active: false, touchId: -1, origin: new Vec2(), current: new Vec2() };
   private rightStick: TouchStick = { active: false, touchId: -1, origin: new Vec2(), current: new Vec2() };
   private canvasWidth = 0;
+  private canvasHeight = 0;
+  private zoom = 1;
 
   // Expose stick positions for joystick rendering
   get leftStickState() { return this.leftStick; }
@@ -32,6 +35,7 @@ export class Input {
 
   constructor(private canvas: HTMLCanvasElement) {
     this.canvasWidth = canvas.clientWidth;
+    this.canvasHeight = canvas.clientHeight;
 
     // Keyboard
     window.addEventListener('keydown', (e) => {
@@ -45,13 +49,11 @@ export class Input {
       this.keys.set(e.code, false);
     });
 
-    // Mouse — use movementX/Y for aim rotation (works with and without pointer lock)
+    // Mouse — track absolute position for aim direction
     canvas.addEventListener('mousemove', (e) => {
       this.mode = 'keyboard';
-      // Accumulate mouse delta into aim angle
-      this._aimAngle += e.movementX * MOUSE_AIM_SENSITIVITY;
-      // Vertical movement also contributes (inverted because screen Y is down)
-      this._aimAngle += e.movementY * MOUSE_AIM_SENSITIVITY * 0.5;
+      this.mouseScreenX = e.clientX;
+      this.mouseScreenY = e.clientY;
     });
     canvas.addEventListener('mousedown', (e) => {
       if (e.button === 0) this.mouseDown = true;
@@ -62,34 +64,11 @@ export class Input {
     });
     canvas.addEventListener('contextmenu', (e) => e.preventDefault());
 
-    // Track pointer lock state
-    document.addEventListener('pointerlockchange', () => {
-      this.pointerLocked = document.pointerLockElement === canvas;
-    });
-
     // Touch
     canvas.addEventListener('touchstart', (e) => this.onTouchStart(e), { passive: false });
     canvas.addEventListener('touchmove', (e) => this.onTouchMove(e), { passive: false });
     canvas.addEventListener('touchend', (e) => this.onTouchEnd(e), { passive: false });
     canvas.addEventListener('touchcancel', (e) => this.onTouchEnd(e), { passive: false });
-  }
-
-  /** Request pointer lock to hide cursor and get raw mouse deltas */
-  requestPointerLock(): void {
-    if (!this.pointerLocked && this.mode === 'keyboard') {
-      this.canvas.requestPointerLock?.();
-    }
-  }
-
-  /** Release pointer lock */
-  releasePointerLock(): void {
-    if (this.pointerLocked) {
-      document.exitPointerLock?.();
-    }
-  }
-
-  get isPointerLocked(): boolean {
-    return this.pointerLocked;
   }
 
   private onTouchStart(e: TouchEvent): void {
@@ -156,6 +135,11 @@ export class Input {
 
   updateCanvasSize(w: number): void {
     this.canvasWidth = w;
+    this.canvasHeight = this.canvas.clientHeight;
+  }
+
+  setZoom(z: number): void {
+    this.zoom = z;
   }
 
   isKeyDown(code: string): boolean {
@@ -174,7 +158,28 @@ export class Input {
     return this.mode === 'touch';
   }
 
-  /** Get the current aim angle (radians). Desktop: accumulated from mouse deltas. Touch: from right stick. */
+  /** Convert mouse screen CSS coords to world position */
+  getMouseWorldPos(): Vec2 {
+    const camX = this.camera ? this.camera.position.x : 0;
+    const camY = this.camera ? this.camera.position.y : 0;
+    const wx = (this.mouseScreenX - this.canvasWidth / 2) / this.zoom + camX;
+    const wy = -(this.mouseScreenY - this.canvasHeight / 2) / this.zoom + camY;
+    return new Vec2(wx, wy);
+  }
+
+  /** Update aim angle from mouse world position relative to player.
+   *  Called each frame from Player.update(). */
+  updateAimFromPlayer(playerPos: Vec2): void {
+    if (this.mode !== 'keyboard') return;
+    const world = this.getMouseWorldPos();
+    const dx = world.x - playerPos.x;
+    const dy = world.y - playerPos.y;
+    if (dx * dx + dy * dy > 1) {
+      this._aimAngle = Math.atan2(dy, dx);
+    }
+  }
+
+  /** Get the current aim angle (radians). Desktop: mouse direction. Touch: from right stick. */
   getAimAngle(): number {
     if (this.mode === 'touch') {
       const rv = this.getStickVector(this.rightStick);

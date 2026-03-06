@@ -10,7 +10,7 @@ import { BulletPool, Bullet } from './entities/bullet';
 import { Enemy } from './entities/enemies/enemy';
 import { DeathStar } from './entities/enemies/deathstar';
 import { ExplosionPool } from './entities/explosion';
-// Crosshair removed — desktop uses pointer-lock rotational aim
+import { Crosshair } from './entities/crosshair';
 import { HUD } from './ui/hud';
 import { VirtualJoystickRenderer } from './ui/virtual-joystick';
 import { renderOffscreenIndicators } from './ui/offscreen-indicators';
@@ -129,7 +129,7 @@ export class Game {
   private enemies: Enemy[] = [];
   private deathstars: DeathStar[] = [];
   private explosions: ExplosionPool;
-  // crosshair removed — desktop uses pointer-lock rotational aim
+  private crosshair: Crosshair;
   private hud: HUD;
   private joystickRenderer: VirtualJoystickRenderer;
   private waveManager: WaveManager;
@@ -187,10 +187,12 @@ export class Game {
     this.camera.clampToArena = !this.mobile;
     this.input = new Input(gameCanvas);
     this.input.setCamera(this.camera);
+    this.input.setZoom(this.renderer.zoom);
     this.audio = new AudioManager();
     this.player = new Player(this.input);
     this.bullets = new BulletPool();
     this.explosions = new ExplosionPool();
+    this.crosshair = new Crosshair();
     this.hud = new HUD(hudCanvas);
     this.joystickRenderer = new VirtualJoystickRenderer(hudCanvas);
     this.waveManager = new WaveManager();
@@ -235,6 +237,7 @@ export class Game {
     this.bloom.resize(this.renderer.canvasWidth, this.renderer.canvasHeight);
     this.hud.resize();
     this.input.updateCanvasSize(this.gameCanvas.clientWidth);
+    this.input.setZoom(this.renderer.zoom);
     if (this.state === 'menu') this.hud.drawMenu();
   }
 
@@ -285,11 +288,8 @@ export class Game {
     this.camera.snapTo(this.player.position);
     this.hud.clear();
 
-    // Reset aim angle and request pointer lock on desktop
+    // Reset aim angle
     this.input.setAimAngle(0);
-    if (!this.mobile) {
-      this.input.requestPointerLock();
-    }
 
     this.audio.playSFX('start');
     this.audio.startMusic();
@@ -835,7 +835,6 @@ export class Game {
     this.audio.playSFX('die');
     this.audio.stopMusic();
     this.haptics.death();
-    if (!this.mobile) this.input.releasePointerLock();
   }
 
   private onPlayerRespawn(): void {
@@ -999,6 +998,11 @@ export class Game {
       if (this.state === 'playing') {
         this.bullets.render(this.renderer);
         this.player.render(this.renderer);
+        // Crosshair at mouse world position (desktop only)
+        if (!this.mobile) {
+          this.crosshair.position = this.input.getMouseWorldPos();
+          this.crosshair.render(this.renderer);
+        }
       }
 
       // Shockwave ring during death slowmo

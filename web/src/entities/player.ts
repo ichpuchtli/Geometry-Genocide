@@ -88,7 +88,8 @@ export class Player extends Entity {
     if (this.position.y < -hh) this.position.y = -hh;
     if (this.position.y > hh) this.position.y = hh;
 
-    // Aim angle from input (mouse deltas on desktop, right stick on touch)
+    // Aim angle: desktop computes from mouse world position, touch from right stick
+    this.input.updateAimFromPlayer(this.position);
     this.aimAngle = this.input.getAimAngle();
 
     // Shooting
