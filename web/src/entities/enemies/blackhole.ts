@@ -11,9 +11,9 @@ export class BlackHole extends Enemy {
   private ringRotation = 0;
 
   /** Max enemies before it becomes unstable and can be killed more easily */
-  static readonly MAX_ABSORB = 8;
-  static readonly ATTRACT_RADIUS = 220;
-  static readonly GRAVITY_STRENGTH = 0.12; // px/ms^2
+  static readonly MAX_ABSORB = 12;
+  static readonly ATTRACT_RADIUS = 300;
+  static readonly GRAVITY_STRENGTH = 0.18; // px/ms^2
 
   constructor() {
     super();

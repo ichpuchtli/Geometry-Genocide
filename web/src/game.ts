@@ -41,8 +41,6 @@ import {
   SCREEN_SHAKE_DEATH,
   WORLD_WIDTH,
   WORLD_HEIGHT,
-  HYPERBOLICDISC_WARP_RADIUS,
-  HYPERBOLICDISC_WARP_FORCE,
   ARENA_BORDER_COLOR,
   ARENA_BORDER_CORNER_COLOR,
   ARENA_BORDER_ALPHA,
@@ -61,19 +59,8 @@ import { CircleEnemy } from './entities/enemies/circle';
 import { Triangle } from './entities/enemies/triangle';
 import { Octagon } from './entities/enemies/octagon';
 import { BlackHole } from './entities/enemies/blackhole';
-// --- New fractal/topology enemies ---
-// FibSpiral removed
-import { Mobius } from './entities/enemies/mobius';
-import { Koch } from './entities/enemies/koch';
-import { Penrose } from './entities/enemies/penrose';
 import { Shard } from './entities/enemies/shard';
 import { Sierpinski } from './entities/enemies/sierpinski';
-import { MengerDust } from './entities/enemies/mengerdust';
-import { HyperbolicDisc } from './entities/enemies/hyperbolicdisc';
-import { Tesseract } from './entities/enemies/tesseract';
-import { Mandelbrot } from './entities/enemies/mandelbrot';
-import { MiniMandel } from './entities/enemies/minimandel';
-import { Klein } from './entities/enemies/klein';
 import { gameSettings } from './settings';
 
 type GameState = 'menu' | 'playing' | 'death_slowmo' | 'gameover';
@@ -89,18 +76,8 @@ function createEnemy(type: string, pos?: Vec2): Enemy {
     case 'triangle': e = new Triangle(); break;
     case 'octagon': e = new Octagon(); break;
     case 'blackhole': e = new BlackHole(); break;
-    // --- New fractal/topology enemies ---
-    case 'mobius': e = new Mobius(); break;
-    case 'koch': e = new Koch(); break;
-    case 'penrose': e = new Penrose(); break;
     case 'shard': e = new Shard(pos); e.speed *= gameSettings.enemySpeedMultiplier; return e;
     case 'sierpinski': e = new Sierpinski(); break;
-    case 'mengerdust': e = new MengerDust(); break;
-    case 'hyperbolicdisc': e = new HyperbolicDisc(); break;
-    case 'tesseract': e = new Tesseract(); break;
-    case 'mandelbrot': e = new Mandelbrot(); break;
-    case 'minimandel': { const m = new MiniMandel(pos); m.speed *= gameSettings.enemySpeedMultiplier; return m; }
-    case 'klein': e = new Klein(); break;
     default: e = new Rhombus(); break;
   }
   if (!pos) {
@@ -322,10 +299,8 @@ export class Game {
       if (e instanceof Octagon) {
         this.grid.applyGravityWell(e.position.x, e.position.y, -30, 280);
       } else if (e instanceof BlackHole) {
-        const mass = -(45 + e.absorbedCount * 10);
-        this.grid.applyGravityWell(e.position.x, e.position.y, mass, BlackHole.ATTRACT_RADIUS * 1.3);
-      } else if (e instanceof HyperbolicDisc) {
-        this.grid.applyGravityWell(e.position.x, e.position.y, -24, HYPERBOLICDISC_WARP_RADIUS);
+        const mass = -(60 + e.absorbedCount * 12);
+        this.grid.applyGravityWell(e.position.x, e.position.y, mass, BlackHole.ATTRACT_RADIUS * 1.5);
       }
     }
     for (const ds of this.deathstars) {
@@ -555,51 +530,6 @@ export class Game {
       }
     }
 
-    // HyperbolicDisc bullet warping — bend bullets toward disc centers
-    const warpR2 = HYPERBOLICDISC_WARP_RADIUS * HYPERBOLICDISC_WARP_RADIUS;
-    for (const b of this.bullets.bullets) {
-      if (!b.active) continue;
-      for (const e of this.enemies) {
-        if (!e.active || e.isSpawning || !(e instanceof HyperbolicDisc)) continue;
-        const dx = e.position.x - b.position.x;
-        const dy = e.position.y - b.position.y;
-        const dist2 = dx * dx + dy * dy;
-        if (dist2 < warpR2 && dist2 > 1) {
-          const dist = Math.sqrt(dist2);
-          const force = HYPERBOLICDISC_WARP_FORCE * dt / dist;
-          b.velocity.x += dx / dist * force;
-          b.velocity.y += dy / dist * force;
-        }
-      }
-    }
-
-    // Koch ice trail — slow player when touching
-    for (const e of this.enemies) {
-      if (!e.active || !(e instanceof Koch)) continue;
-      const koch = e as Koch;
-      for (const seg of koch.iceTrail) {
-        const dx = this.player.position.x - seg.x;
-        const dy = this.player.position.y - seg.y;
-        if (dx * dx + dy * dy < Koch.SLOW_RADIUS * Koch.SLOW_RADIUS) {
-          this.player.applySlow(Koch.SLOW_FACTOR, Koch.SLOW_DURATION);
-          break; // only need to trigger once per frame
-        }
-      }
-    }
-
-    // Mandelbrot minion spawning
-    for (const e of this.enemies) {
-      if (!e.active || !(e instanceof Mandelbrot)) continue;
-      const mb = e as Mandelbrot;
-      while (mb.pendingMinions.length > 0) {
-        const pos = mb.pendingMinions.shift()!;
-        const minion = createEnemy('minimandel', pos) as MiniMandel;
-        minion.parent = mb;
-        minion.trailId = this.trails.register(minion.color, this.trailLenEnemy);
-        this.enemies.push(minion);
-      }
-    }
-
     // Collision
     const result = checkCollisions(
       this.player,
@@ -624,17 +554,26 @@ export class Game {
       // Screen shake on enemy kill
       this.camera.shake(SCREEN_SHAKE_SMALL);
 
+      // BlackHole death: scaled explosion proportional to absorbed count
+      if (kill.enemy instanceof BlackHole) {
+        const absorbed = (kill.enemy as BlackHole).absorbedCount;
+        if (absorbed > 0) {
+          this.explosions.spawn(
+            kill.position.x, kill.position.y, kill.color,
+            this.mobile ? Math.floor(absorbed * 8) : absorbed * 15,
+            EXPLOSION_DURATION_LARGE * 0.8,
+          );
+          this.grid.applyImpulse(kill.position.x, kill.position.y, 600 + absorbed * 50, 300);
+          this.camera.shake(SCREEN_SHAKE_LARGE);
+        }
+      }
+
       this.audio.playSFX('crash');
       this.haptics.light();
 
       // Unregister trail
       if (kill.enemy.trailId >= 0) {
         this.trails.unregister(kill.enemy.trailId);
-      }
-
-      // Notify Mandelbrot parent if a MiniMandel died
-      if (kill.enemy instanceof MiniMandel && (kill.enemy as MiniMandel).parent) {
-        (kill.enemy as MiniMandel).parent!.onMinionDeath();
       }
 
       // Spawn children
@@ -782,13 +721,7 @@ export class Game {
       case 'triangle': this.audio.playSFX('triangle2'); break;
       case 'octagon': this.audio.playSFX('octagon'); break;
       case 'blackhole': this.audio.playSFX('deathstar'); break;
-      // New enemies — reuse existing SFX
-      case 'sierpinski': case 'koch': case 'mengerdust':
-        this.audio.playSFX('octagon'); break;
-      case 'mobius': case 'penrose': case 'klein':
-        this.audio.playSFX('rhombus'); break;
-      case 'tesseract': case 'hyperbolicdisc': case 'mandelbrot':
-        this.audio.playSFX('deathstar'); break;
+      case 'sierpinski': this.audio.playSFX('octagon'); break;
     }
   }
 

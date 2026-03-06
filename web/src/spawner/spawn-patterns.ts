@@ -10,20 +10,9 @@ export type EnemyType =
   | 'octagon'
   | 'circle'
   | 'blackhole'
-  // --- New fractal/topology enemies ---
   | 'sierpinski'
-  | 'mobius'
-  | 'koch'
-  | 'penrose'
-  | 'mengerdust'
-  | 'hyperbolicdisc'
-  // fibspiral removed
-  | 'tesseract'
-  | 'mandelbrot'
-  | 'klein'
   // --- Child types (spawned by parents, not in pools) ---
   | 'shard'
-  | 'minimandel'
   ;
 
 // Pools are weighted by repetition. More copies = higher spawn chance.
@@ -37,57 +26,45 @@ export const TUTORIAL_POOL: EnemyType[] = [
 export const RAMPUP_POOL: EnemyType[] = [
   'rhombus', 'rhombus', 'rhombus', 'rhombus', 'rhombus',
   'pinwheel', 'pinwheel', 'pinwheel', 'pinwheel',
-  'square',
-  'mobius',
+  'square', 'square',
+  'blackhole', 'blackhole',
 ];
 
 export const MIDGAME_POOL: EnemyType[] = [
-  'rhombus', 'rhombus', 'rhombus',
+  'rhombus', 'rhombus', 'rhombus', 'rhombus',
   'pinwheel', 'pinwheel', 'pinwheel',
-  'square', 'square',
-  'triangle',
-  'mobius',
-  'koch',
-  'penrose',
+  'square', 'square', 'square',
+  'triangle', 'triangle',
   'sierpinski',
-  'blackhole',
+  'blackhole', 'blackhole', 'blackhole',
 ];
 
 export const INTENSE_POOL: EnemyType[] = [
-  'rhombus', 'rhombus',
-  'pinwheel', 'pinwheel',
-  'square', 'square',
-  'triangle', 'triangle',
-  'octagon',
-  'mobius',
-  'koch',
-  'penrose',
-  'sierpinski',
-  'tesseract',
-  'klein',
-  'hyperbolicdisc',
-  'blackhole',
+  'rhombus', 'rhombus', 'rhombus', 'rhombus',
+  'pinwheel', 'pinwheel', 'pinwheel',
+  'square', 'square', 'square',
+  'triangle', 'triangle', 'triangle',
+  'octagon', 'octagon',
+  'sierpinski', 'sierpinski',
+  'blackhole', 'blackhole', 'blackhole',
 ];
 
 export const CHAOS_POOL: EnemyType[] = [
-  'rhombus', 'rhombus',
-  'square', 'square',
-  'triangle', 'triangle',
-  'octagon', 'octagon',
-  'circle', 'circle',
-  'sierpinski',
-  'tesseract',
-  'klein',
-  'hyperbolicdisc',
-  'mengerdust',
-  'mandelbrot',
-  'blackhole',
+  'rhombus', 'rhombus', 'rhombus',
+  'pinwheel', 'pinwheel',
+  'square', 'square', 'square',
+  'triangle', 'triangle', 'triangle',
+  'octagon', 'octagon', 'octagon',
+  'circle', 'circle', 'circle',
+  'sierpinski', 'sierpinski',
+  'blackhole', 'blackhole', 'blackhole',
 ];
 
 // Only simple enemies for mass swarm events
 export const SWARM_POOL: EnemyType[] = [
   'rhombus', 'rhombus', 'rhombus',
   'pinwheel', 'pinwheel',
+  'circle',
 ];
 
 export function pickRandom<T>(arr: T[]): T {

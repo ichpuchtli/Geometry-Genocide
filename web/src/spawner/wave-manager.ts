@@ -52,7 +52,7 @@ export class WaveManager {
 
   constructor() {
     this.setupPhase('tutorial');
-    this.nextBurstIn = 30; // first burst possibility at 30s
+    this.nextBurstIn = 20; // first burst possibility at 20s
   }
 
   reset(): void {
@@ -64,7 +64,7 @@ export class WaveManager {
     this.burstMode = false;
     this.burstTimer = 0;
     this.breatherTimer = 0;
-    this.nextBurstIn = 30;
+    this.nextBurstIn = 20;
     this.spawnRateMultiplier = 1.0;
     this.setupPhase('tutorial');
   }
@@ -100,95 +100,95 @@ export class WaveManager {
 
     switch (phase) {
       case 'tutorial':
-        this.addEvent('trickle', 2.5, 0.5, 1, 2, (_count, _pp) => {
-          return this.spawnFromPool(pickCount(1, 2));
+        this.addEvent('trickle', 2.0, 0.5, 1, 3, (_count, _pp) => {
+          return this.spawnFromPool(pickCount(1, 3));
         });
-        // One-shot swarm at 20s handled in update
+        // One-shot swarm at 15s handled in update
         break;
 
       case 'rampUp':
-        this.addEvent('trickle', 2.0, 0.3, 2, 3, (_count) => {
-          return this.spawnFromPool(pickCount(2, 3));
+        this.addEvent('trickle', 1.5, 0.3, 2, 4, (_count) => {
+          return this.spawnFromPool(pickCount(2, 4));
         });
-        this.addEvent('swarm', 15, 3, 15, 25, (count) => {
+        this.addEvent('swarm', 12, 3, 20, 30, (count) => {
           return formationToRequests(generateSwarm(SWARM_POOL, count));
         });
-        this.addEvent('wall', 25, 4, 10, 15, (count) => {
+        this.addEvent('wall', 20, 4, 12, 18, (count) => {
           return formationToRequests(generateWall(SWARM_POOL, count));
         });
-        this.addEvent('squad', 12, 2, 3, 4, (_count) => {
-          return this.spawnFromPool(pickCount(3, 4));
+        this.addEvent('squad', 10, 2, 4, 6, (_count) => {
+          return this.spawnFromPool(pickCount(4, 6));
         });
         break;
 
       case 'midGame':
-        this.addEvent('trickle', 1.5, 0.3, 2, 4, () => {
-          return this.spawnFromPool(pickCount(2, 4));
-        });
-        this.addEvent('swarm', 12, 2, 20, 30, (count) => {
-          return formationToRequests(generateSwarm(SWARM_POOL, count));
-        });
-        this.addEvent('surround', 20, 3, 8, 12, (count, pp) => {
-          return formationToRequests(generateSurround(this.getPool(), count, pp));
-        });
-        this.addEvent('pincer', 18, 3, 10, 16, (count, pp) => {
-          return formationToRequests(generatePincer(this.getPool(), count, pp));
-        });
-        this.addEvent('wall', 20, 3, 12, 20, (count) => {
-          return formationToRequests(generateWall(SWARM_POOL, count));
-        });
-        this.addEvent('squad', 8, 1.5, 4, 6, () => {
-          return this.spawnFromPool(pickCount(4, 6));
-        });
-        this.addEvent('boss', 45, 5, 1, 1, () => {
-          return [{ type: 'deathstar' as const }];
-        });
-        break;
-
-      case 'intense':
-        this.addEvent('trickle', 1.0, 0.2, 3, 5, () => {
+        this.addEvent('trickle', 1.2, 0.3, 3, 5, () => {
           return this.spawnFromPool(pickCount(3, 5));
         });
         this.addEvent('swarm', 10, 2, 25, 35, (count) => {
           return formationToRequests(generateSwarm(SWARM_POOL, count));
         });
-        this.addEvent('surround', 15, 2, 10, 16, (count, pp) => {
+        this.addEvent('surround', 16, 3, 10, 16, (count, pp) => {
           return formationToRequests(generateSurround(this.getPool(), count, pp));
         });
-        this.addEvent('pincer', 14, 2, 12, 20, (count, pp) => {
+        this.addEvent('pincer', 14, 3, 12, 20, (count, pp) => {
           return formationToRequests(generatePincer(this.getPool(), count, pp));
         });
-        this.addEvent('ambush', 20, 3, 4, 6, (count, pp) => {
+        this.addEvent('wall', 16, 3, 15, 24, (count) => {
+          return formationToRequests(generateWall(SWARM_POOL, count));
+        });
+        this.addEvent('squad', 6, 1.5, 5, 8, () => {
+          return this.spawnFromPool(pickCount(5, 8));
+        });
+        this.addEvent('boss', 40, 5, 1, 1, () => {
+          return [{ type: 'deathstar' as const }];
+        });
+        break;
+
+      case 'intense':
+        this.addEvent('trickle', 0.8, 0.2, 4, 6, () => {
+          return this.spawnFromPool(pickCount(4, 6));
+        });
+        this.addEvent('swarm', 8, 2, 30, 40, (count) => {
+          return formationToRequests(generateSwarm(SWARM_POOL, count));
+        });
+        this.addEvent('surround', 12, 2, 14, 20, (count, pp) => {
+          return formationToRequests(generateSurround(this.getPool(), count, pp));
+        });
+        this.addEvent('pincer', 10, 2, 16, 24, (count, pp) => {
+          return formationToRequests(generatePincer(this.getPool(), count, pp));
+        });
+        this.addEvent('ambush', 14, 3, 6, 10, (count, pp) => {
           return formationToRequests(generateAmbush(this.getPool(), count, pp));
         });
-        this.addEvent('cascade', 12, 2, 10, 15, (count) => {
+        this.addEvent('cascade', 8, 2, 15, 20, (count) => {
           return formationToRequests(generateCascade(this.getPool(), count));
         });
-        this.addEvent('boss', 35, 5, 1, 1, () => {
+        this.addEvent('boss', 28, 5, 1, 1, () => {
           return [{ type: 'deathstar' as const }];
         });
         break;
 
       default: // chaos
-        this.addEvent('trickle', 0.7, 0.1, 4, 6, () => {
-          return this.spawnFromPool(pickCount(4, 6));
+        this.addEvent('trickle', 0.5, 0.1, 5, 8, () => {
+          return this.spawnFromPool(pickCount(5, 8));
         });
-        this.addEvent('swarm', 8, 1.5, 30, 40, (count) => {
+        this.addEvent('swarm', 6, 1.5, 35, 50, (count) => {
           return formationToRequests(generateSwarm(SWARM_POOL, count));
         });
-        this.addEvent('surround', 12, 2, 12, 20, (count, pp) => {
+        this.addEvent('surround', 8, 2, 16, 24, (count, pp) => {
           return formationToRequests(generateSurround(this.getPool(), count, pp));
         });
-        this.addEvent('pincer', 10, 1.5, 15, 25, (count, pp) => {
+        this.addEvent('pincer', 7, 1.5, 20, 30, (count, pp) => {
           return formationToRequests(generatePincer(this.getPool(), count, pp));
         });
-        this.addEvent('ambush', 15, 2, 5, 8, (count, pp) => {
+        this.addEvent('ambush', 10, 2, 8, 12, (count, pp) => {
           return formationToRequests(generateAmbush(this.getPool(), count, pp));
         });
-        this.addEvent('cascade', 8, 1.5, 15, 20, (count) => {
+        this.addEvent('cascade', 5, 1.5, 20, 30, (count) => {
           return formationToRequests(generateCascade(this.getPool(), count));
         });
-        this.addEvent('boss', 25, 3, 1, 1, () => {
+        this.addEvent('boss', 20, 3, 1, 1, () => {
           return [{ type: 'deathstar' as const }];
         });
         break;
@@ -228,9 +228,9 @@ export class WaveManager {
     }
 
     // Tutorial one-shot swarm at 20s
-    if (!this.tutorialSwarmFired && this.elapsedTime >= 20) {
+    if (!this.tutorialSwarmFired && this.elapsedTime >= 15) {
       this.tutorialSwarmFired = true;
-      const swarm = generateSwarm(TUTORIAL_POOL, 8);
+      const swarm = generateSwarm(TUTORIAL_POOL, 12);
       for (const s of swarm) {
         this.spawnQueue.push({ type: s.type, position: s.position, delay: s.delay });
       }
@@ -283,7 +283,7 @@ export class WaveManager {
       if (this.breatherTimer <= 0) {
         this.breatherTimer = 0;
         // Schedule next burst
-        this.nextBurstIn = 15 + Math.random() * 20;
+        this.nextBurstIn = 12 + Math.random() * 13;
       }
       return;
     }
@@ -294,7 +294,7 @@ export class WaveManager {
         this.burstMode = false;
         this.burstTimer = 0;
         // Start breather
-        this.breatherTimer = 3 + Math.random() * 2;
+        this.breatherTimer = 2 + Math.random() * 2;
       }
       return;
     }
@@ -303,7 +303,7 @@ export class WaveManager {
     this.nextBurstIn -= dtSec;
     if (this.nextBurstIn <= 0) {
       this.burstMode = true;
-      this.burstTimer = 5 + Math.random() * 5;
+      this.burstTimer = 6 + Math.random() * 6;
     }
   }
 }

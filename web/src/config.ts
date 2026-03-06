@@ -77,9 +77,9 @@ export const ENEMY_SPEED = {
   circle: 0.35,
   triangle: 0.2,
   octagon: 0.15,
-  blackhole: 0.04,
+  blackhole: 0.06,
   // --- New enemies ---
-  sierpinski: 0.08,
+  sierpinski: 0.12,
   mobius: 0.18,
   koch: 0.12,
   penrose: 0.14,
@@ -120,7 +120,7 @@ export const ENEMY_SCORES = {
 
 // --- Enemy HP ---
 export const OCTAGON_HP = 3;
-export const SIERPINSKI_HP = 3;
+export const SIERPINSKI_HP = 2;
 export const MOBIUS_HP = 1;
 export const KOCH_HP = 2;
 export const PENROSE_HP = 2;
@@ -163,11 +163,11 @@ export const EXPLOSION_POOL_SIZE = 60;
 // --- Spawner / difficulty ---
 // Phase boundaries in seconds
 export const DIFFICULTY_PHASES = {
-  tutorial:  { start: 0,   end: 45 },
-  rampUp:    { start: 45,  end: 150 },
-  midGame:   { start: 150, end: 300 },
-  intense:   { start: 300, end: 480 },
-  chaos:     { start: 480, end: Infinity },
+  tutorial:  { start: 0,   end: 30 },
+  rampUp:    { start: 30,  end: 120 },
+  midGame:   { start: 120, end: 240 },
+  intense:   { start: 240, end: 400 },
+  chaos:     { start: 400, end: Infinity },
 };
 
 export const SPAWN_DELAY_BETWEEN = 10; // ms between each enemy in a cluster
@@ -216,7 +216,7 @@ export const TRAIL_LENGTH_BULLET = 10;
 
 // --- Mobile ---
 export const MOBILE_BLOOM_SCALE = 0.25; // bloom FBO at quarter-res on mobile
-export const MOBILE_MAX_ENEMIES = 80;
+export const MOBILE_MAX_ENEMIES = 100;
 export const MOBILE_MAX_PARTICLES = 30;
 export const MOBILE_TRAIL_LENGTH_ENEMY = 8;
 export const MOBILE_TRAIL_LENGTH_BULLET = 5;
