@@ -554,9 +554,10 @@ export class Game {
       // Screen shake on enemy kill
       this.camera.shake(SCREEN_SHAKE_SMALL);
 
-      // BlackHole death: scaled explosion proportional to absorbed count
+      // BlackHole death: scaled explosion + dramatic procedural SFX
       if (kill.enemy instanceof BlackHole) {
         const absorbed = (kill.enemy as BlackHole).absorbedCount;
+        this.audio.playBlackHoleDeath(absorbed);
         if (absorbed > 0) {
           this.explosions.spawn(
             kill.position.x, kill.position.y, kill.color,
@@ -566,10 +567,11 @@ export class Game {
           this.grid.applyImpulse(kill.position.x, kill.position.y, 600 + absorbed * 50, 300);
           this.camera.shake(SCREEN_SHAKE_LARGE);
         }
+        this.haptics.heavy();
+      } else {
+        this.audio.playSFX('crash');
+        this.haptics.light();
       }
-
-      this.audio.playSFX('crash');
-      this.haptics.light();
 
       // Unregister trail
       if (kill.enemy.trailId >= 0) {

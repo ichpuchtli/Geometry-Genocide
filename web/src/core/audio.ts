@@ -113,6 +113,62 @@ export class AudioManager {
     if (this.music) this.music.stop();
   }
 
+  /** Procedural BlackHole death explosion — scales with absorbed count */
+  playBlackHoleDeath(absorbed: number): void {
+    if (!this._initialized || !this.ctx || !this.sfxGain) return;
+    const ctx = this.ctx;
+    const now = ctx.currentTime;
+    const intensity = Math.min(absorbed / 12, 1);
+
+    // 1. Deep sub-bass boom (swept sine 80Hz → 20Hz)
+    const boom = ctx.createOscillator();
+    boom.type = 'sine';
+    boom.frequency.setValueAtTime(80 + intensity * 40, now);
+    boom.frequency.exponentialRampToValueAtTime(20, now + 0.8);
+    const boomGain = ctx.createGain();
+    boomGain.gain.setValueAtTime(0.7 + intensity * 0.3, now);
+    boomGain.gain.exponentialRampToValueAtTime(0.001, now + 1.2 + intensity * 0.5);
+    boom.connect(boomGain);
+    boomGain.connect(this.sfxGain);
+    boom.start(now);
+    boom.stop(now + 1.5 + intensity * 0.5);
+
+    // 2. Noise burst (white noise through bandpass for crunch)
+    const noiseLen = 1.0 + intensity * 0.8;
+    const noiseBuf = ctx.createBuffer(1, ctx.sampleRate * noiseLen, ctx.sampleRate);
+    const data = noiseBuf.getChannelData(0);
+    for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
+    const noise = ctx.createBufferSource();
+    noise.buffer = noiseBuf;
+    const noiseBP = ctx.createBiquadFilter();
+    noiseBP.type = 'bandpass';
+    noiseBP.frequency.setValueAtTime(400 + intensity * 600, now);
+    noiseBP.frequency.exponentialRampToValueAtTime(80, now + noiseLen);
+    noiseBP.Q.value = 1.5;
+    const noiseGain = ctx.createGain();
+    noiseGain.gain.setValueAtTime(0.4 + intensity * 0.3, now);
+    noiseGain.gain.exponentialRampToValueAtTime(0.001, now + noiseLen);
+    noise.connect(noiseBP);
+    noiseBP.connect(noiseGain);
+    noiseGain.connect(this.sfxGain);
+    noise.start(now);
+
+    // 3. Reverb-like tail — descending tone cluster
+    for (let i = 0; i < 3; i++) {
+      const tail = ctx.createOscillator();
+      tail.type = 'triangle';
+      tail.frequency.setValueAtTime(200 + i * 80 + intensity * 100, now);
+      tail.frequency.exponentialRampToValueAtTime(40 + i * 10, now + 1.5);
+      const tGain = ctx.createGain();
+      tGain.gain.setValueAtTime(0.12, now);
+      tGain.gain.exponentialRampToValueAtTime(0.001, now + 1.8);
+      tail.connect(tGain);
+      tGain.connect(this.sfxGain);
+      tail.start(now + 0.02 * i);
+      tail.stop(now + 2.0);
+    }
+  }
+
   /** Resume AudioContext if suspended (call on user gesture) */
   async resume(): Promise<void> {
     if (this.ctx && this.ctx.state === 'suspended') {

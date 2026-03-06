@@ -39,17 +39,9 @@ export class BlackHole extends Enemy {
     this.collisionRadius = 35 + this.absorbedCount * 2;
   }
 
-  update(dt: number, playerPos?: Vec2): void {
+  update(dt: number, _playerPos?: Vec2): void {
     if (!this.active) return;
-
-    // Slow drift toward player
-    if (playerPos) {
-      this.follow(playerPos);
-    }
-    this.move(dt);
-    this.bounce();
-
-    // Spin faster as it absorbs more
+    // No movement — stationary gravity well
     const spinRate = 0.004 + this.absorbedCount * 0.001;
     this.rotation += dt * spinRate;
     this.ringRotation += dt * 0.002;
@@ -64,10 +56,21 @@ export class BlackHole extends Enemy {
     if (!this.active) return;
     if (this.isSpawning) { this.renderSpawn(renderer); return; }
 
-    const px = this.position.x;
-    const py = this.position.y;
-    const pulse = 1 + Math.sin(this.pulseTimer * 0.003) * 0.08;
+    const instability = this.absorbedCount / BlackHole.MAX_ABSORB; // 0 to 1
+    const pulseAmp = 0.08 + instability * 0.15;
+    // Position jitter when unstable
+    const jitter = instability * 3;
+    const px = this.position.x + (jitter > 0 ? (Math.random() - 0.5) * 2 * jitter : 0);
+    const py = this.position.y + (jitter > 0 ? (Math.random() - 0.5) * 2 * jitter : 0);
+    const pulse = 1 + Math.sin(this.pulseTimer * 0.003) * pulseAmp;
     const baseR = this.collisionRadius;
+
+    // Color shift toward white-violet as instability grows
+    const coreColor: [number, number, number] = [
+      this.color[0] + (1 - this.color[0]) * instability * 0.6,
+      this.color[1] + (0.8 - this.color[1]) * instability * 0.6,
+      this.color[2] + (1 - this.color[2]) * instability * 0.6,
+    ];
 
     // Outer gravitational rings (rotating)
     for (let i = 0; i < 3; i++) {
@@ -83,16 +86,24 @@ export class BlackHole extends Enemy {
 
     // Inner accretion disk
     const diskR = baseR * pulse;
-    renderer.drawCircle(px, py, diskR, this.color, 24, 0.9);
+    renderer.drawCircle(px, py, diskR, coreColor, 24, 0.9);
     renderer.drawCircle(px, py, diskR * 0.7, this.color2, 20, 0.7);
 
     // Core shape (hexagon)
     const points = this.getWorldPoints();
-    renderer.drawLineLoop(points, this.color, 0.9);
+    renderer.drawLineLoop(points, coreColor, 0.9);
 
     // Bright core dot
     const coreB = 0.6 + Math.sin(this.pulseTimer * 0.005) * 0.3;
     renderer.drawCircle(px, py, 4, [coreB, coreB * 0.5, coreB], 8, 0.9);
+
+    // Danger ring when instability > 0.5
+    if (instability > 0.5) {
+      const dangerAlpha = (instability - 0.5) * 2; // 0-1 over the last half
+      const dangerPulse = 1 + Math.sin(this.pulseTimer * 0.008) * 0.15;
+      const dangerR = (baseR + 30) * dangerPulse;
+      renderer.drawCircle(px, py, dangerR, [1, 0.4, 0.4], 28, dangerAlpha * 0.5);
+    }
 
     // Absorption count indicator (small dots orbiting)
     for (let i = 0; i < this.absorbedCount; i++) {

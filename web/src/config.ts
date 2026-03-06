@@ -77,7 +77,7 @@ export const ENEMY_SPEED = {
   circle: 0.35,
   triangle: 0.2,
   octagon: 0.15,
-  blackhole: 0.06,
+  blackhole: 0,
   // --- New enemies ---
   sierpinski: 0.12,
   mobius: 0.18,
