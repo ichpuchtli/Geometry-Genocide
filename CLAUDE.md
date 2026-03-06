@@ -3,6 +3,8 @@
 > Context document for AI assistants working on this codebase.
 > Read this file, `PRD.md`, `ENEMY_DESIGNS.md`, and `TASKS.md` before making changes.
 
+**Workflow rule:** After each change, commit and push to master.
+
 ---
 
 ## What This Is

@@ -34,7 +34,6 @@ import {
   TRAIL_LENGTH_BULLET,
   MOBILE_TRAIL_LENGTH_ENEMY,
   MOBILE_TRAIL_LENGTH_BULLET,
-  MOBILE_ZOOM,
   BULLET_COLOR,
   DIFFICULTY_PHASES,
   SCREEN_SHAKE_SMALL,
@@ -162,13 +161,13 @@ export class Game {
     this.trailLenBullet = this.mobile ? MOBILE_TRAIL_LENGTH_BULLET : TRAIL_LENGTH_BULLET;
 
     this.renderer = new Renderer(gameCanvas);
-    if (this.mobile) {
-      this.renderer.zoom = MOBILE_ZOOM;
-    } else {
-      // Auto-fit: compute zoom so full arena fits with slight padding
+    {
       const cssW = gameCanvas.clientWidth;
       const cssH = gameCanvas.clientHeight;
-      this.renderer.zoom = Math.min(cssW / WORLD_WIDTH, cssH / WORLD_HEIGHT);
+      // Desktop: fit entire arena on screen (Math.min). Mobile: fill viewport edge-to-edge (Math.max).
+      this.renderer.zoom = this.mobile
+        ? Math.max(cssW / WORLD_WIDTH, cssH / WORLD_HEIGHT)
+        : Math.min(cssW / WORLD_WIDTH, cssH / WORLD_HEIGHT);
     }
     const gl = this.renderer.getGL();
 
@@ -220,10 +219,12 @@ export class Game {
   }
 
   private resize(): void {
-    if (!this.mobile) {
+    {
       const cssW = this.gameCanvas.clientWidth;
       const cssH = this.gameCanvas.clientHeight;
-      this.renderer.zoom = Math.min(cssW / WORLD_WIDTH, cssH / WORLD_HEIGHT);
+      this.renderer.zoom = this.mobile
+        ? Math.max(cssW / WORLD_WIDTH, cssH / WORLD_HEIGHT)
+        : Math.min(cssW / WORLD_WIDTH, cssH / WORLD_HEIGHT);
     }
     this.renderer.resize();
     this.camera.resize(this.renderer.width, this.renderer.height);
