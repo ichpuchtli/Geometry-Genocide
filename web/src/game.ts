@@ -34,6 +34,7 @@ import {
   TRAIL_LENGTH_BULLET,
   MOBILE_TRAIL_LENGTH_ENEMY,
   MOBILE_TRAIL_LENGTH_BULLET,
+  MOBILE_ZOOM,
   BULLET_COLOR,
   DIFFICULTY_PHASES,
   SCREEN_SHAKE_SMALL,
@@ -161,8 +162,10 @@ export class Game {
     this.trailLenBullet = this.mobile ? MOBILE_TRAIL_LENGTH_BULLET : TRAIL_LENGTH_BULLET;
 
     this.renderer = new Renderer(gameCanvas);
-    // Auto-fit: compute zoom so full arena fits with slight padding
-    {
+    if (this.mobile) {
+      this.renderer.zoom = MOBILE_ZOOM;
+    } else {
+      // Auto-fit: compute zoom so full arena fits with slight padding
       const cssW = gameCanvas.clientWidth;
       const cssH = gameCanvas.clientHeight;
       this.renderer.zoom = Math.min(cssW / WORLD_WIDTH, cssH / WORLD_HEIGHT) * 0.95;
@@ -178,7 +181,7 @@ export class Game {
     this.grid = new SpringMassGrid(gl, this.mobile);
     this.trails = new TrailSystem();
     this.camera = new Camera(this.renderer.width, this.renderer.height);
-    this.camera.fixedView = true;
+    this.camera.fixedView = !this.mobile;
     this.input = new Input(gameCanvas);
     this.input.setCamera(this.camera);
     this.audio = new AudioManager();
@@ -217,9 +220,11 @@ export class Game {
   }
 
   private resize(): void {
-    const cssW = this.gameCanvas.clientWidth;
-    const cssH = this.gameCanvas.clientHeight;
-    this.renderer.zoom = Math.min(cssW / WORLD_WIDTH, cssH / WORLD_HEIGHT) * 0.95;
+    if (!this.mobile) {
+      const cssW = this.gameCanvas.clientWidth;
+      const cssH = this.gameCanvas.clientHeight;
+      this.renderer.zoom = Math.min(cssW / WORLD_WIDTH, cssH / WORLD_HEIGHT) * 0.95;
+    }
     this.renderer.resize();
     this.camera.resize(this.renderer.width, this.renderer.height);
     this.bloom.resize(this.renderer.canvasWidth, this.renderer.canvasHeight);

@@ -200,6 +200,7 @@ export const TRAIL_LENGTH_ENEMY = 18;
 export const TRAIL_LENGTH_BULLET = 10;
 
 // --- Mobile ---
+export const MOBILE_ZOOM = 0.45; // tighter viewport so units are larger on small screens
 export const MOBILE_BLOOM_SCALE = 0.25; // bloom FBO at quarter-res on mobile
 export const MOBILE_MAX_ENEMIES = 80;
 export const MOBILE_MAX_PARTICLES = 30;
