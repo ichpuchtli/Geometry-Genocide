@@ -46,10 +46,13 @@
       font-family: monospace;
       font-size: 20px;
       z-index: 100;
-      justify-content: center;
+      justify-content: flex-start;
       align-items: center;
       text-align: center;
       flex-direction: column;
+      padding: 24px 0 40px;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
     }
     @media screen and (orientation: portrait) and (max-width: 768px) {
       #rotate-prompt { display: flex; }
@@ -59,7 +62,8 @@
 <body>
   <div id="rotate-prompt">
     <div>&#x21BB;</div>
-    <div style="margin-top: 16px;">Rotate your device<br/>to landscape mode</div>
+    <div style="margin-top: 16px;">Rotate to landscape to play</div>
+    <div id="settings-mount" style="margin-top: 20px; width: 100%;"></div>
   </div>
   <canvas id="game"></canvas>
   <canvas id="hud"></canvas>

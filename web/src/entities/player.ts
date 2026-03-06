@@ -12,6 +12,7 @@ import {
   WORLD_HEIGHT,
   WEAPON_STAGES,
 } from '../config';
+import { gameSettings } from '../settings';
 
 export class Player extends Entity {
   lives = PLAYER_STARTING_LIVES;
@@ -75,7 +76,7 @@ export class Player extends Entity {
 
     // Movement
     const dir = this.input.getMovementDir();
-    const speed = PLAYER_SPEED * this.slowFactor;
+    const speed = PLAYER_SPEED * gameSettings.playerSpeedMultiplier * this.slowFactor;
     this.velocity.set(dir.x * speed, dir.y * speed);
     this.move(dt);
 
@@ -99,7 +100,7 @@ export class Player extends Entity {
   tryShoot(): number[] | null {
     if (!this.shooting || this.shotTimer > 0) return null;
     const stage = this.getWeaponStage();
-    this.shotTimer = stage.shotDelay;
+    this.shotTimer = stage.shotDelay / gameSettings.fireRateMultiplier;
     return stage.angleOffsets.map(offset => this.aimAngle + (offset * Math.PI) / 180);
   }
 

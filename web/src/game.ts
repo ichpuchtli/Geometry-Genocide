@@ -72,6 +72,7 @@ import { Tesseract } from './entities/enemies/tesseract';
 import { Mandelbrot } from './entities/enemies/mandelbrot';
 import { MiniMandel } from './entities/enemies/minimandel';
 import { Klein } from './entities/enemies/klein';
+import { gameSettings } from './settings';
 
 type GameState = 'menu' | 'playing' | 'death_slowmo' | 'gameover';
 
@@ -81,8 +82,8 @@ function createEnemy(type: string, pos?: Vec2): Enemy {
     case 'rhombus': e = new Rhombus(); break;
     case 'pinwheel': e = new Pinwheel(); break;
     case 'square': e = new Square(); break;
-    case 'square2': e = new Square2(pos); return e;
-    case 'circle': e = new CircleEnemy(pos); return e;
+    case 'square2': e = new Square2(pos); e.speed *= gameSettings.enemySpeedMultiplier; return e;
+    case 'circle': e = new CircleEnemy(pos); e.speed *= gameSettings.enemySpeedMultiplier; return e;
     case 'triangle': e = new Triangle(); break;
     case 'octagon': e = new Octagon(); break;
     case 'blackhole': e = new BlackHole(); break;
@@ -91,13 +92,13 @@ function createEnemy(type: string, pos?: Vec2): Enemy {
     case 'mobius': e = new Mobius(); break;
     case 'koch': e = new Koch(); break;
     case 'penrose': e = new Penrose(); break;
-    case 'shard': e = new Shard(pos); return e;
+    case 'shard': e = new Shard(pos); e.speed *= gameSettings.enemySpeedMultiplier; return e;
     case 'sierpinski': e = new Sierpinski(); break;
     case 'mengerdust': e = new MengerDust(); break;
     case 'hyperbolicdisc': e = new HyperbolicDisc(); break;
     case 'tesseract': e = new Tesseract(); break;
     case 'mandelbrot': e = new Mandelbrot(); break;
-    case 'minimandel': { const m = new MiniMandel(pos); return m; }
+    case 'minimandel': { const m = new MiniMandel(pos); m.speed *= gameSettings.enemySpeedMultiplier; return m; }
     case 'klein': e = new Klein(); break;
     default: e = new Rhombus(); break;
   }
@@ -106,6 +107,7 @@ function createEnemy(type: string, pos?: Vec2): Enemy {
   } else {
     e.position.copyFrom(pos);
   }
+  e.speed *= gameSettings.enemySpeedMultiplier;
   return e;
 }
 
@@ -270,7 +272,15 @@ export class Game {
     this.grid.clear();
     this.bulletTrailIds.clear();
     this.waveManager.reset();
-    this.gameTime = 0;
+    this.player.lives = gameSettings.startingLives;
+    this.waveManager.spawnRateMultiplier = gameSettings.spawnRateMultiplier;
+    if (gameSettings.startingPhase !== 'tutorial') {
+      this.waveManager.jumpToPhase(gameSettings.startingPhase);
+      this.gameTime = (DIFFICULTY_PHASES as Record<string, { start: number; end: number }>)[gameSettings.startingPhase]?.start ?? 0;
+    } else {
+      this.gameTime = 0;
+    }
+    this.applyVisualSettings();
     this.camera.snapTo(this.player.position);
     this.hud.clear();
 
@@ -518,6 +528,7 @@ export class Game {
     // Spawn
     const spawns = this.waveManager.update(dt, this.player.position);
     for (const req of spawns) {
+      if (this.enemies.length >= gameSettings.maxEnemies && req.type !== 'deathstar') continue;
       if (req.type === 'deathstar') {
         this.deathstars.push(new DeathStar(this.player.position));
         this.audio.playSFX('deathstar');
@@ -1086,5 +1097,16 @@ export class Game {
   onOrientationResume(): void {
     this.audio.resume().catch(() => {});
     this.resize();
+    this.applyVisualSettings();
+  }
+
+  private applyVisualSettings(): void {
+    this.bloom.intensity = gameSettings.bloomIntensity;
+    this.trailLenEnemy = this.mobile
+      ? Math.min(gameSettings.trailLength, MOBILE_TRAIL_LENGTH_ENEMY)
+      : gameSettings.trailLength;
+    this.trailLenBullet = this.mobile
+      ? MOBILE_TRAIL_LENGTH_BULLET
+      : Math.min(gameSettings.trailLength, TRAIL_LENGTH_BULLET);
   }
 }

@@ -38,6 +38,7 @@ interface SpawnEvent {
 
 export class WaveManager {
   elapsedTime = 0; // seconds
+  spawnRateMultiplier = 1.0;
   private events: SpawnEvent[] = [];
   private spawnQueue: SpawnRequest[] = [];
   private queueTimer = 0;
@@ -64,7 +65,16 @@ export class WaveManager {
     this.burstTimer = 0;
     this.breatherTimer = 0;
     this.nextBurstIn = 30;
+    this.spawnRateMultiplier = 1.0;
     this.setupPhase('tutorial');
+  }
+
+  jumpToPhase(phase: string): void {
+    const p = DIFFICULTY_PHASES[phase as keyof typeof DIFFICULTY_PHASES];
+    if (p) {
+      this.elapsedTime = p.start;
+      this.setupPhase(phase);
+    }
   }
 
   get currentPhase(): string {
@@ -239,7 +249,7 @@ export class WaveManager {
       if (!event.enabled) continue;
       event.timer += dtSec;
 
-      const effectiveInterval = event.interval * intervalMultiplier;
+      const effectiveInterval = event.interval * intervalMultiplier * this.spawnRateMultiplier;
       if (event.timer >= effectiveInterval) {
         event.timer -= effectiveInterval;
         // Add some variance to next fire
