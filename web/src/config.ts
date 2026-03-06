@@ -200,7 +200,6 @@ export const TRAIL_LENGTH_ENEMY = 18;
 export const TRAIL_LENGTH_BULLET = 10;
 
 // --- Mobile ---
-export const MOBILE_ZOOM = 0.45; // zoom out on mobile to see more of the world
 export const MOBILE_BLOOM_SCALE = 0.25; // bloom FBO at quarter-res on mobile
 export const MOBILE_MAX_ENEMIES = 80;
 export const MOBILE_MAX_PARTICLES = 30;
@@ -221,7 +220,7 @@ export const ARENA_BORDER_CORNER_COLOR: [number, number, number] = [0.0, 1.0, 1.
 export const ARENA_BORDER_ALPHA = 0.9;
 
 // --- Death slowmo ---
-export const DEATH_SLOWMO_DURATION = 1800; // ms of real time
+export const DEATH_SLOWMO_DURATION = 4800; // ms of real time
 export const DEATH_SLOWMO_TIME_SCALE = 0.12; // how slow game runs during slowmo
 export const DEATH_SLOWMO_SHOCKWAVE_SPEED = 0.8; // px/ms expansion speed of kill shockwave
 

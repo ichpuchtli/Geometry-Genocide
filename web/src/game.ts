@@ -34,7 +34,6 @@ import {
   TRAIL_LENGTH_BULLET,
   MOBILE_TRAIL_LENGTH_ENEMY,
   MOBILE_TRAIL_LENGTH_BULLET,
-  MOBILE_ZOOM,
   BULLET_COLOR,
   DIFFICULTY_PHASES,
   SCREEN_SHAKE_SMALL,
@@ -154,6 +153,7 @@ export class Game {
   private slowmoTimer = 0;
   private slowmoShockwaveRadius = 0;
   private slowmoOrigin = new Vec2(0, 0);
+  private slowmoIsFinal = false; // true = game over after slowmo, false = respawn
 
   constructor(private gameCanvas: HTMLCanvasElement, hudCanvas: HTMLCanvasElement) {
     this.mobile = isMobile();
@@ -161,10 +161,8 @@ export class Game {
     this.trailLenBullet = this.mobile ? MOBILE_TRAIL_LENGTH_BULLET : TRAIL_LENGTH_BULLET;
 
     this.renderer = new Renderer(gameCanvas);
-    if (this.mobile) {
-      this.renderer.zoom = MOBILE_ZOOM;
-    } else {
-      // Auto-fit: compute zoom so full arena fits with slight padding
+    // Auto-fit: compute zoom so full arena fits with slight padding
+    {
       const cssW = gameCanvas.clientWidth;
       const cssH = gameCanvas.clientHeight;
       this.renderer.zoom = Math.min(cssW / WORLD_WIDTH, cssH / WORLD_HEIGHT) * 0.95;
@@ -180,7 +178,7 @@ export class Game {
     this.grid = new SpringMassGrid(gl, this.mobile);
     this.trails = new TrailSystem();
     this.camera = new Camera(this.renderer.width, this.renderer.height);
-    this.camera.fixedView = !this.mobile;
+    this.camera.fixedView = true;
     this.input = new Input(gameCanvas);
     this.input.setCamera(this.camera);
     this.audio = new AudioManager();
@@ -219,11 +217,9 @@ export class Game {
   }
 
   private resize(): void {
-    if (!this.mobile) {
-      const cssW = this.gameCanvas.clientWidth;
-      const cssH = this.gameCanvas.clientHeight;
-      this.renderer.zoom = Math.min(cssW / WORLD_WIDTH, cssH / WORLD_HEIGHT) * 0.95;
-    }
+    const cssW = this.gameCanvas.clientWidth;
+    const cssH = this.gameCanvas.clientHeight;
+    this.renderer.zoom = Math.min(cssW / WORLD_WIDTH, cssH / WORLD_HEIGHT) * 0.95;
     this.renderer.resize();
     this.camera.resize(this.renderer.width, this.renderer.height);
     this.bloom.resize(this.renderer.canvasWidth, this.renderer.canvasHeight);
@@ -246,7 +242,7 @@ export class Game {
         document.documentElement.requestFullscreen?.().catch(() => {});
       }
       this.startGame();
-    } else if (this.state === 'gameover' && this.gameOverTime >= 5) {
+    } else if (this.state === 'gameover' && this.gameOverTime >= 1) {
       if (this.mobile && !document.fullscreenElement) {
         document.documentElement.requestFullscreen?.().catch(() => {});
       }
@@ -772,6 +768,14 @@ export class Game {
   }
 
   private onPlayerDeath(): void {
+    // Reuse the death slowmo shockwave animation for game over
+    this.state = 'death_slowmo';
+    this.slowmoTimer = 0;
+    this.slowmoShockwaveRadius = 0;
+    this.slowmoOrigin = this.player.position.clone();
+    this.slowmoIsFinal = true; // flag: transitions to gameover, not respawn
+    this.player.active = false;
+
     const px = this.player.position.x;
     const py = this.player.position.y;
 
@@ -783,7 +787,7 @@ export class Game {
       EXPLOSION_DURATION_DEATH,
       0.2,
     );
-    // Secondary colored explosion ring (slightly delayed feel via slower speed)
+    // Secondary colored explosion ring
     this.explosions.spawn(
       px, py,
       [1, 0.4, 0.1],
@@ -794,20 +798,19 @@ export class Game {
 
     // Massive grid shockwave
     this.grid.applyImpulse(px, py, 1600, 500);
-    this.player.active = false;
     this.camera.shake(SCREEN_SHAKE_DEATH, 0.8);
-    this.state = 'gameover';
-    this.gameOverTime = 0;
-    // Clean up bullet trails only — keep enemy trails for the frozen scene
+
+    // Clean up bullet trails
     for (const [, tid] of this.bulletTrailIds) {
       this.trails.unregister(tid);
     }
     this.bulletTrailIds.clear();
+    this.bullets.clear();
+
     this.audio.playSFX('die');
     this.audio.stopMusic();
     this.haptics.death();
     if (!this.mobile) this.input.releasePointerLock();
-    this.hud.drawGameOver(this.player.score, this.player.enemiesKilled, this.gameTime);
   }
 
   private onPlayerRespawn(): void {
@@ -816,6 +819,7 @@ export class Game {
     this.slowmoTimer = 0;
     this.slowmoShockwaveRadius = 0;
     this.slowmoOrigin = this.player.position.clone();
+    this.slowmoIsFinal = false;
     this.player.active = false;
 
     // Initial hit explosion
@@ -917,17 +921,24 @@ export class Game {
 
     // End slowmo
     if (this.slowmoTimer >= DEATH_SLOWMO_DURATION) {
-      this.state = 'playing';
-      // Clear any remaining enemies
-      for (const e of this.enemies) {
-        if (e.trailId >= 0) this.trails.unregister(e.trailId);
+      if (this.slowmoIsFinal) {
+        // Transition to game over screen
+        this.state = 'gameover';
+        this.gameOverTime = 0;
+        this.hud.drawGameOver(this.player.score, this.player.enemiesKilled, this.gameTime);
+      } else {
+        // Respawn and continue playing
+        this.state = 'playing';
+        for (const e of this.enemies) {
+          if (e.trailId >= 0) this.trails.unregister(e.trailId);
+        }
+        this.enemies = [];
+        this.deathstars = [];
+        this.pendingSpawns = [];
+        this.player.respawn();
+        this.player.active = true;
+        this.camera.snapTo(this.player.position);
       }
-      this.enemies = [];
-      this.deathstars = [];
-      this.pendingSpawns = [];
-      this.player.respawn();
-      this.player.active = true;
-      this.camera.snapTo(this.player.position);
     }
   }
 
