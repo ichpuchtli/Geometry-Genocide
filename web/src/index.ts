@@ -3,7 +3,8 @@ import { loadSettings } from './settings';
 import { initSettingsPanel } from './ui/settings-panel';
 
 loadSettings();
-initSettingsPanel();
+const desktopSettingsMount = document.getElementById('desktop-settings');
+initSettingsPanel(desktopSettingsMount);
 
 const gameCanvas = document.getElementById('game') as HTMLCanvasElement;
 const hudCanvas = document.getElementById('hud') as HTMLCanvasElement;

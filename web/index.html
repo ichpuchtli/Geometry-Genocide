@@ -57,6 +57,19 @@
     @media screen and (orientation: portrait) and (max-width: 768px) {
       #rotate-prompt { display: flex; }
     }
+    #desktop-settings {
+      display: none;
+      position: fixed;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      max-height: 50vh;
+      overflow-y: auto;
+      z-index: 50;
+      padding-bottom: 20px;
+      pointer-events: auto;
+      cursor: default;
+    }
   </style>
 </head>
 <body>
@@ -67,6 +80,7 @@
   </div>
   <canvas id="game"></canvas>
   <canvas id="hud"></canvas>
+  <div id="desktop-settings"></div>
   <script type="module" src="/src/index.ts"></script>
   <script>
     if ('serviceWorker' in navigator) {

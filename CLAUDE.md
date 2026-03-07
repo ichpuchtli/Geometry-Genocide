@@ -110,7 +110,7 @@ web/src/
 │
 └── ui/
     ├── hud.ts                  # Score + lives overlay (2D canvas)
-    ├── settings-panel.ts       # Portrait settings panel for difficulty tuning on mobile
+    ├── settings-panel.ts       # Settings panel for difficulty tuning (mobile portrait + desktop menu/gameover)
     ├── virtual-joystick.ts     # Mobile twin-stick joysticks
     └── offscreen-indicators.ts # Edge arrows for off-screen enemies
 ```
@@ -263,6 +263,7 @@ Twin-stick virtual joysticks, responsive canvas, mobile performance optimization
 - Spring-mass grid rewrite, smaller arena (1600x1000), auto-fit zoom
 - Death slowmo mechanic reused for game over transition
 - BlackHole gravity fix: grid bending, enemy pull, player pull all retuned from imperceptible to visible levels. Grid anchor stiffness (50→15), damping (12→8), max displacement (60→120). BH enemy pull (0.18→1.5), player pull (0.4→2.5), grid mass (80→250). Grid physics now runtime-tunable via settings panel sliders.
+- Desktop settings panel: Settings panel (16 sliders + phase dropdown) now visible on desktop during menu and gameover states. DOM overlay at bottom-center of screen, hidden during gameplay. `settings-panel.ts` refactored to support multiple mount points (mobile `#settings-mount` + desktop `#desktop-settings`), with cross-instance sync on value changes. `game.ts` calls `showDesktopSettings()`/`hideDesktopSettings()` on state transitions (skipped on mobile).
 
 ### Phase 4 (Scores, Polish & Tuning) — Not Started
 localStorage leaderboard, screenshot-friendly game over screen, debug overlay, difficulty curve tuning, performance profiling, cross-browser testing. See `TASKS.md` for full checklist.

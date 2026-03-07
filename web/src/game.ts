@@ -60,6 +60,7 @@ import { BlackHole } from './entities/enemies/blackhole';
 import { Shard } from './entities/enemies/shard';
 import { Sierpinski } from './entities/enemies/sierpinski';
 import { gameSettings } from './settings';
+import { showDesktopSettings, hideDesktopSettings } from './ui/settings-panel';
 
 type GameState = 'menu' | 'playing' | 'death_slowmo' | 'gameover';
 
@@ -195,6 +196,7 @@ export class Game {
     this.resize();
     this.hud.setTouchMode(this.mobile);
     this.hud.drawMenu();
+    if (!this.mobile) showDesktopSettings();
   }
 
   private resize(): void {
@@ -239,6 +241,7 @@ export class Game {
 
   private startGame(): void {
     this.state = 'playing';
+    if (!this.mobile) hideDesktopSettings();
     this.player.reset();
     this.bullets.clear();
     this.enemies = [];
@@ -841,6 +844,7 @@ export class Game {
         this.state = 'gameover';
         this.gameOverTime = 0;
         this.hud.drawGameOver(this.player.score, this.player.enemiesKilled, this.gameTime);
+        if (!this.mobile) showDesktopSettings();
       } else {
         // Respawn and continue playing
         this.state = 'playing';
