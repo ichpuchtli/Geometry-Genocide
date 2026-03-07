@@ -49,6 +49,9 @@ import {
   DEATH_SLOWMO_SHOCKWAVE_SPEED,
   MIN_SPAWN_DISTANCE,
   SPAWN_DURATION_AMBUSH,
+  BLACKHOLE_PLAYER_PULL_STRENGTH,
+  BLACKHOLE_LENSING_BASE,
+  BLACKHOLE_LENSING_PER_ABSORB,
 } from './config';
 
 // Enemy factory imports
@@ -299,8 +302,8 @@ export class Game {
       if (e instanceof Octagon) {
         this.grid.applyGravityWell(e.position.x, e.position.y, -30, 280);
       } else if (e instanceof BlackHole) {
-        const mass = -(60 + e.absorbedCount * 12);
-        this.grid.applyGravityWell(e.position.x, e.position.y, mass, BlackHole.ATTRACT_RADIUS * 1.5);
+        const mass = -(80 + e.absorbedCount * 18);
+        this.grid.applyGravityWell(e.position.x, e.position.y, mass, BlackHole.ATTRACT_RADIUS * 2.0);
       }
     }
     for (const ds of this.deathstars) {
@@ -338,6 +341,43 @@ export class Game {
           this.explosions.spawn(e.position.x, e.position.y, e.color, 15, 0.6);
           this.grid.applyImpulse(e.position.x, e.position.y, -20, 120);
           this.haptics.absorb();
+
+          // Auto-explode on overload
+          if (bh.overloaded) {
+            bh.active = false;
+            const absorbed = bh.absorbedCount;
+            // Spawn circles radially
+            for (let ci = 0; ci < absorbed; ci++) {
+              const angle = (ci / absorbed) * Math.PI * 2;
+              const dist = 50 + Math.random() * 40;
+              const cPos = new Vec2(
+                bh.position.x + Math.cos(angle) * dist,
+                bh.position.y + Math.sin(angle) * dist,
+              );
+              const ce = createEnemy('circle', cPos);
+              ce.trailId = this.trails.register(ce.color, this.trailLenEnemy);
+              this.enemies.push(ce);
+            }
+            // Massive explosion
+            this.explosions.spawn(
+              bh.position.x, bh.position.y, bh.color,
+              this.mobile ? 100 : 200,
+              EXPLOSION_DURATION_LARGE,
+            );
+            // White flash particles
+            this.explosions.spawn(
+              bh.position.x, bh.position.y, [1, 1, 1],
+              this.mobile ? 40 : 80,
+              EXPLOSION_DURATION_LARGE * 0.6,
+            );
+            this.grid.applyImpulse(bh.position.x, bh.position.y, 1200, 400);
+            this.camera.shake(SCREEN_SHAKE_DEATH);
+            this.audio.playBlackHoleDeath(absorbed);
+            this.player.score += bh.scoreValue;
+            this.player.enemiesKilled++;
+            if (bh.trailId >= 0) this.trails.unregister(bh.trailId);
+            this.haptics.heavy();
+          }
           continue;
         }
 
@@ -350,6 +390,30 @@ export class Game {
         }
       }
     }
+  }
+
+  /** Pull player toward active BlackHoles */
+  private applyBlackHolePlayerPull(dt: number): void {
+    const hw = WORLD_WIDTH / 2;
+    const hh = WORLD_HEIGHT / 2;
+    for (const e of this.enemies) {
+      if (!e.active || e.isSpawning || !(e instanceof BlackHole)) continue;
+      const dx = e.position.x - this.player.position.x;
+      const dy = e.position.y - this.player.position.y;
+      const dist2 = dx * dx + dy * dy;
+      const attractR = BlackHole.ATTRACT_RADIUS;
+      if (dist2 < attractR * attractR && dist2 > 1) {
+        const dist = Math.sqrt(dist2);
+        const force = BLACKHOLE_PLAYER_PULL_STRENGTH * (1 + e.absorbedCount * 0.08) * dt / dist;
+        this.player.position.x += dx / dist * force;
+        this.player.position.y += dy / dist * force;
+      }
+    }
+    // Re-clamp player to world bounds
+    if (this.player.position.x < -hw) this.player.position.x = -hw;
+    if (this.player.position.x > hw) this.player.position.x = hw;
+    if (this.player.position.y < -hh) this.player.position.y = -hh;
+    if (this.player.position.y > hh) this.player.position.y = hh;
   }
 
   /** Update during game over: keep enemies alive with idle animation + gravity */
@@ -438,6 +502,7 @@ export class Game {
 
     // Player
     this.player.update(dt);
+    this.applyBlackHolePlayerPull(dt);
 
     // Shooting
     const shots = this.player.tryShoot();
@@ -981,7 +1046,7 @@ export class Game {
       // World-to-UV: uv = (worldPos - camera) / viewSize + 0.5
       const uvX = (e.position.x - cameraX) / this.renderer.width + 0.5;
       const uvY = (e.position.y - cameraY) / this.renderer.height + 0.5;
-      const strength = 1 + (e as BlackHole).absorbedCount * 0.15;
+      const strength = BLACKHOLE_LENSING_BASE + (e as BlackHole).absorbedCount * BLACKHOLE_LENSING_PER_ABSORB;
       this.bloom.gravityWells.push({ x: uvX, y: uvY, strength });
       if (this.bloom.gravityWells.length >= 4) break;
     }

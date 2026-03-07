@@ -38,10 +38,10 @@ void main() {
         float d = length(delta);
 
         // Einstein ring distortion: deflect UV radially around the well
-        float radius = 0.08 * strength;
+        float radius = min(0.20 * strength, 0.5);
         if (d < radius && d > 0.001) {
             float falloff = 1.0 - d / radius;
-            float deflection = strength * 0.03 * falloff * falloff / (d + 0.01);
+            float deflection = strength * 0.08 * falloff * falloff / (d + 0.01);
             delta.x /= u_aspectRatio; // undo aspect correction for offset
             lensedUV += normalize(delta) * deflection;
         }
@@ -49,8 +49,22 @@ void main() {
     // Clamp to prevent sampling outside texture
     lensedUV = clamp(lensedUV, 0.0, 1.0);
 
-    // --- Chromatic aberration (RGB channel split driven by shake) ---
-    float aberration = u_shakeIntensity * 0.008 + 0.001;
+    // --- Per-well gravitational chromatic aberration ---
+    float gravAberration = 0.0;
+    for (int i = 0; i < 4; i++) {
+        if (i >= u_wellCount) break;
+        vec2 gDelta = lensedUV - u_wells[i].xy;
+        gDelta.x *= u_aspectRatio;
+        float gd = length(gDelta);
+        float gr = min(0.20 * u_wells[i].z, 0.5);
+        if (gd < gr) {
+            float gFalloff = 1.0 - gd / gr;
+            gravAberration += u_wells[i].z * 0.006 * gFalloff * gFalloff;
+        }
+    }
+
+    // --- Chromatic aberration (RGB channel split driven by shake + gravity) ---
+    float aberration = u_shakeIntensity * 0.008 + 0.001 + gravAberration;
     vec2 dir = normalize(centered + 0.001);
     float r = texture2D(u_scene, lensedUV + dir * aberration).r;
     float g = texture2D(u_scene, lensedUV).g;
