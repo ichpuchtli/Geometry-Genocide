@@ -49,8 +49,6 @@ import {
   MIN_SPAWN_DISTANCE,
   SPAWN_DURATION_AMBUSH,
   BLACKHOLE_PLAYER_PULL_STRENGTH,
-  BLACKHOLE_LENSING_BASE,
-  BLACKHOLE_LENSING_PER_ABSORB,
 } from './config';
 
 // Enemy factory imports
@@ -929,19 +927,6 @@ export class Game {
     // setBlendMode('normal') flushes additive batch and restores blend func
     this.renderer.setBlendMode('normal');
     this.renderer.end();
-
-    // --- Populate gravitational lensing wells from active BlackHoles ---
-    this.bloom.gravityWells = [];
-    this.bloom.aspectRatio = this.renderer.canvasWidth / this.renderer.canvasHeight;
-    for (const e of this.enemies) {
-      if (!e.active || e.isSpawning || !(e instanceof BlackHole)) continue;
-      // World-to-UV: uv = (worldPos - camera) / viewSize + 0.5
-      const uvX = (e.position.x - cameraX) / this.renderer.width + 0.5;
-      const uvY = (e.position.y - cameraY) / this.renderer.height + 0.5;
-      const strength = BLACKHOLE_LENSING_BASE + (e as BlackHole).absorbedCount * BLACKHOLE_LENSING_PER_ABSORB;
-      this.bloom.gravityWells.push({ x: uvX, y: uvY, strength });
-      if (this.bloom.gravityWells.length >= 4) break;
-    }
 
     // --- Bloom post-process: scene FBO -> screen ---
     this.bloom.apply(this.renderer.canvasWidth, this.renderer.canvasHeight);

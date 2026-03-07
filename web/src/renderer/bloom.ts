@@ -36,9 +36,6 @@ export class BloomPass {
   shakeIntensity = 0; // 0-1, drives chromatic aberration + barrel warp
   time = 0;
 
-  // Gravitational lensing (populated by game.ts from active BlackHoles)
-  gravityWells: { x: number; y: number; strength: number }[] = [];
-  aspectRatio = 1;
 
   constructor(gl: WebGLRenderingContext) {
     this.gl = gl;
@@ -163,15 +160,6 @@ export class BloomPass {
     gl.uniform1f(gl.getUniformLocation(this.compositeProgram, 'u_bloomIntensity'), this.intensity);
     gl.uniform1f(gl.getUniformLocation(this.compositeProgram, 'u_shakeIntensity'), this.shakeIntensity);
     gl.uniform1f(gl.getUniformLocation(this.compositeProgram, 'u_time'), this.time);
-
-    // Gravitational lensing uniforms
-    const wellCount = Math.min(this.gravityWells.length, 4);
-    gl.uniform1i(gl.getUniformLocation(this.compositeProgram, 'u_wellCount'), wellCount);
-    gl.uniform1f(gl.getUniformLocation(this.compositeProgram, 'u_aspectRatio'), this.aspectRatio);
-    for (let i = 0; i < wellCount; i++) {
-      const w = this.gravityWells[i];
-      gl.uniform3f(gl.getUniformLocation(this.compositeProgram, `u_wells[${i}]`), w.x, w.y, w.strength);
-    }
 
     this.drawQuad(this.compositeProgram);
 

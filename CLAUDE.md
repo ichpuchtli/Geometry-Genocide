@@ -21,11 +21,11 @@ The game runs entirely client-side. No backend. No external dependencies at runt
 
 The core experience is **neon chaos** — dozens to hundreds of geometric enemies swarming the player in a scrolling arena, with Geometry Wars-level visual spectacle (bloom, reactive grid, particle trails, screen shake). The difficulty curve should feel like:
 
-- **0-45s (Tutorial):** Gentle. Learn to move and shoot. Just rhombus + pinwheel.
-- **45-150s (Ramp Up):** Swarms start. FibSpiral and Mobius appear. 20-40 enemies on screen.
-- **150-300s (Mid Game):** Formations (surround, pincer, wall). Koch, Penrose, Sierpinski. 30-60 enemies.
-- **300-480s (Intense):** Ambush spawns. Tesseract, Klein, HyperbolicDisc. 40-80 enemies.
-- **480s+ (Chaos):** Maximum spawn rates. Mandelbrot and MengerDust. Screen constantly full.
+- **0-30s (Tutorial):** Gentle. Learn to move and shoot. Rhombus, pinwheel, rare blackhole.
+- **30-120s (Ramp Up):** Swarms + walls start. Square and blackhole added. 20-40 enemies on screen.
+- **120-240s (Mid Game):** Formations (surround, pincer, wall). Triangle, sierpinski, blackhole. 30-60 enemies.
+- **240-400s (Intense):** Ambush + cascade spawns. All types at higher rates. 40-80 enemies.
+- **400s+ (Chaos):** Maximum spawn rates. Circle added to pools. Screen constantly full.
 
 The cadence system alternates between **burst windows** (double spawn rates for 5-10s) and **breathers** (only trickle spawns for 3-5s) to create tension/release rhythm. This is critical to the feel.
 
@@ -51,7 +51,7 @@ Player has 5 lives. Weapon auto-upgrades at score milestones (single → faster 
 ```
 web/src/
 ├── index.ts                    # Entry point, creates Engine + Game
-├── game.ts                     # Main game loop, state machine, orchestrator (~900 lines)
+├── game.ts                     # Main game loop, state machine, orchestrator (~1030 lines)
 ├── config.ts                   # ALL tunable constants (speeds, colors, HP, spawn rates, etc.)
 ├── glsl.d.ts                   # TypeScript declarations for GLSL imports
 │
@@ -59,7 +59,7 @@ web/src/
 │   ├── vector.ts               # Vec2 class (immutable-style math)
 │   ├── camera.ts               # Camera follow + screen shake
 │   ├── input.ts                # Keyboard/mouse/touch unified input
-│   ├── collision.ts            # Bullet↔enemy, player↔enemy, deathstar interactions
+│   ├── collision.ts            # Bullet↔enemy, player↔enemy collision
 │   ├── audio.ts                # AudioManager (SFX + ProceduralMusic)
 │   └── haptics.ts              # Vibration API wrapper
 │
@@ -76,37 +76,39 @@ web/src/
 │   ├── player.ts               # Player ship (movement, shooting, lives, weapon progression)
 │   ├── bullet.ts               # BulletPool with object pooling
 │   ├── explosion.ts            # ExplosionPool with line particles
-│   ├── crosshair.ts            # Mouse reticle (desktop only)
+│   ├── crosshair.ts            # Aim chevron indicator (directional arrow near player)
 │   └── enemies/
 │       ├── enemy.ts            # Base Enemy (follow, bounce, attack, spawnAtEdge, onBulletHit)
 │       │                       #   onBulletHit returns 'damage' | 'absorb' | 'reflect'
 │       ├── rhombus.ts          # Tier 1 — basic tracker
 │       ├── pinwheel.ts         # Tier 1 — bouncer
 │       ├── square.ts           # Tier 2 — splits into Square2 children
-│       ├── circle.ts           # Tier 2 — fast, spawned by Triangle/Octagon/DeathStar
+│       ├── circle.ts           # Tier 2 — fast, spawned by Triangle on death
 │       ├── triangle.ts         # Tier 2 — bounces, spawns Circles on death
-│       ├── octagon.ts          # Tier 3 — predictive aim, 3 HP, spawns Circles on death
-│       ├── blackhole.ts        # Tier 3 — absorbs nearby enemies, grows stronger
-│       ├── deathstar.ts        # Boss — 20 HP, attracts enemies, spawns Circles
-│       ├── fibspiral.ts        # Tier 2 — logarithmic spiral toward player, fast
-│       ├── mobius.ts           # Tier 2 — orbits player, periodic immunity phase
-│       ├── koch.ts             # Tier 3 — ice trails that slow player, periodic dash
-│       ├── penrose.ts          # Tier 3 — teleports every 4-5s with ghost afterimage
+│       ├── blackhole.ts        # Tier 3 — stationary, pulls player + absorbs enemies, overload explosion
 │       ├── sierpinski.ts       # Tier 3 — fractal breakup on hit, spawns Shards on death
 │       ├── shard.ts            # Child — tiny fast triangle from Sierpinski death
-│       ├── mengerdust.ts       # Tier 5 — absorbs first 3 bullets, overload window
-│       ├── hyperbolicdisc.ts   # Tier 4 — warps nearby bullet trajectories
-│       ├── tesseract.ts        # Tier 4 — dimensional phase (halved hitbox + 2x speed)
-│       ├── mandelbrot.ts       # Tier 5 — boss-tier, spawns MiniMandel minions
-│       ├── minimandel.ts       # Child — fast tracker spawned by Mandelbrot
-│       └── klein.ts            # Tier 4 — reflects bullets from wrong angles
+│       │                       # --- Files below exist but are NOT wired into spawner ---
+│       ├── fibspiral.ts        # (unwired) logarithmic spiral toward player
+│       ├── mobius.ts           # (unwired) orbits player, periodic immunity phase
+│       ├── koch.ts             # (unwired) ice trails that slow player
+│       ├── penrose.ts          # (unwired) teleports every 4-5s
+│       ├── mengerdust.ts       # (unwired) absorbs first 3 bullets
+│       ├── hyperbolicdisc.ts   # (unwired) warps nearby bullet trajectories
+│       ├── tesseract.ts        # (unwired) dimensional phase
+│       ├── mandelbrot.ts       # (unwired) boss-tier, spawns MiniMandel minions
+│       ├── minimandel.ts       # (unwired) fast tracker spawned by Mandelbrot
+│       └── klein.ts            # (unwired) reflects bullets from wrong angles
 │
 ├── spawner/
 │   ├── spawn-patterns.ts       # Enemy pools, formation generators (swarm/surround/wall/etc.)
 │   └── wave-manager.ts         # Event-based spawn scheduler with cadence (burst/breather)
 │
+├── settings.ts                 # Game settings / difficulty tuning state
+│
 └── ui/
     ├── hud.ts                  # Score + lives overlay (2D canvas)
+    ├── settings-panel.ts       # Portrait settings panel for difficulty tuning on mobile
     ├── virtual-joystick.ts     # Mobile twin-stick joysticks
     └── offscreen-indicators.ts # Edge arrows for off-screen enemies
 ```
@@ -120,17 +122,15 @@ web/src/
 The `Game` class is the orchestrator. `update(dt)` runs every frame:
 
 1. Player movement + shooting
-2. Bullet pool update
-3. DeathStar attraction (redirects enemy movement)
-4. BlackHole attraction (pulls + absorbs nearby enemies)
+2. BlackHole player pull (gravity toward nearby blackholes)
+3. Bullet pool update + trail bookkeeping
+4. BlackHole enemy attraction (pulls + absorbs nearby enemies)
 5. Enemy AI updates (each enemy type has its own `update()`)
 6. Wave manager produces `SpawnRequest[]` → enemies instantiated via `createEnemy()` factory
-7. HyperbolicDisc bullet warping (bends bullets toward disc centers)
-8. Koch ice trail collision (slows player)
-9. Mandelbrot minion spawning (drains `pendingMinions` queue)
-10. Collision detection → kill processing → child spawning
-11. Explosion + grid + camera updates
-12. Music intensity adjustment
+7. Collision detection → kill processing → child spawning
+8. Staggered spawn queue processing (theatrical child spawns)
+9. Explosion + grid physics + gravity wells + camera updates
+10. Music intensity adjustment
 
 `render()` draws: grid → starfield → entities (normal blend) → trails + explosions (additive blend) → bloom post-process → HUD overlay.
 
@@ -142,7 +142,7 @@ Scene FBO → Bloom (brightness extract → blur passes → composite with chrom
 
 - `Renderer` (sprite-batch.ts) batches all line/triangle draws per frame
 - Bloom uses ping-pong framebuffers, half-res on mobile (2 passes instead of 6)
-- Grid renders with its own shader, supports gravity wells from Octagon/BlackHole/DeathStar/HyperbolicDisc
+- Grid renders with its own shader, supports gravity wells from BlackHole
 - Trails are ring buffers rendered as fading line segments with additive blending
 
 ### Enemy System
@@ -155,10 +155,7 @@ All enemies extend `Enemy` (which extends `Entity`). Key methods:
 - `onDeath()` → `EnemyDeathResult` — optional child spawning
 
 Special mechanics are handled in `game.ts` rather than in enemy classes:
-- **HyperbolicDisc** bullet warping: game.ts iterates bullets near discs
-- **Koch** ice trails: game.ts checks player distance to trail segments
-- **Mandelbrot** minion spawning: game.ts drains `pendingMinions` queue
-- **BlackHole** absorption: game.ts `applyBlackHoleAttraction()`
+- **BlackHole** attraction + absorption: game.ts `applyBlackHoleAttraction()` + `applyBlackHolePlayerPull()`
 
 ### Spawn System
 
@@ -168,7 +165,7 @@ Special mechanics are handled in `game.ts` rather than in enemy classes:
 - Min/max count
 - Handler function that returns `SpawnRequest[]`
 
-Events: `trickle`, `swarm`, `squad`, `wall`, `surround`, `pincer`, `ambush`, `cascade`, `boss`
+Events: `trickle`, `swarm`, `squad`, `wall`, `surround`, `pincer`, `ambush`, `cascade`
 
 Cadence system overlaid on top: burst windows (0.5x intervals) alternate with breathers (only trickle fires).
 
@@ -180,10 +177,7 @@ Formation generators (`generateSwarm`, `generateSurround`, etc.) compute positio
 
 Simple circle-circle in `collision.ts`. No spatial partitioning (not needed yet — O(bullets * enemies) is fast enough at current scale).
 
-The `onBulletHit()` virtual method allows enemies to override bullet interaction:
-- `Klein` reflects bullets from outside its safe arc
-- `MengerDust` absorbs bullets until overloaded
-- `Mobius` is immune during phase shift (handled in its own update, makes itself untargetable)
+The `onBulletHit()` virtual method allows enemies to override bullet interaction (currently only the default `'damage'` is used by active enemies, but `'absorb'` and `'reflect'` are supported for unwired enemy types).
 
 ### Config System
 
@@ -202,7 +196,7 @@ The `onBulletHit()` virtual method allows enemies to override bullet interaction
 ### Audio System
 
 - **SFX:** 11 WAV files loaded via Web Audio API. `playSFX(name)` creates a new AudioBufferSourceNode each call.
-- **Music:** 4-layer procedural synthwave (bass pad, rhythm, arpeggio, lead). Layers cross-fade based on a 0-1 intensity value computed from game state. Intensity scales with difficulty phase + enemy count + boss presence.
+- **Music:** 4-layer procedural synthwave (bass pad, rhythm, arpeggio, lead). Layers cross-fade based on a 0-1 intensity value computed from game state. Intensity scales with difficulty phase + enemy count.
 - Safari quirk: AudioContext must be created/resumed on user gesture.
 
 ---
@@ -237,7 +231,7 @@ Deployment: push to `main` → GitHub Actions builds and deploys to GitHub Pages
 ## Development History & Completed Phases
 
 ### Phase 1 (MVP) — Complete
-Project scaffolding, WebGL renderer, player, bullets, all 7 original enemies + DeathStar, collision detection, wave spawner, explosions, scrolling world with camera, game states, HUD, CI/CD.
+Project scaffolding, WebGL renderer, player, bullets, original enemies (rhombus, pinwheel, square, circle, triangle), collision detection, wave spawner, explosions, scrolling world with camera, game states, HUD, CI/CD.
 
 ### Phase 2 (Visual Polish) — Complete
 Bloom post-processing, reactive background grid with displacement, particle trails, entity rendering polish (double-line, fusion circles), off-screen indicators, styled UI, crosshair.
@@ -245,8 +239,19 @@ Bloom post-processing, reactive background grid with displacement, particle trai
 ### Phase 3 (Mobile & Audio) — Complete
 Twin-stick virtual joysticks, responsive canvas, mobile performance optimizations (half-res bloom, reduced particles/trails), all 11 SFX via Web Audio API, procedural 4-layer adaptive music, audio controls with M key mute, Safari audio handling.
 
-### New Enemies Expansion — Complete
-10 new fractal/topology enemies (Sierpinski, Mobius, Koch, Penrose, MengerDust, HyperbolicDisc, FibSpiral, Tesseract, Mandelbrot, Klein) plus 2 child types (Shard, MiniMandel). Complete spawn system overhaul with event-based scheduler, 7 formation types, cadence system, and 5-phase difficulty curve.
+### New Enemies Expansion — Complete (then pruned)
+10 new enemy source files created (Sierpinski, Mobius, Koch, Penrose, MengerDust, HyperbolicDisc, FibSpiral, Tesseract, Mandelbrot, Klein) plus 2 child types (Shard, MiniMandel). Complete spawn system overhaul with event-based scheduler, 7 formation types, cadence system, and 5-phase difficulty curve. Subsequently, 9 gimmick enemies were unwired from the spawn system to focus on Geometry Wars-style swarm + gravity well gameplay. Only Sierpinski (+Shard child) remains active from this expansion. Octagon and DeathStar were deleted entirely.
+
+### Post-expansion Polish — Complete
+- Mobile viewport fixes: edge-to-edge zoom, camera follow, iOS PWA safe area, 100dvh
+- Settings panel for difficulty tuning (spawn rate, lives, speed, fire rate, phase skip)
+- Spawn animation rework (theatrical grow-in, staggered child spawns)
+- Player ship redesign as Geometry Wars-style claw/pincer
+- Mouse-position aiming (replaced pointer-lock rotational aim)
+- BlackHole overhaul: stationary, player gravitational pull, shrink-per-bullet, overload explosion, gravitational lensing, electric blue-white plasma visuals, procedural death SFX
+- Octagon & DeathStar removal (redundant with BlackHole)
+- Spring-mass grid rewrite, smaller arena (1600x1000), auto-fit zoom
+- Death slowmo mechanic reused for game over transition
 
 ### Phase 4 (Scores, Polish & Tuning) — Not Started
 localStorage leaderboard, screenshot-friendly game over screen, debug overlay, difficulty curve tuning, performance profiling, cross-browser testing. See `TASKS.md` for full checklist.
@@ -258,7 +263,7 @@ localStorage leaderboard, screenshot-friendly game over screen, debug overlay, d
 - **WAV audio files** are large; could convert to OGG/MP3 for smaller bundle
 - **Procedural music** uses setTimeout scheduling, not AudioContext scheduler — may drift slightly
 - **No spatial partitioning** for collision — works fine now but could become a bottleneck at 100+ enemies with 200 bullets (16,000+ checks/frame). Add grid-based spatial hash if profiling shows issues
-- **Reflected bullets (Klein)** reverse direction but don't become hostile to the player — they just bounce away. Full hostile-bullet-vs-player collision not implemented
+- **10 unwired enemy source files** exist (fibspiral, mobius, koch, penrose, mengerdust, hyperbolicdisc, tesseract, mandelbrot, minimandel, klein) — can be re-enabled by adding to `EnemyType`, `createEnemy()`, and spawn pool arrays
 - **No leaderboard** yet (Phase 4)
 - **No debug overlay** yet (Phase 4)
 
@@ -275,7 +280,7 @@ localStorage leaderboard, screenshot-friendly game over screen, debug overlay, d
 ## Important Conventions
 
 - **All constants in config.ts.** If you add a new tunable value, put it there.
-- **Enemy classes are self-contained.** Each enemy file defines its own shape, colors, AI, and rendering. Special cross-system mechanics (bullet warping, trail collision) are wired in `game.ts`.
+- **Enemy classes are self-contained.** Each enemy file defines its own shape, colors, AI, and rendering. Special cross-system mechanics (BlackHole attraction) are wired in `game.ts`.
 - **Object pooling** for bullets and explosions. Enemies are not pooled (created/destroyed via array filter).
 - **Additive blending** for trails and explosions. Normal blending for entities.
 - **Mobile detection** via `'ontouchstart' in window`. Mobile gets: reduced bloom passes, smaller particle counts, shorter trails, different zoom level.
