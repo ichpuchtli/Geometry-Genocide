@@ -3,6 +3,9 @@ import {
   BLOOM_INTENSITY,
   TRAIL_LENGTH_ENEMY,
   MOBILE_MAX_ENEMIES,
+  GRID_ANCHOR_STIFFNESS,
+  GRID_SPRING_DAMPING,
+  GRID_MAX_DISPLACEMENT,
 } from './config';
 
 export interface GameSettings {
@@ -17,11 +20,15 @@ export interface GameSettings {
   trailLength: number;            // 2–30
   // BlackHole gravity tuning
   bhAttractRadius: number;        // 50–600 (px, how far gravity reaches)
-  bhEnemyPull: number;            // 0.01–0.5 (px/ms², enemy pull strength)
-  bhPlayerPull: number;           // 0.0–1.0 (px/ms², player pull strength)
-  bhGridMassBase: number;         // 0–300 (grid well depth at 0 absorbed)
-  bhGridMassPerAbsorb: number;    // 0–60 (additional grid depth per absorbed enemy)
-  bhGridRadiusMultiplier: number; // 0.5–4.0 (grid well radius as multiple of attract radius)
+  bhEnemyPull: number;            // 0.1–5.0 (px/ms², enemy pull strength)
+  bhPlayerPull: number;           // 0.0–5.0 (px/ms², player pull strength)
+  bhGridMassBase: number;         // 0–500 (grid well depth at 0 absorbed)
+  bhGridMassPerAbsorb: number;    // 0–100 (additional grid depth per absorbed enemy)
+  bhGridRadiusMultiplier: number; // 0.5–5.0 (grid well radius as multiple of attract radius)
+  // Grid physics tuning
+  gridAnchorStiffness: number;    // 1–100 (spring return-to-rest strength)
+  gridDamping: number;            // 1–20 (velocity damping)
+  gridMaxDisplacement: number;    // 20–200 (max px displacement from rest)
 }
 
 export const DEFAULTS: GameSettings = {
@@ -35,11 +42,14 @@ export const DEFAULTS: GameSettings = {
   bloomIntensity: BLOOM_INTENSITY,
   trailLength: TRAIL_LENGTH_ENEMY,
   bhAttractRadius: 300,
-  bhEnemyPull: 0.18,
-  bhPlayerPull: 0.4,
-  bhGridMassBase: 80,
-  bhGridMassPerAbsorb: 18,
-  bhGridRadiusMultiplier: 2.0,
+  bhEnemyPull: 1.5,
+  bhPlayerPull: 2.5,
+  bhGridMassBase: 250,
+  bhGridMassPerAbsorb: 40,
+  bhGridRadiusMultiplier: 2.5,
+  gridAnchorStiffness: GRID_ANCHOR_STIFFNESS,
+  gridDamping: GRID_SPRING_DAMPING,
+  gridMaxDisplacement: GRID_MAX_DISPLACEMENT,
 };
 
 const STORAGE_KEY = 'gg_settings';

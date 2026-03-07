@@ -3,10 +3,11 @@ import gridVert from './shaders/grid.vert';
 import gridFrag from './shaders/grid.frag';
 import {
   WORLD_WIDTH, WORLD_HEIGHT,
-  GRID_SPACING, GRID_SPRING_STIFFNESS, GRID_SPRING_DAMPING,
-  GRID_ANCHOR_STIFFNESS, GRID_MAX_DISPLACEMENT, GRID_SUBSTEPS,
+  GRID_SPACING, GRID_SPRING_STIFFNESS,
+  GRID_SUBSTEPS,
   GRID_MOBILE_SUBSTEPS, GRID_COLOR_BASE, GRID_COLOR_STRETCH, GRID_COLOR_COMPRESS,
 } from '../config';
+import { gameSettings } from '../settings';
 
 const cols = Math.floor(WORLD_WIDTH / GRID_SPACING) + 1;
 const rows = Math.floor(WORLD_HEIGHT / GRID_SPACING) + 1;
@@ -148,9 +149,9 @@ export class SpringMassGrid {
     const substeps = this.substeps;
     const subDt = dt / 1000 / substeps;
     const k = GRID_SPRING_STIFFNESS;
-    const anchorK = GRID_ANCHOR_STIFFNESS;
-    const damping = GRID_SPRING_DAMPING;
-    const maxDisp = GRID_MAX_DISPLACEMENT;
+    const anchorK = gameSettings.gridAnchorStiffness;
+    const damping = gameSettings.gridDamping;
+    const maxDisp = gameSettings.gridMaxDisplacement;
     const spacing = GRID_SPACING;
 
     for (let s = 0; s < substeps; s++) {

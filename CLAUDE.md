@@ -3,7 +3,9 @@
 > Context document for AI assistants working on this codebase.
 > Read this file, `PRD.md`, `ENEMY_DESIGNS.md`, and `TASKS.md` before making changes.
 
-**Workflow rule:** After each change, commit and push to master.
+**Workflow rules:**
+1. After each change, commit and push to master.
+2. **MANDATORY: Update this CLAUDE.md file** after every code change to reflect the current state of the codebase. This includes: new/changed config values, new settings, architectural changes, new files, completed work items, and any other information that would help a future AI assistant understand the codebase. This update must be part of the same commit as the code change.
 
 ---
 
@@ -181,17 +183,25 @@ The `onBulletHit()` virtual method allows enemies to override bullet interaction
 
 ### Config System
 
-**Every tunable value** lives in `config.ts`. Nothing is hardcoded in entity classes. This includes:
+**Every tunable value** lives in `config.ts` (compile-time defaults) or `settings.ts` (runtime-tunable via settings panel with localStorage persistence). Nothing is hardcoded in entity classes.
+
+**`config.ts`** (compile-time constants):
 - All enemy colors, speeds, scores, HP values
 - All collision radii
 - Difficulty phase boundaries
 - Explosion particle counts and durations
 - Camera zoom, shake intensities
 - Bloom parameters
-- Grid distortion strengths
+- Grid spring stiffness (neighbor springs), grid spacing
 - Trail lengths
 - Mobile overrides
 - Audio volume levels
+
+**`settings.ts`** (runtime-tunable, persisted in localStorage):
+- Spawn rate, starting lives, player/enemy speed, fire rate, starting phase, max enemies
+- Bloom intensity, trail length
+- BlackHole gravity: attract radius, enemy pull, player pull, grid mass base/per-absorb, grid radius multiplier
+- Grid physics: anchor stiffness, damping, max displacement (read by `grid.ts` each frame)
 
 ### Audio System
 
@@ -252,6 +262,7 @@ Twin-stick virtual joysticks, responsive canvas, mobile performance optimization
 - Octagon & DeathStar removal (redundant with BlackHole)
 - Spring-mass grid rewrite, smaller arena (1600x1000), auto-fit zoom
 - Death slowmo mechanic reused for game over transition
+- BlackHole gravity fix: grid bending, enemy pull, player pull all retuned from imperceptible to visible levels. Grid anchor stiffness (50→15), damping (12→8), max displacement (60→120). BH enemy pull (0.18→1.5), player pull (0.4→2.5), grid mass (80→250). Grid physics now runtime-tunable via settings panel sliders.
 
 ### Phase 4 (Scores, Polish & Tuning) — Not Started
 localStorage leaderboard, screenshot-friendly game over screen, debug overlay, difficulty curve tuning, performance profiling, cross-browser testing. See `TASKS.md` for full checklist.

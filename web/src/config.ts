@@ -195,9 +195,9 @@ export const BLOOM_BLUR_RADIUS = 2.5;
 // --- Spring-mass grid ---
 export const GRID_SPACING = 40;
 export const GRID_SPRING_STIFFNESS = 800;
-export const GRID_SPRING_DAMPING = 12;
-export const GRID_ANCHOR_STIFFNESS = 50;
-export const GRID_MAX_DISPLACEMENT = 60;
+export const GRID_SPRING_DAMPING = 8;
+export const GRID_ANCHOR_STIFFNESS = 15;
+export const GRID_MAX_DISPLACEMENT = 120;
 export const GRID_SUBSTEPS = 3;
 export const GRID_MOBILE_SUBSTEPS = 2;
 export const GRID_COLOR_BASE: [number, number, number] = [0.38, 0.14, 0.72];

@@ -29,11 +29,15 @@ const SLIDERS: SliderDef[] = [
   { key: 'trailLength', label: 'Trail Length', min: 2, max: 30, step: 1, format: v => `${v}` },
   // BlackHole gravity
   { key: 'bhAttractRadius', label: 'BH Pull Radius', min: 50, max: 600, step: 10, format: v => `${v}px` },
-  { key: 'bhEnemyPull', label: 'BH Enemy Pull', min: 0.01, max: 0.5, step: 0.01, format: v => v.toFixed(2) },
-  { key: 'bhPlayerPull', label: 'BH Player Pull', min: 0.0, max: 1.0, step: 0.05, format: v => v.toFixed(2) },
-  { key: 'bhGridMassBase', label: 'BH Grid Depth', min: 0, max: 300, step: 5, format: v => `${v}` },
-  { key: 'bhGridMassPerAbsorb', label: 'BH Grid/Absorb', min: 0, max: 60, step: 2, format: v => `${v}` },
-  { key: 'bhGridRadiusMultiplier', label: 'BH Grid Radius', min: 0.5, max: 4.0, step: 0.1, format: v => `${v.toFixed(1)}x` },
+  { key: 'bhEnemyPull', label: 'BH Enemy Pull', min: 0.1, max: 5.0, step: 0.1, format: v => v.toFixed(1) },
+  { key: 'bhPlayerPull', label: 'BH Player Pull', min: 0.0, max: 5.0, step: 0.1, format: v => v.toFixed(1) },
+  { key: 'bhGridMassBase', label: 'BH Grid Depth', min: 0, max: 500, step: 10, format: v => `${v}` },
+  { key: 'bhGridMassPerAbsorb', label: 'BH Grid/Absorb', min: 0, max: 100, step: 5, format: v => `${v}` },
+  { key: 'bhGridRadiusMultiplier', label: 'BH Grid Radius', min: 0.5, max: 5.0, step: 0.1, format: v => `${v.toFixed(1)}x` },
+  // Grid physics
+  { key: 'gridAnchorStiffness', label: 'Grid Anchor', min: 1, max: 100, step: 1, format: v => `${v}` },
+  { key: 'gridDamping', label: 'Grid Damping', min: 1, max: 20, step: 1, format: v => `${v}` },
+  { key: 'gridMaxDisplacement', label: 'Grid Max Disp', min: 20, max: 200, step: 5, format: v => `${v}px` },
 ];
 
 export function initSettingsPanel(): void {
