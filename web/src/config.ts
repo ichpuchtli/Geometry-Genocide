@@ -28,7 +28,6 @@ export const AIM_CHEVRON_ALPHA = 0.9;
 // --- Bullets ---
 export const BULLET_SPEED = 1.0; // px/ms
 export const BULLET_COLLISION_RADIUS_ENEMY = 38;
-export const BULLET_COLLISION_RADIUS_DEATHSTAR = 64;
 export const BULLET_SCALE = 5;
 export const BULLET_COLOR: [number, number, number] = [1.0, 0.0, 0.0];
 export const BULLET_COLOR2: [number, number, number] = [1.0, 0.78, 0.78];
@@ -50,8 +49,6 @@ export const COLORS = {
   square:   { color: [1.0, 0.125, 1.0] as [number, number, number], color2: [1.0, 0.125, 1.0] as [number, number, number] },
   circle:   { color: [0.125, 0.251, 1.0] as [number, number, number], color2: [0.196, 0.784, 1.0] as [number, number, number] },
   triangle: { color: [0.682, 0.796, 0.0] as [number, number, number], color2: [0, 0.502, 0] as [number, number, number] },
-  octagon:  { color: [1.0, 0.502, 0.125] as [number, number, number], color2: [1.0, 0.502, 0.251] as [number, number, number] },
-  deathstar:{ color: [0.6, 0.2, 0.2] as [number, number, number], color2: [0.9, 0.4, 0.25] as [number, number, number] },
   blackhole:{ color: [0.4, 0.7, 1.0] as [number, number, number], color2: [0.1, 0.9, 1.0] as [number, number, number] },
   // --- New fractal/topology enemies ---
   sierpinski:     { color: [1.0, 0.843, 0.0] as [number, number, number], color2: [0.722, 0.525, 0.043] as [number, number, number] },
@@ -76,7 +73,6 @@ export const ENEMY_SPEED = {
   square2: 0.2,
   circle: 0.35,
   triangle: 0.2,
-  octagon: 0.15,
   blackhole: 0,
   // --- New enemies ---
   sierpinski: 0.12,
@@ -101,7 +97,6 @@ export const ENEMY_SCORES = {
   square2: 150,
   circle: 300,
   triangle: 550,
-  octagon: 1650,
   blackhole: 2000,
   // --- New enemies ---
   sierpinski: 2400,
@@ -119,7 +114,6 @@ export const ENEMY_SCORES = {
 };
 
 // --- Enemy HP ---
-export const OCTAGON_HP = 3;
 export const SIERPINSKI_HP = 2;
 export const MOBIUS_HP = 1;
 export const KOCH_HP = 2;
@@ -151,12 +145,6 @@ export const HYPERBOLICDISC_WARP_FORCE = 0.0004; // bullet bend strength
 
 // --- Enemy collision radii ---
 export const ENEMY_COLLISION_RADIUS = 28;
-export const DEATHSTAR_COLLISION_RADIUS = 50;
-export const DEATHSTAR_BULLET_RADIUS = 64;
-export const DEATHSTAR_HP = 20;
-export const DEATHSTAR_CIRCLE_SPAWN = 5;
-export const DEATHSTAR_ATTRACT_RADIUS = 50;
-
 // --- Explosion particles ---
 export const EXPLOSION_PARTICLE_COUNT_SMALL = 50;
 export const EXPLOSION_PARTICLE_COUNT_LARGE = 180;

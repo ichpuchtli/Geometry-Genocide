@@ -1,7 +1,6 @@
 import { Renderer } from '../renderer/sprite-batch';
 import { Camera } from '../core/camera';
 import { Enemy } from '../entities/enemies/enemy';
-import { DeathStar } from '../entities/enemies/deathstar';
 import { OFFSCREEN_INDICATOR_RANGE } from '../config';
 
 const INDICATOR_MARGIN = 30;
@@ -11,7 +10,6 @@ export function renderOffscreenIndicators(
   renderer: Renderer,
   camera: Camera,
   enemies: Enemy[],
-  deathstars: DeathStar[],
 ): void {
   const cx = camera.position.x;
   const cy = camera.position.y;
@@ -28,12 +26,6 @@ export function renderOffscreenIndicators(
       if (dist < OFFSCREEN_INDICATOR_RANGE) {
         entities.push({ x: e.position.x, y: e.position.y, color: e.color });
       }
-    }
-  }
-  for (const ds of deathstars) {
-    if (!ds.active) continue;
-    if (!camera.isVisible(ds.position.x, ds.position.y, 0)) {
-      entities.push({ x: ds.position.x, y: ds.position.y, color: ds.color });
     }
   }
 

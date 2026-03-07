@@ -8,7 +8,6 @@ import { AudioManager } from './core/audio';
 import { Player } from './entities/player';
 import { BulletPool, Bullet } from './entities/bullet';
 import { Enemy } from './entities/enemies/enemy';
-import { DeathStar } from './entities/enemies/deathstar';
 import { ExplosionPool } from './entities/explosion';
 import { AimIndicator } from './entities/crosshair';
 import { HUD } from './ui/hud';
@@ -16,7 +15,7 @@ import { VirtualJoystickRenderer } from './ui/virtual-joystick';
 import { renderOffscreenIndicators } from './ui/offscreen-indicators';
 import { WaveManager } from './spawner/wave-manager';
 import { Starfield } from './renderer/starfield';
-import { checkCollisions, applyDeathStarAttraction } from './core/collision';
+import { checkCollisions } from './core/collision';
 import { Vec2 } from './core/vector';
 import { HapticsManager } from './core/haptics';
 import {
@@ -60,7 +59,6 @@ import { Pinwheel } from './entities/enemies/pinwheel';
 import { Square, Square2 } from './entities/enemies/square';
 import { CircleEnemy } from './entities/enemies/circle';
 import { Triangle } from './entities/enemies/triangle';
-import { Octagon } from './entities/enemies/octagon';
 import { BlackHole } from './entities/enemies/blackhole';
 import { Shard } from './entities/enemies/shard';
 import { Sierpinski } from './entities/enemies/sierpinski';
@@ -77,7 +75,6 @@ function createEnemy(type: string, pos?: Vec2): Enemy {
     case 'square2': e = new Square2(pos); e.speed *= gameSettings.enemySpeedMultiplier; return e;
     case 'circle': e = new CircleEnemy(pos); e.speed *= gameSettings.enemySpeedMultiplier; return e;
     case 'triangle': e = new Triangle(); break;
-    case 'octagon': e = new Octagon(); break;
     case 'blackhole': e = new BlackHole(); break;
     case 'shard': e = new Shard(pos); e.speed *= gameSettings.enemySpeedMultiplier; return e;
     case 'sierpinski': e = new Sierpinski(); break;
@@ -107,7 +104,6 @@ export class Game {
   private player: Player;
   private bullets: BulletPool;
   private enemies: Enemy[] = [];
-  private deathstars: DeathStar[] = [];
   private explosions: ExplosionPool;
   private aimIndicator: AimIndicator;
   private hud: HUD;
@@ -129,7 +125,7 @@ export class Game {
   private trailLenEnemy: number;
   private trailLenBullet: number;
 
-  // Staggered spawn queue for theatrical enemy deaths (e.g. Octagon)
+  // Staggered spawn queue for theatrical enemy deaths (e.g. Sierpinski)
   private pendingSpawns: { type: string; position: Vec2; delay: number; origin: Vec2 }[] = [];
 
   // Death slowmo state
@@ -249,7 +245,6 @@ export class Game {
     this.player.reset();
     this.bullets.clear();
     this.enemies = [];
-    this.deathstars = [];
     this.pendingSpawns = [];
     this.explosions.clear();
     this.trails.clear();
@@ -286,10 +281,6 @@ export class Game {
     else if (this.gameTime < DIFFICULTY_PHASES.intense.end) base = 0.75;
     else base = 0.9;
 
-    // Boost for boss presence
-    const hasBoss = this.deathstars.some(d => d.active);
-    if (hasBoss) base = Math.max(base, 0.8);
-
     // Boost for enemy count
     const enemyBoost = Math.min(this.enemies.length / 40, 0.3);
     return Math.min(base + enemyBoost, 1);
@@ -299,16 +290,10 @@ export class Game {
   private updateGravityWells(): void {
     for (const e of this.enemies) {
       if (!e.active) continue;
-      if (e instanceof Octagon) {
-        this.grid.applyGravityWell(e.position.x, e.position.y, -30, 280);
-      } else if (e instanceof BlackHole) {
+      if (e instanceof BlackHole) {
         const mass = -(80 + e.absorbedCount * 18);
         this.grid.applyGravityWell(e.position.x, e.position.y, mass, BlackHole.ATTRACT_RADIUS * 2.0);
       }
-    }
-    for (const ds of this.deathstars) {
-      if (!ds.active) continue;
-      this.grid.applyGravityWell(ds.position.x, ds.position.y, -55, 400);
     }
   }
 
@@ -429,34 +414,16 @@ export class Game {
       e.rotation += dt * 0.001;
     }
 
-    // DeathStars keep pulsing
-    for (const ds of this.deathstars) {
-      if (ds.active) ds.update(dt);
-    }
-
     // Gravity: big enemies pull smaller ones slowly during game over
     for (const e of this.enemies) {
       if (!e.active) continue;
-      // Pulled by Octagons and BlackHoles
       for (const o of this.enemies) {
-        if (o === e || !o.active || (!(o instanceof Octagon) && !(o instanceof BlackHole))) continue;
+        if (o === e || !o.active || !(o instanceof BlackHole)) continue;
         const dx = o.position.x - e.position.x;
         const dy = o.position.y - e.position.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
         if (dist > 10 && dist < 200) {
           const pull = 0.02 * dt / dist;
-          e.position.x += dx * pull;
-          e.position.y += dy * pull;
-        }
-      }
-      // Pulled by DeathStars
-      for (const ds of this.deathstars) {
-        if (!ds.active) continue;
-        const dx = ds.position.x - e.position.x;
-        const dy = ds.position.y - e.position.y;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        if (dist > 10 && dist < 300) {
-          const pull = 0.04 * dt / dist;
           e.position.x += dx * pull;
           e.position.y += dy * pull;
         }
@@ -532,12 +499,6 @@ export class Game {
       }
     }
 
-    // DeathStar attraction
-    const activeDeathstars = this.deathstars.filter(d => d.active);
-    if (activeDeathstars.length > 0) {
-      applyDeathStarAttraction(this.enemies, activeDeathstars);
-    }
-
     // BlackHole attraction — pull nearby non-blackhole enemies toward black holes
     this.applyBlackHoleAttraction(dt);
 
@@ -550,49 +511,34 @@ export class Game {
         if (e.trailId >= 0) this.trails.update(e.trailId, e.position.x, e.position.y);
         continue; // skip movement/AI during spawn
       }
-      if (e instanceof Octagon) {
-        (e as Octagon).update(dt, this.player.position, this.player.velocity);
-      } else {
-        (e as { update(dt: number, playerPos?: Vec2): void }).update(dt, this.player.position);
-      }
+      (e as { update(dt: number, playerPos?: Vec2): void }).update(dt, this.player.position);
       // Update enemy trails
       if (e.trailId >= 0) {
         this.trails.update(e.trailId, e.position.x, e.position.y);
       }
     }
 
-    // DeathStars
-    for (const ds of this.deathstars) {
-      if (ds.active) ds.update(dt);
-    }
-
     // Spawn
     const spawns = this.waveManager.update(dt, this.player.position);
     for (const req of spawns) {
-      if (this.enemies.length >= gameSettings.maxEnemies && req.type !== 'deathstar') continue;
-      if (req.type === 'deathstar') {
-        this.deathstars.push(new DeathStar(this.player.position));
-        this.audio.playSFX('deathstar');
-        this.haptics.bossSpawn();
-      } else {
-        const enemy = createEnemy(req.type, req.position);
-        // If ambush spawn, use longer spawn animation
-        if (req.isAmbush) { enemy.spawnDuration = enemy.spawnTimer = SPAWN_DURATION_AMBUSH; }
-        // Push enemies that spawn too close to the player to the edge
-        const dx = enemy.position.x - this.player.position.x;
-        const dy = enemy.position.y - this.player.position.y;
-        if (dx * dx + dy * dy < MIN_SPAWN_DISTANCE * MIN_SPAWN_DISTANCE) {
-          enemy.spawnAtEdge();
-        }
-        // Register trail for enemy
-        enemy.trailId = this.trails.register(enemy.color, this.trailLenEnemy);
-        this.enemies.push(enemy);
-        // Grid ripple on spawn
-        this.grid.applyImpulse(enemy.position.x, enemy.position.y, 80, 120);
-        // Play spawn SFX for specific enemy types
-        this.playEnemySpawnSFX(req.type);
-        this.haptics.medium();
+      if (this.enemies.length >= gameSettings.maxEnemies) continue;
+      const enemy = createEnemy(req.type, req.position);
+      // If ambush spawn, use longer spawn animation
+      if (req.isAmbush) { enemy.spawnDuration = enemy.spawnTimer = SPAWN_DURATION_AMBUSH; }
+      // Push enemies that spawn too close to the player to the edge
+      const dx = enemy.position.x - this.player.position.x;
+      const dy = enemy.position.y - this.player.position.y;
+      if (dx * dx + dy * dy < MIN_SPAWN_DISTANCE * MIN_SPAWN_DISTANCE) {
+        enemy.spawnAtEdge();
       }
+      // Register trail for enemy
+      enemy.trailId = this.trails.register(enemy.color, this.trailLenEnemy);
+      this.enemies.push(enemy);
+      // Grid ripple on spawn
+      this.grid.applyImpulse(enemy.position.x, enemy.position.y, 80, 120);
+      // Play spawn SFX for specific enemy types
+      this.playEnemySpawnSFX(req.type);
+      this.haptics.medium();
     }
 
     // Collision
@@ -600,7 +546,6 @@ export class Game {
       this.player,
       this.bullets.bullets,
       this.enemies,
-      this.deathstars,
     );
 
     // Process kills
@@ -675,34 +620,6 @@ export class Game {
       }
     }
 
-    // Process deathstar kills
-    for (const kill of result.killedDeathStars) {
-      this.explosions.spawn(
-        kill.position.x, kill.position.y,
-        [0.92, 0.38, 0.24],
-        this.mobile ? Math.floor(EXPLOSION_PARTICLE_COUNT_LARGE * 0.5) : EXPLOSION_PARTICLE_COUNT_LARGE,
-        EXPLOSION_DURATION_LARGE,
-      );
-      this.grid.applyImpulse(kill.position.x, kill.position.y, 800, 350);
-      this.camera.shake(SCREEN_SHAKE_LARGE);
-      this.audio.playSFX('deathstar2');
-      this.haptics.heavy();
-      for (let i = 0; i < kill.circleSpawnCount; i++) {
-        const offset = Vec2.random().scale(100);
-        const ce = createEnemy('circle', kill.position.add(offset));
-        ce.trailId = this.trails.register(ce.color, this.trailLenEnemy);
-        this.enemies.push(ce);
-      }
-    }
-
-    // Process absorbed enemies
-    for (const { enemy, deathstar } of result.absorbedEnemies) {
-      deathstar.absorbEnemy();
-      if (enemy.trailId >= 0) this.trails.unregister(enemy.trailId);
-      this.explosions.spawn(enemy.position.x, enemy.position.y, enemy.color, 8, 0.5);
-      this.haptics.absorb();
-    }
-
     // Player hit
     if (result.playerHit) {
       this.player.lives--;
@@ -714,7 +631,7 @@ export class Game {
       }
     }
 
-    // Process staggered spawn queue (theatrical Octagon death etc.)
+    // Process staggered spawn queue (theatrical enemy deaths)
     for (const ps of this.pendingSpawns) {
       ps.delay -= dt;
       if (ps.delay <= 0) {
@@ -741,7 +658,6 @@ export class Game {
       }
       return e.active;
     });
-    this.deathstars = this.deathstars.filter(d => d.active);
 
     // Explosions
     this.explosions.update(dt);
@@ -786,7 +702,6 @@ export class Game {
       case 'square': this.audio.playSFX('square'); break;
       case 'pinwheel': this.audio.playSFX('pinwheel'); break;
       case 'triangle': this.audio.playSFX('triangle2'); break;
-      case 'octagon': this.audio.playSFX('octagon'); break;
       case 'blackhole': this.audio.playSFX('deathstar'); break;
       case 'sierpinski': this.audio.playSFX('octagon'); break;
     }
@@ -898,25 +813,6 @@ export class Game {
       }
     }
 
-    // Kill deathstars caught by shockwave
-    for (const ds of this.deathstars) {
-      if (!ds.active) continue;
-      const dx = ds.position.x - this.slowmoOrigin.x;
-      const dy = ds.position.y - this.slowmoOrigin.y;
-      const dist = Math.sqrt(dx * dx + dy * dy);
-      if (dist <= this.slowmoShockwaveRadius) {
-        ds.active = false;
-        this.explosions.spawn(
-          ds.position.x, ds.position.y,
-          [0.92, 0.38, 0.24],
-          this.mobile ? 60 : 120,
-          EXPLOSION_DURATION_LARGE,
-        );
-        this.grid.applyImpulse(ds.position.x, ds.position.y, 800, 350);
-        this.camera.shake(SCREEN_SHAKE_LARGE, 0.2);
-      }
-    }
-
     // Update explosions (at slowed rate)
     this.explosions.update(gameDt);
     this.grid.update(gameDt);
@@ -941,7 +837,6 @@ export class Game {
       }
       return e.active;
     });
-    this.deathstars = this.deathstars.filter(d => d.active);
 
     // End slowmo
     if (this.slowmoTimer >= DEATH_SLOWMO_DURATION) {
@@ -957,7 +852,6 @@ export class Game {
           if (e.trailId >= 0) this.trails.unregister(e.trailId);
         }
         this.enemies = [];
-        this.deathstars = [];
         this.pendingSpawns = [];
         this.player.respawn();
         this.player.active = true;
@@ -994,7 +888,6 @@ export class Game {
 
     if (this.state === 'playing' || this.state === 'death_slowmo') {
       for (const e of this.enemies) e.render(this.renderer);
-      for (const ds of this.deathstars) ds.render(this.renderer);
       if (this.state === 'playing') {
         this.bullets.render(this.renderer);
         this.player.render(this.renderer);
@@ -1020,14 +913,13 @@ export class Game {
       }
 
       // Off-screen indicators
-      renderOffscreenIndicators(this.renderer, this.camera, this.enemies, this.deathstars);
+      renderOffscreenIndicators(this.renderer, this.camera, this.enemies);
     }
 
     // Game over: render frozen enemies with unique glow effects
     if (this.state === 'gameover') {
       const t = this.gameOverTime;
       for (const e of this.enemies) e.renderGlow(this.renderer, t);
-      for (const ds of this.deathstars) ds.renderGlow(this.renderer, t);
     }
 
     // 4. Switch to additive blend for trails, explosions, glow

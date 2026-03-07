@@ -19,7 +19,7 @@ import {
 } from './spawn-patterns';
 
 export type SpawnRequest = {
-  type: EnemyType | 'deathstar';
+  type: EnemyType;
   position?: Vec2;
   delay?: number;      // ms delay before actually spawning
   isAmbush?: boolean;  // longer spawn animation
@@ -140,9 +140,6 @@ export class WaveManager {
         this.addEvent('squad', 8, 1.5, 4, 6, () => {
           return this.spawnFromPool(pickCount(4, 6));
         });
-        this.addEvent('boss', 45, 5, 1, 1, () => {
-          return [{ type: 'deathstar' as const }];
-        });
         break;
 
       case 'intense':
@@ -164,9 +161,6 @@ export class WaveManager {
         this.addEvent('cascade', 8, 2, 15, 20, (count) => {
           return formationToRequests(generateCascade(this.getPool(), count));
         });
-        this.addEvent('boss', 28, 5, 1, 1, () => {
-          return [{ type: 'deathstar' as const }];
-        });
         break;
 
       default: // chaos
@@ -187,9 +181,6 @@ export class WaveManager {
         });
         this.addEvent('cascade', 5, 1.5, 20, 30, (count) => {
           return formationToRequests(generateCascade(this.getPool(), count));
-        });
-        this.addEvent('boss', 20, 3, 1, 1, () => {
-          return [{ type: 'deathstar' as const }];
         });
         break;
     }

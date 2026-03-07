@@ -7,7 +7,6 @@ export type EnemyType =
   | 'pinwheel'
   | 'square'
   | 'triangle'
-  | 'octagon'
   | 'circle'
   | 'blackhole'
   | 'sierpinski'
@@ -45,7 +44,6 @@ export const INTENSE_POOL: EnemyType[] = [
   'pinwheel', 'pinwheel', 'pinwheel',
   'square', 'square', 'square',
   'triangle', 'triangle', 'triangle',
-  'octagon', 'octagon',
   'sierpinski', 'sierpinski',
   'blackhole', 'blackhole',
 ];
@@ -55,7 +53,6 @@ export const CHAOS_POOL: EnemyType[] = [
   'pinwheel', 'pinwheel',
   'square', 'square', 'square',
   'triangle', 'triangle', 'triangle',
-  'octagon', 'octagon', 'octagon',
   'circle', 'circle', 'circle',
   'sierpinski', 'sierpinski',
   'blackhole', 'blackhole',
