@@ -1,7 +1,7 @@
 import { Enemy, EnemyDeathResult } from './enemy';
 import { Vec2 } from '../../core/vector';
 import { Renderer } from '../../renderer/sprite-batch';
-import { COLORS, ENEMY_SPEED, ENEMY_SCORES, ENEMY_COLLISION_RADIUS } from '../../config';
+import { COLORS, ENEMY_SPEED, ENEMY_SCORES } from '../../config';
 
 /** Gravity/Black Hole enemy — warps the grid, attracts nearby enemies and bullets */
 export class BlackHole extends Enemy {
@@ -17,20 +17,14 @@ export class BlackHole extends Enemy {
 
   constructor() {
     super();
-    // Dark purple / violet
     this.color = COLORS.blackhole.color;
     this.color2 = COLORS.blackhole.color2;
     this.speed = ENEMY_SPEED.blackhole;
     this.scoreValue = ENEMY_SCORES.blackhole;
     this.collisionRadius = 35;
 
-    // Shape: hexagon (inner core visual)
-    const s = 15;
+    // No geometric shape — blackhole is rendered procedurally
     this.shapePoints = [];
-    for (let i = 0; i < 6; i++) {
-      const a = (i / 6) * Math.PI * 2;
-      this.shapePoints.push([Math.cos(a) * s, Math.sin(a) * s]);
-    }
   }
 
   absorbEnemy(): void {
@@ -64,70 +58,74 @@ export class BlackHole extends Enemy {
     const py = this.position.y + (jitter > 0 ? (Math.random() - 0.5) * 2 * jitter : 0);
     const pulse = 1 + Math.sin(this.pulseTimer * 0.003) * pulseAmp;
     const baseR = this.collisionRadius;
+    const horizonR = (baseR - 5) * pulse;
 
-    // Color shift toward white-violet as instability grows
-    const coreColor: [number, number, number] = [
-      this.color[0] + (1 - this.color[0]) * instability * 0.6,
-      this.color[1] + (0.8 - this.color[1]) * instability * 0.6,
-      this.color[2] + (1 - this.color[2]) * instability * 0.6,
-    ];
-
-    // Outer gravitational rings (rotating)
+    // 1. Outer gravitational influence glow (very faint expanding rings)
     for (let i = 0; i < 3; i++) {
-      const ringR = (baseR + 15 + i * 14) * pulse;
-      const angle = this.ringRotation * (i % 2 === 0 ? 1 : -1) + i * 0.7;
-      const alpha = 0.25 - i * 0.06;
-      this.drawRotatedRing(renderer, px, py, ringR, angle, 20, this.color2, alpha);
+      const glowR = (baseR + 30 + i * 20) * pulse;
+      const glowAlpha = 0.08 - i * 0.02;
+      renderer.drawCircle(px, py, glowR, [0.3, 0.15, 0.05], 28, glowAlpha);
     }
 
-    // Event horizon (dark filled circle)
-    const horizonR = (baseR - 8) * pulse;
-    renderer.drawFilledCircle(px, py, horizonR, [0.02, 0.0, 0.04], 20, 0.8);
+    // 2. Accretion disk — multiple partial arcs at varied tilts and speeds
+    const diskArcs = [
+      { rMul: 1.3, speed: 1.0,  arcLen: Math.PI * 1.4, color: [1, 0.4, 0.1] as [number, number, number], alpha: 0.6 },
+      { rMul: 1.15, speed: -1.5, arcLen: Math.PI * 1.2, color: [1, 0.6, 0.2] as [number, number, number], alpha: 0.7 },
+      { rMul: 1.05, speed: 2.0,  arcLen: Math.PI * 1.0, color: [1, 0.8, 0.4] as [number, number, number], alpha: 0.8 },
+      { rMul: 0.95, speed: -2.5, arcLen: Math.PI * 0.8, color: [1, 0.9, 0.6] as [number, number, number], alpha: 0.85 },
+      { rMul: 1.4, speed: 0.7,  arcLen: Math.PI * 1.6, color: [1, 0.3, 0.05] as [number, number, number], alpha: 0.35 },
+    ];
+    for (const arc of diskArcs) {
+      const arcR = horizonR * arc.rMul;
+      const rot = this.ringRotation * arc.speed + arc.rMul * 2.0;
+      // Brighten with instability
+      const a = arc.alpha + instability * 0.15;
+      this.drawArc(renderer, px, py, arcR, rot, arc.arcLen, 24, arc.color, a);
+    }
 
-    // Inner accretion disk
-    const diskR = baseR * pulse;
-    renderer.drawCircle(px, py, diskR, coreColor, 24, 0.9);
-    renderer.drawCircle(px, py, diskR * 0.7, this.color2, 20, 0.7);
+    // 3. Event horizon — solid black circle (true void)
+    renderer.drawFilledCircle(px, py, horizonR, [0, 0, 0], 32, 1.0);
 
-    // Core shape (hexagon)
-    const points = this.getWorldPoints();
-    renderer.drawLineLoop(points, coreColor, 0.9);
+    // 4. Photon ring — thin bright ring at horizon edge
+    renderer.drawCircle(px, py, horizonR + 1.5, [1, 0.85, 0.4], 32, 0.9);
+    renderer.drawCircle(px, py, horizonR + 3, [1, 0.6, 0.15], 32, 0.45);
 
-    // Bright core dot
-    const coreB = 0.6 + Math.sin(this.pulseTimer * 0.005) * 0.3;
-    renderer.drawCircle(px, py, 4, [coreB, coreB * 0.5, coreB], 8, 0.9);
+    // 5. Hot core glow (Hawking radiation point)
+    const coreBrightness = 0.5 + Math.sin(this.pulseTimer * 0.005) * 0.3 + instability * 0.3;
+    renderer.drawFilledCircle(px, py, 3, [1, 1, 1], 8, coreBrightness);
 
-    // Danger ring when instability > 0.5
+    // 6. Danger ring when instability > 0.5
     if (instability > 0.5) {
       const dangerAlpha = (instability - 0.5) * 2; // 0-1 over the last half
       const dangerPulse = 1 + Math.sin(this.pulseTimer * 0.008) * 0.15;
       const dangerR = (baseR + 30) * dangerPulse;
-      renderer.drawCircle(px, py, dangerR, [1, 0.4, 0.4], 28, dangerAlpha * 0.5);
+      renderer.drawCircle(px, py, dangerR, [1, 0.4, 0.1], 28, dangerAlpha * 0.5);
     }
 
-    // Absorption count indicator (small dots orbiting)
+    // 7. Absorption count indicator (small dots orbiting)
     for (let i = 0; i < this.absorbedCount; i++) {
       const a = (i / BlackHole.MAX_ABSORB) * Math.PI * 2 + this.ringRotation * 3;
-      const orbitR = baseR + 8;
+      const orbitR = horizonR + 6;
       const dx = px + Math.cos(a) * orbitR;
       const dy = py + Math.sin(a) * orbitR;
-      renderer.drawCircle(dx, dy, 2, [1, 1, 1], 6, 0.7);
+      renderer.drawCircle(dx, dy, 2, [1, 0.9, 0.5], 6, 0.7);
     }
   }
 
-  private drawRotatedRing(
+  /** Draw a partial arc (like an accretion disk streak) */
+  private drawArc(
     renderer: Renderer, cx: number, cy: number, radius: number,
-    rotation: number, segments: number, color: [number, number, number], alpha: number,
+    rotation: number, arcLength: number, segments: number,
+    color: [number, number, number], alpha: number,
   ): void {
-    const step = (Math.PI * 2) / segments;
-    // Draw a partial ring (arc) for a vortex look
-    const arcLength = Math.PI * 1.5; // 3/4 of circle
-    const arcSegs = Math.ceil(segments * (arcLength / (Math.PI * 2)));
-    for (let i = 0; i < arcSegs; i++) {
+    const step = arcLength / segments;
+    for (let i = 0; i < segments; i++) {
       const a1 = rotation + i * step;
       const a2 = rotation + (i + 1) * step;
-      const fadeIn = i / arcSegs;
-      const a = alpha * fadeIn;
+      // Fade: bright in middle, dim at edges
+      const t = i / segments;
+      const fade = Math.sin(t * Math.PI); // 0 at edges, 1 at center
+      const a = alpha * (0.3 + 0.7 * fade);
       renderer.drawLine(
         cx + Math.cos(a1) * radius, cy + Math.sin(a1) * radius,
         cx + Math.cos(a2) * radius, cy + Math.sin(a2) * radius,
@@ -139,13 +137,13 @@ export class BlackHole extends Enemy {
   renderGlow(renderer: Renderer, time: number): void {
     if (!this.active) return;
     this.render(renderer);
-    // Pulsing gravity waves
+    // Pulsing gravity waves (warm colors)
     for (let i = 0; i < 4; i++) {
       const phase = (time * 0.6 + i * 0.25) % 1.0;
       const ringR = this.collisionRadius + phase * 60;
       const alpha = (1 - phase) * 0.2;
       renderer.drawCircle(this.position.x, this.position.y, ringR,
-        [this.color[0] * alpha, this.color[1] * alpha, this.color[2] * alpha], 28);
+        [alpha, alpha * 0.5, alpha * 0.1], 28);
     }
   }
 

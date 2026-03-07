@@ -973,6 +973,19 @@ export class Game {
     this.renderer.setBlendMode('normal');
     this.renderer.end();
 
+    // --- Populate gravitational lensing wells from active BlackHoles ---
+    this.bloom.gravityWells = [];
+    this.bloom.aspectRatio = this.renderer.canvasWidth / this.renderer.canvasHeight;
+    for (const e of this.enemies) {
+      if (!e.active || e.isSpawning || !(e instanceof BlackHole)) continue;
+      // World-to-UV: uv = (worldPos - camera) / viewSize + 0.5
+      const uvX = (e.position.x - cameraX) / this.renderer.width + 0.5;
+      const uvY = (e.position.y - cameraY) / this.renderer.height + 0.5;
+      const strength = 1 + (e as BlackHole).absorbedCount * 0.15;
+      this.bloom.gravityWells.push({ x: uvX, y: uvY, strength });
+      if (this.bloom.gravityWells.length >= 4) break;
+    }
+
     // --- Bloom post-process: scene FBO -> screen ---
     this.bloom.apply(this.renderer.canvasWidth, this.renderer.canvasHeight);
 
