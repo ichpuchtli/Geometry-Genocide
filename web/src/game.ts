@@ -48,7 +48,6 @@ import {
   DEATH_SLOWMO_SHOCKWAVE_SPEED,
   MIN_SPAWN_DISTANCE,
   SPAWN_DURATION_AMBUSH,
-  BLACKHOLE_PLAYER_PULL_STRENGTH,
 } from './config';
 
 // Enemy factory imports
@@ -284,13 +283,12 @@ export class Game {
     return Math.min(base + enemyBoost, 1);
   }
 
-  /** Apply gravity wells on the grid from large enemies (Octagon, DeathStar) */
   private updateGravityWells(): void {
     for (const e of this.enemies) {
       if (!e.active) continue;
       if (e instanceof BlackHole) {
-        const mass = -(80 + e.absorbedCount * 18);
-        this.grid.applyGravityWell(e.position.x, e.position.y, mass, BlackHole.ATTRACT_RADIUS * 2.0);
+        const mass = -(gameSettings.bhGridMassBase + e.absorbedCount * gameSettings.bhGridMassPerAbsorb);
+        this.grid.applyGravityWell(e.position.x, e.position.y, mass, BlackHole.ATTRACT_RADIUS * gameSettings.bhGridRadiusMultiplier);
       }
     }
   }
@@ -387,7 +385,7 @@ export class Game {
       const attractR = BlackHole.ATTRACT_RADIUS;
       if (dist2 < attractR * attractR && dist2 > 1) {
         const dist = Math.sqrt(dist2);
-        const force = BLACKHOLE_PLAYER_PULL_STRENGTH * (1 + e.absorbedCount * 0.08) * dt / dist;
+        const force = gameSettings.bhPlayerPull * (1 + e.absorbedCount * 0.08) * dt / dist;
         this.player.position.x += dx / dist * force;
         this.player.position.y += dy / dist * force;
       }

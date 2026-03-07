@@ -15,6 +15,13 @@ export interface GameSettings {
   maxEnemies: number;             // 20–150
   bloomIntensity: number;         // 0.5–4.0
   trailLength: number;            // 2–30
+  // BlackHole gravity tuning
+  bhAttractRadius: number;        // 50–600 (px, how far gravity reaches)
+  bhEnemyPull: number;            // 0.01–0.5 (px/ms², enemy pull strength)
+  bhPlayerPull: number;           // 0.0–1.0 (px/ms², player pull strength)
+  bhGridMassBase: number;         // 0–300 (grid well depth at 0 absorbed)
+  bhGridMassPerAbsorb: number;    // 0–60 (additional grid depth per absorbed enemy)
+  bhGridRadiusMultiplier: number; // 0.5–4.0 (grid well radius as multiple of attract radius)
 }
 
 export const DEFAULTS: GameSettings = {
@@ -27,6 +34,12 @@ export const DEFAULTS: GameSettings = {
   maxEnemies: MOBILE_MAX_ENEMIES,
   bloomIntensity: BLOOM_INTENSITY,
   trailLength: TRAIL_LENGTH_ENEMY,
+  bhAttractRadius: 300,
+  bhEnemyPull: 0.18,
+  bhPlayerPull: 0.4,
+  bhGridMassBase: 80,
+  bhGridMassPerAbsorb: 18,
+  bhGridRadiusMultiplier: 2.0,
 };
 
 const STORAGE_KEY = 'gg_settings';

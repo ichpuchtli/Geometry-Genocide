@@ -2,6 +2,7 @@ import { Enemy, EnemyDeathResult } from './enemy';
 import { Vec2 } from '../../core/vector';
 import { Renderer } from '../../renderer/sprite-batch';
 import { COLORS, ENEMY_SPEED, ENEMY_SCORES, BLACKHOLE_HP } from '../../config';
+import { gameSettings } from '../../settings';
 
 /** Gravity/Black Hole enemy — bright electric blue-white plasma sphere */
 export class BlackHole extends Enemy {
@@ -23,8 +24,8 @@ export class BlackHole extends Enemy {
 
   /** Max enemies before it becomes unstable and auto-explodes */
   static readonly MAX_ABSORB = 12;
-  static readonly ATTRACT_RADIUS = 300;
-  static readonly GRAVITY_STRENGTH = 0.18; // px/ms^2
+  static get ATTRACT_RADIUS(): number { return gameSettings.bhAttractRadius; }
+  static get GRAVITY_STRENGTH(): number { return gameSettings.bhEnemyPull; }
 
   constructor() {
     super();

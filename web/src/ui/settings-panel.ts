@@ -27,6 +27,13 @@ const SLIDERS: SliderDef[] = [
   { key: 'maxEnemies', label: 'Max Enemies', min: 20, max: 150, step: 10, format: v => `${v}` },
   { key: 'bloomIntensity', label: 'Bloom', min: 0.5, max: 4.0, step: 0.1, format: v => `${v.toFixed(1)}` },
   { key: 'trailLength', label: 'Trail Length', min: 2, max: 30, step: 1, format: v => `${v}` },
+  // BlackHole gravity
+  { key: 'bhAttractRadius', label: 'BH Pull Radius', min: 50, max: 600, step: 10, format: v => `${v}px` },
+  { key: 'bhEnemyPull', label: 'BH Enemy Pull', min: 0.01, max: 0.5, step: 0.01, format: v => v.toFixed(2) },
+  { key: 'bhPlayerPull', label: 'BH Player Pull', min: 0.0, max: 1.0, step: 0.05, format: v => v.toFixed(2) },
+  { key: 'bhGridMassBase', label: 'BH Grid Depth', min: 0, max: 300, step: 5, format: v => `${v}` },
+  { key: 'bhGridMassPerAbsorb', label: 'BH Grid/Absorb', min: 0, max: 60, step: 2, format: v => `${v}` },
+  { key: 'bhGridRadiusMultiplier', label: 'BH Grid Radius', min: 0.5, max: 4.0, step: 0.1, format: v => `${v.toFixed(1)}x` },
 ];
 
 export function initSettingsPanel(): void {
