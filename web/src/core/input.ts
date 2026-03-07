@@ -167,13 +167,12 @@ export class Input {
     return new Vec2(wx, wy);
   }
 
-  /** Update aim angle from mouse world position relative to player.
+  /** Update aim angle from mouse screen position relative to screen center.
    *  Called each frame from Player.update(). */
-  updateAimFromPlayer(playerPos: Vec2): void {
+  updateAimFromPlayer(_playerPos: Vec2): void {
     if (this.mode !== 'keyboard') return;
-    const world = this.getMouseWorldPos();
-    const dx = world.x - playerPos.x;
-    const dy = world.y - playerPos.y;
+    const dx = this.mouseScreenX - this.canvasWidth / 2;
+    const dy = -(this.mouseScreenY - this.canvasHeight / 2); // flip Y: screen down → world up
     if (dx * dx + dy * dy > 1) {
       this._aimAngle = Math.atan2(dy, dx);
     }

@@ -257,7 +257,7 @@ Twin-stick virtual joysticks, responsive canvas, mobile performance optimization
 - Settings panel for difficulty tuning (spawn rate, lives, speed, fire rate, phase skip)
 - Spawn animation rework (theatrical grow-in, staggered child spawns)
 - Player ship redesign as Geometry Wars-style claw/pincer
-- Mouse-position aiming (replaced pointer-lock rotational aim)
+- Screen-center directional aiming: aim angle = atan2(screen center → cursor), player position irrelevant (mouse acts like virtual right-stick)
 - BlackHole overhaul: stationary, player gravitational pull, shrink-per-bullet, overload explosion, gravitational lensing, electric blue-white plasma visuals, procedural death SFX
 - Octagon & DeathStar removal (redundant with BlackHole)
 - Spring-mass grid rewrite, smaller arena (1600x1000), auto-fit zoom
