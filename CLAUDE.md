@@ -25,9 +25,9 @@ The core experience is **neon chaos** — dozens to hundreds of geometric enemie
 
 - **0-30s (Tutorial):** Gentle. Learn to move and shoot. Rhombus, pinwheel, rare blackhole.
 - **30-120s (Ramp Up):** Swarms + walls start. Square and blackhole added. 20-40 enemies on screen.
-- **120-240s (Mid Game):** Formations (surround, pincer, wall). Triangle, sierpinski, blackhole. 30-60 enemies.
+- **120-240s (Mid Game):** Formations (surround, pincer, wall). Sierpinski, blackhole. 30-60 enemies.
 - **240-400s (Intense):** Ambush + cascade spawns. All types at higher rates. 40-80 enemies.
-- **400s+ (Chaos):** Maximum spawn rates. Circle added to pools. Screen constantly full.
+- **400s+ (Chaos):** Maximum spawn rates. Screen constantly full.
 
 The cadence system alternates between **burst windows** (double spawn rates for 5-10s) and **breathers** (only trickle spawns for 3-5s) to create tension/release rhythm. This is critical to the feel.
 
@@ -85,12 +85,12 @@ web/src/
 │       ├── rhombus.ts          # Tier 1 — basic tracker
 │       ├── pinwheel.ts         # Tier 1 — bouncer
 │       ├── square.ts           # Tier 2 — splits into Square2 children
-│       ├── circle.ts           # Tier 2 — fast, spawned by Triangle on death
-│       ├── triangle.ts         # Tier 2 — bounces, spawns Circles on death
-│       ├── blackhole.ts        # Tier 3 — stationary, pulls player + absorbs enemies, overload explosion
+│       ├── circle.ts           # Child — fast, spawned only by BlackHole overload explosion
+│       ├── blackhole.ts        # Tier 3 — spawns anywhere in arena, pulls player + absorbs enemies, overload spawns Circles
 │       ├── sierpinski.ts       # Tier 3 — fractal breakup on hit, spawns Shards on death
 │       ├── shard.ts            # Child — tiny fast triangle from Sierpinski death
 │       │                       # --- Files below exist but are NOT wired into spawner ---
+│       ├── triangle.ts         # (unwired) bounces, spawns Circles on death
 │       ├── fibspiral.ts        # (unwired) logarithmic spiral toward player
 │       ├── mobius.ts           # (unwired) orbits player, periodic immunity phase
 │       ├── koch.ts             # (unwired) ice trails that slow player
@@ -110,7 +110,7 @@ web/src/
 │
 └── ui/
     ├── hud.ts                  # Score + lives overlay (2D canvas)
-    ├── settings-panel.ts       # Settings panel for difficulty tuning (mobile portrait + desktop menu/gameover)
+    ├── settings-panel.ts       # Settings panel for difficulty tuning with descriptions (mobile portrait + desktop menu/gameover)
     ├── virtual-joystick.ts     # Mobile twin-stick joysticks
     └── offscreen-indicators.ts # Edge arrows for off-screen enemies
 ```
@@ -202,6 +202,7 @@ The `onBulletHit()` virtual method allows enemies to override bullet interaction
 - Bloom intensity, trail length
 - BlackHole gravity: attract radius, enemy pull, player pull, grid mass base/per-absorb, grid radius multiplier
 - Grid physics: anchor stiffness, damping, max displacement (read by `grid.ts` each frame)
+- Vulnerable during spawn: boolean toggle to allow bullets to kill spawning enemies
 
 ### Audio System
 
@@ -220,6 +221,10 @@ To comment out any enemy (e.g., Sierpinski):
 3. The `default` case in `createEnemy()` falls back to Rhombus, so stale spawn requests degrade gracefully
 
 Config entries in `config.ts` can be left — unused config is harmless.
+
+**Currently active in spawn pools:** rhombus, pinwheel, square, blackhole, sierpinski (5 types).
+**Child-only types** (spawned by parents, not in pools): circle (BlackHole overload), shard (Sierpinski death), square2 (Square split).
+**BlackHole spawns anywhere** in the arena (not at edges like other enemies).
 
 ---
 
@@ -263,7 +268,9 @@ Twin-stick virtual joysticks, responsive canvas, mobile performance optimization
 - Spring-mass grid rewrite, smaller arena (1600x1000), auto-fit zoom
 - Death slowmo mechanic reused for game over transition
 - BlackHole gravity fix: grid bending, enemy pull, player pull all retuned from imperceptible to visible levels. Grid anchor stiffness (50→15), damping (12→8), max displacement (60→120). BH enemy pull (0.18→1.5), player pull (0.4→2.5), grid mass (80→250). Grid physics now runtime-tunable via settings panel sliders.
-- Desktop settings panel: Settings panel (16 sliders + phase dropdown) now visible on desktop during menu and gameover states. DOM overlay at bottom-center of screen, hidden during gameplay. `settings-panel.ts` refactored to support multiple mount points (mobile `#settings-mount` + desktop `#desktop-settings`), with cross-instance sync on value changes. `game.ts` calls `showDesktopSettings()`/`hideDesktopSettings()` on state transitions (skipped on mobile).
+- Desktop settings panel: Settings panel (17 sliders + phase dropdown + checkbox) now visible on desktop during menu and gameover states. DOM overlay at bottom-center of screen, hidden during gameplay. `settings-panel.ts` refactored to support multiple mount points (mobile `#settings-mount` + desktop `#desktop-settings`), with cross-instance sync on value changes. `game.ts` calls `showDesktopSettings()`/`hideDesktopSettings()` on state transitions (skipped on mobile). Each slider has a description line explaining what it controls.
+- Spawn rework: Triangle unwired from spawner (circle was its child). Circle removed from all spawn pools — now only spawned by BlackHole overload explosion. BlackHole spawns anywhere in the arena (not at edges). New `spawnAnywhere()` method on Enemy base class.
+- Vulnerable during spawn setting: New boolean toggle in settings panel. When enabled, bullets can kill enemies during their spawn-in animation. Checked in `collision.ts`.
 
 ### Phase 4 (Scores, Polish & Tuning) — Not Started
 localStorage leaderboard, screenshot-friendly game over screen, debug overlay, difficulty curve tuning, performance profiling, cross-browser testing. See `TASKS.md` for full checklist.
@@ -275,7 +282,7 @@ localStorage leaderboard, screenshot-friendly game over screen, debug overlay, d
 - **WAV audio files** are large; could convert to OGG/MP3 for smaller bundle
 - **Procedural music** uses setTimeout scheduling, not AudioContext scheduler — may drift slightly
 - **No spatial partitioning** for collision — works fine now but could become a bottleneck at 100+ enemies with 200 bullets (16,000+ checks/frame). Add grid-based spatial hash if profiling shows issues
-- **10 unwired enemy source files** exist (fibspiral, mobius, koch, penrose, mengerdust, hyperbolicdisc, tesseract, mandelbrot, minimandel, klein) — can be re-enabled by adding to `EnemyType`, `createEnemy()`, and spawn pool arrays
+- **11 unwired enemy source files** exist (triangle, fibspiral, mobius, koch, penrose, mengerdust, hyperbolicdisc, tesseract, mandelbrot, minimandel, klein) — can be re-enabled by adding to `EnemyType`, `createEnemy()`, and spawn pool arrays
 - **No leaderboard** yet (Phase 4)
 - **No debug overlay** yet (Phase 4)
 

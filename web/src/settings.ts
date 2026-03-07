@@ -29,6 +29,7 @@ export interface GameSettings {
   gridAnchorStiffness: number;    // 1–100 (spring return-to-rest strength)
   gridDamping: number;            // 1–20 (velocity damping)
   gridMaxDisplacement: number;    // 20–200 (max px displacement from rest)
+  vulnerableDuringSpawn: boolean; // false = spawn invulnerability (default), true = can be shot during spawn
 }
 
 export const DEFAULTS: GameSettings = {
@@ -50,6 +51,7 @@ export const DEFAULTS: GameSettings = {
   gridAnchorStiffness: GRID_ANCHOR_STIFFNESS,
   gridDamping: GRID_SPRING_DAMPING,
   gridMaxDisplacement: GRID_MAX_DISPLACEMENT,
+  vulnerableDuringSpawn: false,
 };
 
 const STORAGE_KEY = 'gg_settings';

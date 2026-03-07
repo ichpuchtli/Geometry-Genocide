@@ -3,6 +3,7 @@ import { Bullet } from '../entities/bullet';
 import { Enemy } from '../entities/enemies/enemy';
 import { Vec2 } from './vector';
 import { BULLET_COLLISION_RADIUS_ENEMY } from '../config';
+import { gameSettings } from '../settings';
 
 export interface CollisionResult {
   killedEnemies: { enemy: Enemy; position: Vec2; color: [number, number, number]; scoreValue: number }[];
@@ -23,7 +24,7 @@ export function checkCollisions(
   for (const b of bullets) {
     if (!b.active) continue;
     for (const e of enemies) {
-      if (!e.active || e.isSpawning) continue;
+      if (!e.active || (e.isSpawning && !gameSettings.vulnerableDuringSpawn)) continue;
       if (b.position.distanceToSq(e.position) < BULLET_COLLISION_RADIUS_ENEMY * BULLET_COLLISION_RADIUS_ENEMY) {
         const bulletAngle = Math.atan2(b.position.y - e.position.y, b.position.x - e.position.x);
         const reaction = e.onBulletHit(bulletAngle);
@@ -61,7 +62,7 @@ export function checkCollisions(
   // Player vs Enemy
   if (!player.isInvulnerable && player.active) {
     for (const e of enemies) {
-      if (!e.active || e.isSpawning) continue;
+      if (!e.active || (e.isSpawning && !gameSettings.vulnerableDuringSpawn)) continue;
       const dist = player.position.distanceToSq(e.position);
       const minDist = player.collisionRadius + e.collisionRadius;
       if (dist < minDist * minDist) {

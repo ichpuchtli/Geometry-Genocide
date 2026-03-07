@@ -54,6 +54,17 @@ export abstract class Enemy extends Entity {
     }
   }
 
+  /** Place at a random position anywhere within the arena */
+  spawnAnywhere(): void {
+    const margin = 50;
+    const hw = WORLD_WIDTH / 2 - margin;
+    const hh = WORLD_HEIGHT / 2 - margin;
+    this.position.set(
+      (Math.random() - 0.5) * 2 * hw,
+      (Math.random() - 0.5) * 2 * hh,
+    );
+  }
+
   /** Move toward a target position */
   protected follow(target: Vec2): void {
     const dir = target.add(this.displacer).sub(this.position);

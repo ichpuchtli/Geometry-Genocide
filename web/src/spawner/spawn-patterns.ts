@@ -6,11 +6,10 @@ export type EnemyType =
   | 'rhombus'
   | 'pinwheel'
   | 'square'
-  | 'triangle'
-  | 'circle'
   | 'blackhole'
   | 'sierpinski'
   // --- Child types (spawned by parents, not in pools) ---
+  | 'circle'   // spawned only by BlackHole overload explosion
   | 'shard'
   ;
 
@@ -34,7 +33,6 @@ export const MIDGAME_POOL: EnemyType[] = [
   'rhombus', 'rhombus', 'rhombus', 'rhombus',
   'pinwheel', 'pinwheel', 'pinwheel',
   'square', 'square', 'square',
-  'triangle', 'triangle',
   'sierpinski',
   'blackhole',
 ];
@@ -43,7 +41,6 @@ export const INTENSE_POOL: EnemyType[] = [
   'rhombus', 'rhombus', 'rhombus', 'rhombus',
   'pinwheel', 'pinwheel', 'pinwheel',
   'square', 'square', 'square',
-  'triangle', 'triangle', 'triangle',
   'sierpinski', 'sierpinski',
   'blackhole', 'blackhole',
 ];
@@ -52,8 +49,6 @@ export const CHAOS_POOL: EnemyType[] = [
   'rhombus', 'rhombus', 'rhombus',
   'pinwheel', 'pinwheel',
   'square', 'square', 'square',
-  'triangle', 'triangle', 'triangle',
-  'circle', 'circle', 'circle',
   'sierpinski', 'sierpinski',
   'blackhole', 'blackhole',
 ];
@@ -62,7 +57,6 @@ export const CHAOS_POOL: EnemyType[] = [
 export const SWARM_POOL: EnemyType[] = [
   'rhombus', 'rhombus', 'rhombus',
   'pinwheel', 'pinwheel',
-  'circle',
 ];
 
 export function pickRandom<T>(arr: T[]): T {

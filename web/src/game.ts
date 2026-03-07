@@ -55,7 +55,6 @@ import { Rhombus } from './entities/enemies/rhombus';
 import { Pinwheel } from './entities/enemies/pinwheel';
 import { Square, Square2 } from './entities/enemies/square';
 import { CircleEnemy } from './entities/enemies/circle';
-import { Triangle } from './entities/enemies/triangle';
 import { BlackHole } from './entities/enemies/blackhole';
 import { Shard } from './entities/enemies/shard';
 import { Sierpinski } from './entities/enemies/sierpinski';
@@ -72,14 +71,17 @@ function createEnemy(type: string, pos?: Vec2): Enemy {
     case 'square': e = new Square(); break;
     case 'square2': e = new Square2(pos); e.speed *= gameSettings.enemySpeedMultiplier; return e;
     case 'circle': e = new CircleEnemy(pos); e.speed *= gameSettings.enemySpeedMultiplier; return e;
-    case 'triangle': e = new Triangle(); break;
     case 'blackhole': e = new BlackHole(); break;
     case 'shard': e = new Shard(pos); e.speed *= gameSettings.enemySpeedMultiplier; return e;
     case 'sierpinski': e = new Sierpinski(); break;
     default: e = new Rhombus(); break;
   }
   if (!pos) {
-    e.spawnAtEdge();
+    if (type === 'blackhole') {
+      e.spawnAnywhere();
+    } else {
+      e.spawnAtEdge();
+    }
   } else {
     e.position.copyFrom(pos);
   }
@@ -700,7 +702,6 @@ export class Game {
       case 'rhombus': this.audio.playSFX('rhombus'); break;
       case 'square': this.audio.playSFX('square'); break;
       case 'pinwheel': this.audio.playSFX('pinwheel'); break;
-      case 'triangle': this.audio.playSFX('triangle2'); break;
       case 'blackhole': this.audio.playSFX('deathstar'); break;
       case 'sierpinski': this.audio.playSFX('octagon'); break;
     }

@@ -12,6 +12,7 @@ const PHASE_LABELS: Record<string, string> = {
 interface SliderDef {
   key: keyof GameSettings;
   label: string;
+  desc: string;
   min: number;
   max: number;
   step: number;
@@ -19,25 +20,25 @@ interface SliderDef {
 }
 
 const SLIDERS: SliderDef[] = [
-  { key: 'spawnRateMultiplier', label: 'Spawn Rate', min: 0.5, max: 2.0, step: 0.1, format: v => `${v.toFixed(1)}x` },
-  { key: 'startingLives', label: 'Starting Lives', min: 1, max: 10, step: 1, format: v => `${v}` },
-  { key: 'playerSpeedMultiplier', label: 'Player Speed', min: 0.5, max: 2.0, step: 0.1, format: v => `${v.toFixed(1)}x` },
-  { key: 'fireRateMultiplier', label: 'Fire Rate', min: 0.5, max: 3.0, step: 0.1, format: v => `${v.toFixed(1)}x` },
-  { key: 'enemySpeedMultiplier', label: 'Enemy Speed', min: 0.5, max: 2.0, step: 0.1, format: v => `${v.toFixed(1)}x` },
-  { key: 'maxEnemies', label: 'Max Enemies', min: 20, max: 150, step: 10, format: v => `${v}` },
-  { key: 'bloomIntensity', label: 'Bloom', min: 0.5, max: 4.0, step: 0.1, format: v => `${v.toFixed(1)}` },
-  { key: 'trailLength', label: 'Trail Length', min: 2, max: 30, step: 1, format: v => `${v}` },
+  { key: 'spawnRateMultiplier', label: 'Spawn Rate', desc: 'Scales spawn intervals. Lower = more enemies', min: 0.5, max: 2.0, step: 0.1, format: v => `${v.toFixed(1)}x` },
+  { key: 'startingLives', label: 'Starting Lives', desc: 'Number of lives at game start', min: 1, max: 10, step: 1, format: v => `${v}` },
+  { key: 'playerSpeedMultiplier', label: 'Player Speed', desc: 'Multiplier on player movement speed', min: 0.5, max: 2.0, step: 0.1, format: v => `${v.toFixed(1)}x` },
+  { key: 'fireRateMultiplier', label: 'Fire Rate', desc: 'Multiplier on shooting speed', min: 0.5, max: 3.0, step: 0.1, format: v => `${v.toFixed(1)}x` },
+  { key: 'enemySpeedMultiplier', label: 'Enemy Speed', desc: 'Multiplier on all enemy movement', min: 0.5, max: 2.0, step: 0.1, format: v => `${v.toFixed(1)}x` },
+  { key: 'maxEnemies', label: 'Max Enemies', desc: 'Hard cap on simultaneous enemies', min: 20, max: 150, step: 10, format: v => `${v}` },
+  { key: 'bloomIntensity', label: 'Bloom', desc: 'Glow post-processing intensity', min: 0.5, max: 4.0, step: 0.1, format: v => `${v.toFixed(1)}` },
+  { key: 'trailLength', label: 'Trail Length', desc: 'Length of motion trails behind entities', min: 2, max: 30, step: 1, format: v => `${v}` },
   // BlackHole gravity
-  { key: 'bhAttractRadius', label: 'BH Pull Radius', min: 50, max: 600, step: 10, format: v => `${v}px` },
-  { key: 'bhEnemyPull', label: 'BH Enemy Pull', min: 0.1, max: 5.0, step: 0.1, format: v => v.toFixed(1) },
-  { key: 'bhPlayerPull', label: 'BH Player Pull', min: 0.0, max: 5.0, step: 0.1, format: v => v.toFixed(1) },
-  { key: 'bhGridMassBase', label: 'BH Grid Depth', min: 0, max: 500, step: 10, format: v => `${v}` },
-  { key: 'bhGridMassPerAbsorb', label: 'BH Grid/Absorb', min: 0, max: 100, step: 5, format: v => `${v}` },
-  { key: 'bhGridRadiusMultiplier', label: 'BH Grid Radius', min: 0.5, max: 5.0, step: 0.1, format: v => `${v.toFixed(1)}x` },
+  { key: 'bhAttractRadius', label: 'BH Pull Radius', desc: 'How far BlackHole gravity reaches (px)', min: 50, max: 600, step: 10, format: v => `${v}px` },
+  { key: 'bhEnemyPull', label: 'BH Enemy Pull', desc: 'Strength of pull on nearby enemies', min: 0.1, max: 5.0, step: 0.1, format: v => v.toFixed(1) },
+  { key: 'bhPlayerPull', label: 'BH Player Pull', desc: 'Strength of pull on the player', min: 0.0, max: 5.0, step: 0.1, format: v => v.toFixed(1) },
+  { key: 'bhGridMassBase', label: 'BH Grid Depth', desc: 'Grid warping depth at 0 absorbed enemies', min: 0, max: 500, step: 10, format: v => `${v}` },
+  { key: 'bhGridMassPerAbsorb', label: 'BH Grid/Absorb', desc: 'Additional grid depth per absorbed enemy', min: 0, max: 100, step: 5, format: v => `${v}` },
+  { key: 'bhGridRadiusMultiplier', label: 'BH Grid Radius', desc: 'Grid warp radius as multiple of pull radius', min: 0.5, max: 5.0, step: 0.1, format: v => `${v.toFixed(1)}x` },
   // Grid physics
-  { key: 'gridAnchorStiffness', label: 'Grid Anchor', min: 1, max: 100, step: 1, format: v => `${v}` },
-  { key: 'gridDamping', label: 'Grid Damping', min: 1, max: 20, step: 1, format: v => `${v}` },
-  { key: 'gridMaxDisplacement', label: 'Grid Max Disp', min: 20, max: 200, step: 5, format: v => `${v}px` },
+  { key: 'gridAnchorStiffness', label: 'Grid Anchor', desc: 'Spring return-to-rest strength (higher = stiffer)', min: 1, max: 100, step: 1, format: v => `${v}` },
+  { key: 'gridDamping', label: 'Grid Damping', desc: 'Velocity damping (higher = less wobble)', min: 1, max: 20, step: 1, format: v => `${v}` },
+  { key: 'gridMaxDisplacement', label: 'Grid Max Disp', desc: 'Maximum grid node displacement from rest (px)', min: 20, max: 200, step: 5, format: v => `${v}px` },
 ];
 
 // Track all panel instances so Reset Defaults can sync them all
@@ -58,6 +59,10 @@ function buildSettingsPanel(): HTMLDivElement {
     header.className = 'sp-header';
     header.innerHTML = '<span class="sp-label">Starting Phase</span>';
     row.appendChild(header);
+    const desc = document.createElement('div');
+    desc.className = 'sp-desc';
+    desc.textContent = 'Skip to a later difficulty phase';
+    row.appendChild(desc);
 
     const sel = document.createElement('select');
     for (const p of PHASES) {
@@ -73,6 +78,30 @@ function buildSettingsPanel(): HTMLDivElement {
       syncAllPanels();
     });
     row.appendChild(sel);
+    panel.appendChild(row);
+  }
+
+  // Vulnerable during spawn checkbox
+  {
+    const row = document.createElement('div');
+    row.className = 'sp-row sp-checkbox-row';
+    const label = document.createElement('label');
+    label.className = 'sp-checkbox-label';
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.checked = gameSettings.vulnerableDuringSpawn;
+    cb.addEventListener('change', () => {
+      gameSettings.vulnerableDuringSpawn = cb.checked;
+      saveSettings();
+      syncAllPanels();
+    });
+    label.appendChild(cb);
+    label.appendChild(document.createTextNode(' Kill During Spawn'));
+    row.appendChild(label);
+    const desc = document.createElement('div');
+    desc.className = 'sp-desc';
+    desc.textContent = 'Enemies can be destroyed during spawn-in animation';
+    row.appendChild(desc);
     panel.appendChild(row);
   }
 
@@ -94,6 +123,11 @@ function buildSettingsPanel(): HTMLDivElement {
     header.appendChild(label);
     header.appendChild(val);
     row.appendChild(header);
+
+    const descEl = document.createElement('div');
+    descEl.className = 'sp-desc';
+    descEl.textContent = def.desc;
+    row.appendChild(descEl);
 
     const input = document.createElement('input');
     input.type = 'range';
@@ -133,6 +167,11 @@ function syncAllPanels(): void {
     const selects = inst.panel.querySelectorAll('select');
     selects.forEach(sel => {
       (sel as HTMLSelectElement).value = gameSettings.startingPhase;
+    });
+    // Update checkboxes
+    const checkboxes = inst.panel.querySelectorAll('input[type="checkbox"]');
+    checkboxes.forEach(cb => {
+      (cb as HTMLInputElement).checked = gameSettings.vulnerableDuringSpawn;
     });
     // Update sliders + value displays
     const inputs = inst.panel.querySelectorAll('input[type="range"]');
@@ -181,7 +220,22 @@ export function initSettingsPanel(desktopMount?: HTMLElement | null): void {
         margin-bottom: 2px;
       }
       .sp-label { opacity: 0.8; }
+      .sp-desc { font-size: 10px; opacity: 0.45; margin-bottom: 2px; }
       .sp-value { color: #60ff60; font-weight: bold; }
+      .sp-checkbox-row { margin-bottom: 12px; }
+      .sp-checkbox-label {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        opacity: 0.9;
+      }
+      .sp-checkbox-label input[type="checkbox"] {
+        accent-color: #20ff20;
+        width: 14px;
+        height: 14px;
+        cursor: pointer;
+      }
       .sp-row input[type="range"] {
         width: 100%;
         height: 20px;
