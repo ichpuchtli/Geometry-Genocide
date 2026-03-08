@@ -334,7 +334,7 @@ Heat system and post-death recovery window added to `game.ts`:
   - Starfield gains diagonal drift motion via `Starfield.setDrift()`/`updateDrift()` scaled by heat
   - Grid gets random micro-impulse turbulence (up to HEAT_GRID_TURBULENCE_MAX) at heat >0.1
   - Music intensity gets +0.15 * heat boost via `computeIntensity()`
-- **Heat HUD:** Thin vertical bar on left side of screen with orange→white gradient fill. Label "HEAT" below. Only visible when heat >0.01.
+- **Heat HUD:** Removed — heat is communicated purely through visual/audio spectacle (border color, bloom, starfield drift, grid turbulence, music intensity), not an explicit meter.
 - **Recovery window:** Activated on non-final respawn (after death slowmo). 3500ms duration.
   - Player invulnerable for full recovery duration (overrides normal 2s invuln)
   - Fire rate boosted 1.8x via `Player.fireRateOverride`

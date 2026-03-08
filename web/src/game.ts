@@ -1557,11 +1557,6 @@ export class Game {
     if (this.state === 'playing' || this.state === 'death_slowmo') {
       this.hud.drawPlaying(this.player.score, this.player.lives, this.audio.muted, this.enemies.length, this.input.autoFire);
 
-      // Heat meter
-      if (this.state === 'playing') {
-        this.hud.drawHeatMeter(this.heat);
-      }
-
       // Recovery banner
       if (this.recoveryActive && this.state === 'playing') {
         this.hud.drawRecoveryBanner(this.recoveryTimer / RECOVERY_DURATION);

@@ -134,44 +134,6 @@ export class HUD {
     this.ctx.restore();
   }
 
-  /** Draw heat meter — thin bar on the left side, scales with heat 0-1 */
-  drawHeatMeter(heat: number): void {
-    if (heat <= 0.01) return;
-    const w = this.canvas.clientWidth;
-    const h = this.canvas.clientHeight;
-
-    const barX = 20;
-    const barY = h * 0.2;
-    const barW = 6;
-    const barH = h * 0.3;
-    const fillH = barH * heat;
-
-    // Background outline
-    this.ctx.save();
-    this.ctx.strokeStyle = 'rgba(255, 100, 50, 0.3)';
-    this.ctx.lineWidth = 1;
-    this.ctx.strokeRect(barX, barY, barW, barH);
-
-    // Fill (bottom-up, gradient from orange to white)
-    const gradient = this.ctx.createLinearGradient(barX, barY + barH, barX, barY + barH - fillH);
-    gradient.addColorStop(0, 'rgba(255, 120, 30, 0.6)');
-    gradient.addColorStop(0.5, 'rgba(255, 180, 50, 0.8)');
-    gradient.addColorStop(1, 'rgba(255, 255, 200, 0.9)');
-    this.ctx.fillStyle = gradient;
-    this.ctx.shadowColor = 'rgba(255, 120, 30, 0.5)';
-    this.ctx.shadowBlur = 8;
-    this.ctx.fillRect(barX, barY + barH - fillH, barW, fillH);
-
-    // Label
-    this.ctx.shadowBlur = 0;
-    this.ctx.fillStyle = heat > 0.5 ? 'rgba(255, 180, 50, 0.8)' : 'rgba(255, 120, 30, 0.5)';
-    this.ctx.font = '9px monospace';
-    this.ctx.textAlign = 'center';
-    this.ctx.textBaseline = 'top';
-    this.ctx.fillText('HEAT', barX + barW / 2, barY + barH + 4);
-    this.ctx.restore();
-  }
-
   /** Draw recovery window banner */
   drawRecoveryBanner(progress: number): void {
     if (progress <= 0) return;
