@@ -774,7 +774,6 @@ export class Game {
             this.mobile ? 20 : 40, EXPLOSION_DURATION_DEFAULT * 0.6,
           );
           this.grid.applyImpulse(kill.position.x, kill.position.y, 500, 220);
-          this.camera.shake(SCREEN_SHAKE_SMALL * 0.5);
           maxHitstop = Math.max(maxHitstop, HITSTOP_SIERPINSKI);
           this.haptics.medium();
           break;
@@ -784,7 +783,6 @@ export class Game {
             this.mobile ? 35 : 70, EXPLOSION_DURATION_DEFAULT * 1.1, 0.8,
           );
           this.grid.applyImpulse(kill.position.x, kill.position.y, 450, 200);
-          this.camera.shake(SCREEN_SHAKE_SMALL * 0.4);
           maxHitstop = Math.max(maxHitstop, HITSTOP_SQUARE);
           this.haptics.medium();
           break;
