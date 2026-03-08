@@ -6,6 +6,7 @@
 **Workflow rules:**
 1. After each change, commit and push to master.
 2. **MANDATORY: Update this CLAUDE.md file** after every code change to reflect the current state of the codebase. This includes: new/changed config values, new settings, architectural changes, new files, completed work items, and any other information that would help a future AI assistant understand the codebase. This update must be part of the same commit as the code change.
+3. **MANDATORY: Test every change with a Playwright test** before committing. Use the `/playwright` skill to write and run tests that verify your changes work correctly.
 
 ---
 
