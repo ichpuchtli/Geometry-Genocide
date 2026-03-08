@@ -44,12 +44,28 @@ export class SpringMassGrid {
   private wellStr: number[] = [];
   private wellRad: number[] = [];
 
+  // Render-side copies of gravity wells (preserved across update→render gap)
+  private renderWellX: number[] = [];
+  private renderWellY: number[] = [];
+  private renderWellStr: number[] = [];
+  private renderWellRad: number[] = [];
+
+  // Pre-allocated arrays for uploading well uniforms
+  private wellPosArray = new Float32Array(16); // 8 wells * 2 components
+  private wellStrArray = new Float32Array(8);
+  private wellRadArray = new Float32Array(8);
+
   // Uniform locations
   private uResolution: WebGLUniformLocation;
   private uCamera: WebGLUniformLocation;
   private uColorBase: WebGLUniformLocation;
   private uColorStretch: WebGLUniformLocation;
   private uColorCompress: WebGLUniformLocation;
+  private uWellCount: WebGLUniformLocation;
+  private uWellPositions: WebGLUniformLocation;
+  private uWellStrengths: WebGLUniformLocation;
+  private uWellRadii: WebGLUniformLocation;
+  private uPerspectiveDepth: WebGLUniformLocation;
 
   constructor(gl: WebGLRenderingContext, mobile: boolean) {
     this.gl = gl;
@@ -61,6 +77,11 @@ export class SpringMassGrid {
     this.uColorBase = gl.getUniformLocation(this.program, 'u_colorBase')!;
     this.uColorStretch = gl.getUniformLocation(this.program, 'u_colorStretch')!;
     this.uColorCompress = gl.getUniformLocation(this.program, 'u_colorCompress')!;
+    this.uWellCount = gl.getUniformLocation(this.program, 'u_wellCount')!;
+    this.uWellPositions = gl.getUniformLocation(this.program, 'u_wellPositions')!;
+    this.uWellStrengths = gl.getUniformLocation(this.program, 'u_wellStrengths')!;
+    this.uWellRadii = gl.getUniformLocation(this.program, 'u_wellRadii')!;
+    this.uPerspectiveDepth = gl.getUniformLocation(this.program, 'u_perspectiveDepth')!;
 
     this.vertexBuffer = gl.createBuffer()!;
     this.indexBuffer = gl.createBuffer()!;
@@ -141,6 +162,10 @@ export class SpringMassGrid {
     this.wellY.length = 0;
     this.wellStr.length = 0;
     this.wellRad.length = 0;
+    this.renderWellX.length = 0;
+    this.renderWellY.length = 0;
+    this.renderWellStr.length = 0;
+    this.renderWellRad.length = 0;
   }
 
   /** One-shot radial impulse — directly modifies velocities */
@@ -312,6 +337,19 @@ export class SpringMassGrid {
       }
     }
 
+    // Copy gravity wells to render-side arrays before clearing (cap at 8)
+    const count = Math.min(this.wellX.length, 8);
+    this.renderWellX.length = count;
+    this.renderWellY.length = count;
+    this.renderWellStr.length = count;
+    this.renderWellRad.length = count;
+    for (let i = 0; i < count; i++) {
+      this.renderWellX[i] = this.wellX[i];
+      this.renderWellY[i] = this.wellY[i];
+      this.renderWellStr[i] = this.wellStr[i];
+      this.renderWellRad[i] = this.wellRad[i];
+    }
+
     // Clear gravity wells for next frame
     this.wellX.length = 0;
     this.wellY.length = 0;
@@ -349,6 +387,26 @@ export class SpringMassGrid {
     gl.uniform3f(this.uColorBase, GRID_COLOR_BASE[0], GRID_COLOR_BASE[1], GRID_COLOR_BASE[2]);
     gl.uniform3f(this.uColorStretch, GRID_COLOR_STRETCH[0], GRID_COLOR_STRETCH[1], GRID_COLOR_STRETCH[2]);
     gl.uniform3f(this.uColorCompress, GRID_COLOR_COMPRESS[0], GRID_COLOR_COMPRESS[1], GRID_COLOR_COMPRESS[2]);
+
+    // Upload gravity well data for spacetime fabric shader
+    const wellCount = this.renderWellX.length;
+    gl.uniform1i(this.uWellCount, wellCount);
+    if (wellCount > 0) {
+      // Pack into pre-allocated arrays
+      this.wellPosArray.fill(0);
+      this.wellStrArray.fill(0);
+      this.wellRadArray.fill(0);
+      for (let i = 0; i < wellCount; i++) {
+        this.wellPosArray[i * 2] = this.renderWellX[i];
+        this.wellPosArray[i * 2 + 1] = this.renderWellY[i];
+        this.wellStrArray[i] = this.renderWellStr[i];
+        this.wellRadArray[i] = this.renderWellRad[i];
+      }
+      gl.uniform2fv(this.uWellPositions, this.wellPosArray);
+      gl.uniform1fv(this.uWellStrengths, this.wellStrArray);
+      gl.uniform1fv(this.uWellRadii, this.wellRadArray);
+    }
+    gl.uniform1f(this.uPerspectiveDepth, gameSettings.bhGridPerspectiveDepth);
 
     // Vertex attribs (stride = 16 bytes: 4 floats)
     const aPos = gl.getAttribLocation(this.program, 'a_position');
@@ -389,5 +447,9 @@ export class SpringMassGrid {
     this.wellY.length = 0;
     this.wellStr.length = 0;
     this.wellRad.length = 0;
+    this.renderWellX.length = 0;
+    this.renderWellY.length = 0;
+    this.renderWellStr.length = 0;
+    this.renderWellRad.length = 0;
   }
 }

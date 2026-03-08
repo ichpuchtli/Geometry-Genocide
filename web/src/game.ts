@@ -527,6 +527,11 @@ export class Game {
     const spawns = this.waveManager.update(dt, this.player.position);
     for (const req of spawns) {
       if (this.enemies.length >= gameSettings.maxEnemies) continue;
+      // Hard cap: max 4 BlackHoles active at once
+      if (req.type === 'blackhole') {
+        const bhCount = this.enemies.filter(e => e.active && e instanceof BlackHole).length;
+        if (bhCount >= 4) continue;
+      }
       const enemy = createEnemy(req.type, req.position);
       // If ambush spawn, use longer spawn animation
       if (req.isAmbush) { enemy.spawnDuration = enemy.spawnTimer = SPAWN_DURATION_AMBUSH; }

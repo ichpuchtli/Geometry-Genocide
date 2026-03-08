@@ -33,6 +33,7 @@ export interface GameSettings {
   bhGridMassBase: number;         // 0–500 (grid well depth at 0 absorbed)
   bhGridMassPerAbsorb: number;    // 0–100 (additional grid depth per absorbed enemy)
   bhGridRadiusMultiplier: number; // 0.5–5.0 (grid well radius as multiple of attract radius)
+  bhGridPerspectiveDepth: number; // 0.0–1.0 (strength of 3D spacetime depression illusion)
   // Grid physics tuning
   gridAnchorStiffness: number;    // 1–100 (spring return-to-rest strength)
   gridDamping: number;            // 1–20 (velocity damping)
@@ -60,12 +61,13 @@ export const DEFAULTS: GameSettings = {
   maxEnemies: MOBILE_MAX_ENEMIES,
   bloomIntensity: BLOOM_INTENSITY,
   trailLength: TRAIL_LENGTH_ENEMY,
-  bhAttractRadius: 300,
-  bhEnemyPull: 1.5,
-  bhPlayerPull: 2.5,
-  bhGridMassBase: 250,
+  bhAttractRadius: 400,
+  bhEnemyPull: 2.5,
+  bhPlayerPull: 3.5,
+  bhGridMassBase: 400,
   bhGridMassPerAbsorb: 40,
-  bhGridRadiusMultiplier: 2.5,
+  bhGridRadiusMultiplier: 3.0,
+  bhGridPerspectiveDepth: 0.6,
   gridAnchorStiffness: GRID_ANCHOR_STIFFNESS,
   gridDamping: GRID_SPRING_DAMPING,
   gridMaxDisplacement: GRID_MAX_DISPLACEMENT,

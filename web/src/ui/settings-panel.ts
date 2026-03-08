@@ -35,6 +35,7 @@ const SLIDERS: SliderDef[] = [
   { key: 'bhGridMassBase', label: 'BH Grid Depth', desc: 'Grid warping depth at 0 absorbed enemies', min: 0, max: 500, step: 10, format: v => `${v}` },
   { key: 'bhGridMassPerAbsorb', label: 'BH Grid/Absorb', desc: 'Additional grid depth per absorbed enemy', min: 0, max: 100, step: 5, format: v => `${v}` },
   { key: 'bhGridRadiusMultiplier', label: 'BH Grid Radius', desc: 'Grid warp radius as multiple of pull radius', min: 0.5, max: 5.0, step: 0.1, format: v => `${v.toFixed(1)}x` },
+  { key: 'bhGridPerspectiveDepth', label: 'BH Depth Effect', desc: 'Strength of 3D spacetime depression illusion (0=flat, 1=max)', min: 0.0, max: 1.0, step: 0.05, format: v => v.toFixed(2) },
   // Grid physics
   { key: 'gridAnchorStiffness', label: 'Grid Anchor', desc: 'Spring return-to-rest strength (higher = stiffer)', min: 1, max: 100, step: 1, format: v => `${v}` },
   { key: 'gridDamping', label: 'Grid Damping', desc: 'Velocity damping (higher = less wobble)', min: 1, max: 20, step: 1, format: v => `${v}` },

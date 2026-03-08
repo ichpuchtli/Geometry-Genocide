@@ -1,0 +1,71 @@
+name: "BlackHole Spacetime Fabric"
+tags: [visual, blackhole]
+steps:
+  - action: launch
+    url: "/"
+    waitFor: "canvas#game"
+
+  - action: wait
+    ms: 300
+
+  # Set starting phase to intense and boost BH spawn rate via localStorage
+  - action: evalCheck
+    description: "Configure settings for BlackHole testing"
+    script: |
+      const settings = JSON.parse(localStorage.getItem('gg_settings') || '{}');
+      settings.startingPhase = 'intense';
+      settings.startingLives = 10;
+      settings.bhGridPerspectiveDepth = 0.6;
+      settings.bhGridMassBase = 400;
+      settings.bhGridRadiusMultiplier = 3.0;
+      localStorage.setItem('gg_settings', JSON.stringify(settings));
+      return true;
+
+  # Reload to pick up settings
+  - action: launch
+    url: "/"
+    waitFor: "canvas#game"
+
+  - action: wait
+    ms: 300
+
+  # Start game
+  - action: click
+    selector: "canvas#game"
+    x: 0.5
+    y: 0.5
+
+  - action: wait
+    ms: 200
+
+  # Move mouse and start shooting
+  - action: mouseMove
+    x: 800
+    y: 400
+
+  - action: mouseDown
+
+  # Play for 8s to let BlackHoles spawn
+  - action: keys
+    keys: ["w", "d"]
+    duration: 2000
+
+  - action: keys
+    keys: ["s", "a"]
+    duration: 2000
+
+  - action: keys
+    keys: ["w"]
+    duration: 2000
+
+  - action: keys
+    keys: ["d"]
+    duration: 2000
+
+  - action: mouseUp
+
+  - action: screenshot
+    name: "33-blackhole-spacetime"
+
+  - action: assertNoErrors
+    description: "No console errors during BlackHole gameplay"

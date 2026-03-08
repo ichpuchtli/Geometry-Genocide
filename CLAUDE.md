@@ -145,7 +145,7 @@ Scene FBO → Bloom (brightness extract → blur passes → composite with chrom
 
 - `Renderer` (sprite-batch.ts) batches all line/triangle draws per frame
 - Bloom uses ping-pong framebuffers, half-res on mobile (2 passes instead of 6)
-- Grid renders with its own shader, supports gravity wells from BlackHole
+- Grid renders with its own shader, supports gravity wells from BlackHole with spacetime fabric visual (perspective contraction + depth coloring via well uniforms)
 - Trails are ring buffers rendered as fading line segments with additive blending
 
 ### Enemy System
@@ -159,6 +159,7 @@ All enemies extend `Enemy` (which extends `Entity`). Key methods:
 
 Special mechanics are handled in `game.ts` rather than in enemy classes:
 - **BlackHole** attraction + absorption: game.ts `applyBlackHoleAttraction()` + `applyBlackHolePlayerPull()`
+- **BlackHole hard cap**: max 4 active at once (enforced in spawn loop)
 
 ### Spawn System
 
@@ -201,7 +202,7 @@ The `onBulletHit()` virtual method allows enemies to override bullet interaction
 **`settings.ts`** (runtime-tunable, persisted in localStorage):
 - Spawn rate, starting lives, player/enemy speed, fire rate, starting phase, max enemies
 - Bloom intensity, trail length
-- BlackHole gravity: attract radius, enemy pull, player pull, grid mass base/per-absorb, grid radius multiplier
+- BlackHole gravity: attract radius, enemy pull, player pull, grid mass base/per-absorb, grid radius multiplier, perspective depth (3D illusion strength)
 - Grid physics: anchor stiffness, damping, max displacement (read by `grid.ts` each frame)
 - Vulnerable during spawn: boolean toggle to allow bullets to kill spawning enemies
 - **GPU Stress settings** (arena/grid/bloom/resolution — changes take effect on game restart):
@@ -279,6 +280,8 @@ Twin-stick virtual joysticks, responsive canvas, mobile performance optimization
 - Vulnerable during spawn setting: New boolean toggle in settings panel. When enabled, bullets can kill enemies during their spawn-in animation. Checked in `collision.ts`.
 - Crosshair cursor: Desktop crosshair rendered at mouse world position (4 inward-pointing chevrons with slow rotation animation, neon green). Touch mode renders crosshair near player at aim direction. Desktop aim = atan2(cursorWorld - playerWorld) — standard player-to-cursor aiming. Old `AIM_CHEVRON_*` config replaced with `CROSSHAIR_*` constants.
 - GPU Stress settings: 9 new runtime-tunable sliders for arena size (800–6400 × 500–4000), grid resolution (spacing 10–80, substeps 1–8, stiffness 100–3000), bloom quality (threshold, passes 1–12, radius), and resolution scale (0.25–2.0x DPR). Arena/grid changes rebuild on game restart via `grid.rebuild()` + starfield recreation. All world bounds (`WORLD_WIDTH`/`WORLD_HEIGHT` references in enemy, player, bullet, camera, spawn-patterns) now read from `gameSettings.arenaWidth`/`arenaHeight`. Grid `cols`/`rows`/`totalPoints` moved from module-level constants to instance properties. Large grids (>65535 vertices) use `OES_element_index_uint` for 32-bit index buffers.
+- BlackHole enhancement — fewer but more dangerous: Hard cap at 4 active BlackHoles (enforced in game.ts spawn loop). `BLACKHOLE_HP` 4→8 (takes twice as many bullets). Default gravity settings increased: `bhAttractRadius` 300→400, `bhEnemyPull` 1.5→2.5, `bhPlayerPull` 2.5→3.5, `bhGridMassBase` 250→400, `bhGridRadiusMultiplier` 2.5→3.0, `GRID_MAX_DISPLACEMENT` 120→160.
+- Spacetime fabric grid visual: Grid shader now receives gravity well positions/strengths as uniforms (up to 8 wells). Vertex shader applies perspective contraction (vertices near wells pull toward center, simulating 3D funnel viewed from above). Fragment shader applies depth-based coloring (dark indigo center, bright blue-white rim glow at well edge, alpha boost). Grid.ts preserves well data across update→render gap in `renderWellX/Y/Str/Rad` arrays. New `bhGridPerspectiveDepth` setting (0.0–1.0, default 0.6) controls 3D illusion strength via "BH Depth Effect" slider in settings panel.
 
 ### Phase 4 (Scores, Polish & Tuning) — Not Started
 localStorage leaderboard, screenshot-friendly game over screen, debug overlay, difficulty curve tuning, performance profiling, cross-browser testing. See `TASKS.md` for full checklist.

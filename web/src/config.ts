@@ -136,7 +136,7 @@ export const MANDELBROT_SPAWN_INTERVAL = 5.0; // seconds
 export const MANDELBROT_BUD_REGROW_TIME = 3.0; // seconds
 
 // --- BlackHole ---
-export const BLACKHOLE_HP = 4;
+export const BLACKHOLE_HP = 8;
 export const BLACKHOLE_PLAYER_PULL_STRENGTH = 0.4; // px/ms² force on player
 export const BLACKHOLE_LENSING_BASE = 1.5;
 export const BLACKHOLE_LENSING_PER_ABSORB = 0.35;
@@ -198,7 +198,7 @@ export const GRID_SPACING = 40;
 export const GRID_SPRING_STIFFNESS = 800;
 export const GRID_SPRING_DAMPING = 8;
 export const GRID_ANCHOR_STIFFNESS = 15;
-export const GRID_MAX_DISPLACEMENT = 120;
+export const GRID_MAX_DISPLACEMENT = 160;
 export const GRID_SUBSTEPS = 3;
 export const GRID_MOBILE_SUBSTEPS = 2;
 export const GRID_COLOR_BASE: [number, number, number] = [0.38, 0.14, 0.72];

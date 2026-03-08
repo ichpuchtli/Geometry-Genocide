@@ -26,12 +26,12 @@ steps:
       return true;
 
   - action: evalCheck
-    description: "Settings panel has exactly 26 sliders (was 27 before removing Aim Sensitivity)"
+    description: "Settings panel has exactly 27 sliders (26 original + BH Depth Effect)"
     script: |
       var ds = document.getElementById('desktop-settings');
       if (!ds) return false;
       var sliders = ds.querySelectorAll('input[type="range"]');
-      return sliders.length === 26;
+      return sliders.length === 27;
 
   - action: evalCheck
     description: "Spawn Rate slider still exists"
