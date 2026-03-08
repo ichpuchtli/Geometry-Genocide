@@ -54,6 +54,9 @@ import {
   PHASE_DISPLAY_NAMES,
   TELEGRAPH_DURATION,
   TELEGRAPH_COLOR,
+  ELITE_MODIFIERS,
+  MAX_CONCURRENT_ELITES,
+  HITSTOP_ELITE,
 } from './config';
 import { FormationMeta } from './spawner/spawn-patterns';
 
@@ -88,7 +91,7 @@ interface Telegraph {
   duration: number;
 }
 
-function createEnemy(type: string, pos?: Vec2): Enemy {
+function createEnemy(type: string, pos?: Vec2, isElite = false): Enemy {
   let e: Enemy;
   switch (type) {
     case 'rhombus': e = new Rhombus(); break;
@@ -101,6 +104,7 @@ function createEnemy(type: string, pos?: Vec2): Enemy {
     case 'sierpinski': e = new Sierpinski(); break;
     default: e = new Rhombus(); break;
   }
+  e.baseType = type;
   if (!pos) {
     if (type === 'blackhole') {
       e.spawnAnywhere();
@@ -111,6 +115,23 @@ function createEnemy(type: string, pos?: Vec2): Enemy {
     e.position.copyFrom(pos);
   }
   e.speed *= gameSettings.enemySpeedMultiplier;
+
+  // Apply elite modifiers
+  if (isElite) {
+    const mod = ELITE_MODIFIERS[type];
+    if (mod) {
+      e.isElite = true;
+      e.speed *= mod.speedMult;
+      e.scoreValue = Math.floor(e.scoreValue * mod.scoreMult);
+      e.hp += mod.hpAdd;
+      e.maxHp += mod.hpAdd;
+      e.color = [
+        Math.min(1, e.color[0] + mod.colorBright),
+        Math.min(1, e.color[1] + mod.colorBright),
+        Math.min(1, e.color[2] + mod.colorBright),
+      ];
+    }
+  }
   return e;
 }
 
@@ -615,7 +636,13 @@ export class Game {
         const bhCount = this.enemies.filter(e => e.active && e instanceof BlackHole).length;
         if (bhCount >= 4) continue;
       }
-      const enemy = createEnemy(req.type, req.position);
+      // Enforce elite concurrent cap
+      let elite = req.isElite ?? false;
+      if (elite) {
+        const eliteCount = this.enemies.filter(e => e.active && e.isElite).length;
+        if (eliteCount >= MAX_CONCURRENT_ELITES) elite = false;
+      }
+      const enemy = createEnemy(req.type, req.position, elite);
       // If ambush spawn, use longer spawn animation
       if (req.isAmbush) { enemy.spawnDuration = enemy.spawnTimer = SPAWN_DURATION_AMBUSH; }
       // Push enemies that spawn too close to the player to the edge
@@ -631,6 +658,7 @@ export class Game {
       this.grid.applyImpulse(enemy.position.x, enemy.position.y, 80, 120);
       // Play spawn SFX for specific enemy types
       this.playEnemySpawnSFX(req.type);
+      if (elite) this.audio.playEliteArrive();
       this.haptics.medium();
     }
 
@@ -656,10 +684,15 @@ export class Game {
 
       // Determine enemy family for kill signature
       const family = this.getEnemyFamily(kill.enemy);
+      const isEliteKill = kill.enemy.isElite;
 
       // Per-family kill signature: VFX + SFX + hitstop
-      this.spawnKillSignature(kill.position.x, kill.position.y, kill.color, family);
+      this.spawnKillSignature(kill.position.x, kill.position.y, kill.color, family, isEliteKill);
       this.audio.playKillSignature(family);
+      if (isEliteKill) {
+        this.audio.playEliteKill();
+        maxHitstop = Math.max(maxHitstop, HITSTOP_ELITE);
+      }
 
       // Per-family explosion + grid + shake
       switch (family) {
@@ -863,21 +896,37 @@ export class Game {
   }
 
   /** Spawn per-family kill signature visual effect */
-  private spawnKillSignature(x: number, y: number, color: [number, number, number], family: string): void {
+  private spawnKillSignature(x: number, y: number, color: [number, number, number], family: string, isElite = false): void {
     // Only spawn for families with distinct signatures
     if (family === 'rhombus' || family === 'pinwheel' || family === 'square' || family === 'sierpinski') {
       const angles: number[] = [];
-      const count = family === 'pinwheel' ? 8 : KILL_SIG_RAY_COUNT;
+      const baseCount = family === 'pinwheel' ? 8 : KILL_SIG_RAY_COUNT;
+      const count = isElite ? Math.floor(baseCount * 1.5) : baseCount;
       const baseAngle = Math.random() * Math.PI * 2;
       for (let i = 0; i < count; i++) {
         angles.push(baseAngle + (i / count) * Math.PI * 2);
       }
       this.killEffects.push({
-        x, y, color, family,
+        x, y,
+        color: isElite ? [1, 1, 0.7] : color, // elite = bright golden-white
+        family,
         elapsed: 0,
-        duration: KILL_SIG_DURATION,
+        duration: isElite ? KILL_SIG_DURATION * 1.3 : KILL_SIG_DURATION,
         angles,
       });
+      // Elite kills get a second burst layer
+      if (isElite) {
+        const outerAngles: number[] = [];
+        for (let i = 0; i < count; i++) {
+          outerAngles.push(baseAngle + Math.PI / count + (i / count) * Math.PI * 2);
+        }
+        this.killEffects.push({
+          x, y, color, family,
+          elapsed: 0,
+          duration: KILL_SIG_DURATION * 1.5,
+          angles: outerAngles,
+        });
+      }
     }
   }
 

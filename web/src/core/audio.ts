@@ -256,6 +256,61 @@ export class AudioManager {
     impact.stop(now + 1.0);
   }
 
+  /** Distinct arrival sting for elite enemies */
+  playEliteArrive(): void {
+    if (!this._initialized || !this.ctx || !this.sfxGain) return;
+    const ctx = this.ctx;
+    const now = ctx.currentTime;
+    // Rising chime — two quick ascending tones
+    for (let i = 0; i < 2; i++) {
+      const osc = ctx.createOscillator();
+      osc.type = 'sine';
+      const t = now + i * 0.08;
+      osc.frequency.setValueAtTime(600 + i * 400, t);
+      osc.frequency.exponentialRampToValueAtTime(800 + i * 500, t + 0.1);
+      const gain = ctx.createGain();
+      gain.gain.setValueAtTime(0.15, t);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
+      osc.connect(gain);
+      gain.connect(this.sfxGain!);
+      osc.start(t);
+      osc.stop(t + 0.2);
+    }
+  }
+
+  /** Satisfying crunch+chime for elite kills */
+  playEliteKill(): void {
+    if (!this._initialized || !this.ctx || !this.sfxGain) return;
+    const ctx = this.ctx;
+    const now = ctx.currentTime;
+    // Bright major chord stab
+    const freqs = [523, 659, 784]; // C5, E5, G5
+    for (let i = 0; i < 3; i++) {
+      const osc = ctx.createOscillator();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(freqs[i], now);
+      const gain = ctx.createGain();
+      gain.gain.setValueAtTime(0.12, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+      osc.connect(gain);
+      gain.connect(this.sfxGain!);
+      osc.start(now);
+      osc.stop(now + 0.45);
+    }
+    // Sub thud
+    const sub = ctx.createOscillator();
+    sub.type = 'sine';
+    sub.frequency.setValueAtTime(80, now);
+    sub.frequency.exponentialRampToValueAtTime(30, now + 0.25);
+    const sg = ctx.createGain();
+    sg.gain.setValueAtTime(0.3, now);
+    sg.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+    sub.connect(sg);
+    sg.connect(this.sfxGain!);
+    sub.start(now);
+    sub.stop(now + 0.35);
+  }
+
   /** Short warning buzz for incoming formation telegraph */
   playTelegraphWarning(): void {
     if (!this._initialized || !this.ctx || !this.sfxGain) return;

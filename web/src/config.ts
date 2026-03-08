@@ -234,6 +234,24 @@ export const DEATH_SLOWMO_DURATION = 4800; // ms of real time
 export const DEATH_SLOWMO_TIME_SCALE = 0.12; // how slow game runs during slowmo
 export const DEATH_SLOWMO_SHOCKWAVE_SPEED = 0.8; // px/ms expansion speed of kill shockwave
 
+// --- Elite Enemies ---
+export const ELITE_MODIFIERS: Record<string, { speedMult: number; scoreMult: number; hpAdd: number; colorBright: number }> = {
+  rhombus:   { speedMult: 1.4, scoreMult: 3.0, hpAdd: 1, colorBright: 0.2 },
+  pinwheel:  { speedMult: 1.3, scoreMult: 2.5, hpAdd: 1, colorBright: 0.15 },
+  square:    { speedMult: 1.0, scoreMult: 2.0, hpAdd: 2, colorBright: 0.25 },
+  blackhole: { speedMult: 1.0, scoreMult: 1.5, hpAdd: 4, colorBright: 0.15 },
+  sierpinski:{ speedMult: 1.2, scoreMult: 2.0, hpAdd: 1, colorBright: 0.2 },
+};
+export const ELITE_CHANCE_BY_PHASE: Record<string, number> = {
+  tutorial: 0,
+  rampUp: 0,
+  midGame: 0.08,
+  intense: 0.15,
+  chaos: 0.22,
+};
+export const MAX_CONCURRENT_ELITES = 3;
+export const HITSTOP_ELITE = 65;   // ms — elite kills
+
 // --- Hitstop (combat freeze on major kills) ---
 export const HITSTOP_SQUARE = 35;       // ms
 export const HITSTOP_SIERPINSKI = 50;   // ms

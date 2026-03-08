@@ -1,4 +1,4 @@
-import { DIFFICULTY_PHASES, SPAWN_DELAY_BETWEEN } from '../config';
+import { DIFFICULTY_PHASES, SPAWN_DELAY_BETWEEN, ELITE_CHANCE_BY_PHASE } from '../config';
 import { Vec2 } from '../core/vector';
 import {
   EnemyType,
@@ -24,6 +24,7 @@ export type SpawnRequest = {
   position?: Vec2;
   delay?: number;      // ms delay before actually spawning
   isAmbush?: boolean;  // longer spawn animation
+  isElite?: boolean;   // elite variant with boosted stats
 };
 
 interface SpawnEvent {
@@ -277,6 +278,19 @@ export class WaveManager {
         const spawns = event.handler(count, playerPos);
         for (const s of spawns) {
           this.spawnQueue.push(s);
+        }
+      }
+    }
+
+    // Inject elite flags based on current phase
+    const eliteChance = ELITE_CHANCE_BY_PHASE[this.currentPhaseName] ?? 0;
+    if (eliteChance > 0) {
+      for (const req of this.spawnQueue) {
+        if (!req.isElite && Math.random() < eliteChance) {
+          // Only elite-ize pool enemies, not child types
+          if (req.type !== 'circle' && req.type !== 'shard') {
+            req.isElite = true;
+          }
         }
       }
     }

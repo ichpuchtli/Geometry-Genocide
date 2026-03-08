@@ -29,6 +29,10 @@ export abstract class Enemy extends Entity {
     (Math.random() - 0.5) * 64,
   );
 
+  // Elite metadata
+  baseType = '';
+  isElite = false;
+
   constructor() {
     super();
     this.collisionRadius = ENEMY_COLLISION_RADIUS;
@@ -303,6 +307,32 @@ export abstract class Enemy extends Entity {
     renderer.drawLineLoop(points.map(([x, y]) => [x - 1, y]), this.color2);
     // Main line (color)
     renderer.drawLineLoop(points, this.color);
+    // Elite crown ring
+    if (this.isElite) {
+      this.renderEliteRing(renderer);
+    }
+  }
+
+  /** Golden crown ring + thicker glow for elite enemies */
+  protected renderEliteRing(renderer: Renderer): void {
+    const cx = this.position.x;
+    const cy = this.position.y;
+    const r = this.collisionRadius + 6;
+    // Rotating dashed crown ring (golden)
+    const segments = 12;
+    const rot = Date.now() * 0.002;
+    for (let i = 0; i < segments; i++) {
+      if (i % 2 === 0) continue; // skip every other = dashed
+      const a1 = rot + (i / segments) * Math.PI * 2;
+      const a2 = rot + ((i + 1) / segments) * Math.PI * 2;
+      renderer.drawLine(
+        cx + Math.cos(a1) * r, cy + Math.sin(a1) * r,
+        cx + Math.cos(a2) * r, cy + Math.sin(a2) * r,
+        1, 0.85, 0.2, 0.5,
+      );
+    }
+    // Outer glow ring (dim)
+    renderer.drawCircle(cx, cy, r + 3, [1, 0.9, 0.3], 20, 0.15);
   }
 
   /** Render with unique glow effect for game over screen. Override per enemy type. */

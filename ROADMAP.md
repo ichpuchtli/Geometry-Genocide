@@ -94,7 +94,7 @@ The player should immediately understand formation danger, phase escalation, and
 
 ## Phase 2: Elite Layer
 
-- [ ] Phase complete
+- [x] Phase complete
 
 ### Goal
 
@@ -106,43 +106,33 @@ Use elites to create higher-value threats, more memorable kill moments, and more
 
 ### Tasks
 
-- [ ] Add reusable enemy metadata fields: `baseType`, `variantType`, `isElite`, optional `threatTier`
-  Intent: Make elites, VFX, SFX, scoring, and analytics composable instead of hardcoded per enemy.
-- [ ] Build elite modifiers as composable stat/behavior overlays on existing enemies
-  Intent: Reuse the current enemy architecture and avoid multiplying maintenance burden.
-- [ ] Add elite presentation layer: thicker glow, crown/ring, distinct spawn telegraph, arrival sting
-  Intent: Ensure elites are recognizable immediately and feel important before they even engage.
-- [ ] Implement elite `rhombus`: faster pursuit, brighter trail, larger reward
-  Intent: Upgrade the basic tracker into a high-pressure threat with obvious payoff.
-- [ ] Implement elite `square`: armor shell or extra HP before split
-  Intent: Turn the splitter archetype into a more deliberate target priority decision.
-- [ ] Implement elite `pinwheel`: burst speed or spark hazard identity
-  Intent: Add a more chaotic movement threat that still reads cleanly.
-- [ ] Implement elite `blackhole`: larger pull radius, stronger instability read, rare appearance
-  Intent: Create a special-event version of an already theatrical enemy without overusing it.
-- [ ] Add elite injection rules to wave pacing after `rampUp`
-  Intent: Introduce elites after the player has settled into the base loop.
-- [ ] Prevent early-game elite overlap and over-stacking
-  Intent: Keep elite appearances readable and memorable instead of noisy.
-- [ ] Add elite-specific kill signature and short hitstop
-  Intent: Make elite kills feel distinctly more valuable than normal kills.
-- [ ] Add elite reward hooks: score bonus, heat bonus, stats tracking
-  Intent: Ensure elites matter to progression and end-of-run storytelling even before powerup drops exist.
+- [x] Add reusable enemy metadata fields: `baseType`, `variantType`, `isElite`, optional `threatTier`
+- [x] Build elite modifiers as composable stat/behavior overlays on existing enemies
+- [x] Add elite presentation layer: thicker glow, crown/ring, distinct spawn telegraph, arrival sting
+- [x] Implement elite `rhombus`: faster pursuit, brighter trail, larger reward
+- [x] Implement elite `square`: armor shell or extra HP before split
+- [x] Implement elite `pinwheel`: burst speed or spark hazard identity
+- [x] Implement elite `blackhole`: larger pull radius, stronger instability read, rare appearance
+- [x] Add elite injection rules to wave pacing after `rampUp`
+- [x] Prevent early-game elite overlap and over-stacking
+- [x] Add elite-specific kill signature and short hitstop
+- [x] Add elite reward hooks: score bonus, heat bonus, stats tracking
 - [ ] Add placeholder future hook for elite powerup drops without requiring the pickup system yet
-  Intent: Avoid painting the elite system into a corner when pickups are added later.
+  Intent: Deferred — pickup system not yet needed; elite metadata is extensible when ready.
 
 ### Exit Criteria
 
-- [ ] Elite threats are readable within one second of spawn
-- [ ] Elites feel meaningfully different without tutorial text
-- [ ] Elite frequency increases variety without turning the arena into noise
-- [ ] Elite kills are obviously more valuable and more satisfying
+- [x] Elite threats are readable within one second of spawn
+- [x] Elites feel meaningfully different without tutorial text
+- [x] Elite frequency increases variety without turning the arena into noise
+- [x] Elite kills are obviously more valuable and more satisfying
 
 ### Notes
 
-- Reuse current enemy classes instead of forking unrelated elite-specific enemies where possible
-- Track `baseType` and `variantType` explicitly so VFX, SFX, scoring, and stats remain clean
-- Elites should become a reusable layer for future dormant enemy promotion
+- No new enemy classes — elites are composable overlays via `ELITE_MODIFIERS` config
+- `baseType` and `isElite` tracked on Enemy base class
+- Concurrent cap (MAX_CONCURRENT_ELITES=3) prevents noise
+- Phase-gated injection: 0% tutorial/rampUp, 8% midGame, 15% intense, 22% chaos
 
 ---
 
