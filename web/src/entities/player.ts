@@ -47,6 +47,7 @@ export class Player extends Entity {
   invulnTimer = 0;
   aimAngle = 0;
   facingAngle = 0;
+  fireRateOverride = 1; // multiplied with gameSettings.fireRateMultiplier
   private slowTimer = 0;
   private slowFactor = 1;
 
@@ -78,6 +79,7 @@ export class Player extends Entity {
     this.invulnTimer = PLAYER_INVULN_DURATION;
     this.active = true;
     this.facingAngle = 0;
+    this.fireRateOverride = 1;
   }
 
   respawn(): void {
@@ -136,7 +138,7 @@ export class Player extends Entity {
   tryShoot(): number[] | null {
     if (!this.shooting || this.shotTimer > 0) return null;
     const stage = this.getWeaponStage();
-    this.shotTimer = stage.shotDelay / gameSettings.fireRateMultiplier;
+    this.shotTimer = stage.shotDelay / (gameSettings.fireRateMultiplier * this.fireRateOverride);
     return stage.angleOffsets.map(offset => this.aimAngle + (offset * Math.PI) / 180);
   }
 

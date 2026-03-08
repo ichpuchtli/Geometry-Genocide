@@ -202,6 +202,9 @@ The `onBulletHit()` virtual method allows enemies to override bullet interaction
 - Kill signature effect duration (0.4s), ray count (6), ray length (80px)
 - Phase transition banner duration (2.5s), border pulse duration (1.5s), display names
 - Spawn telegraph duration (1.2s), color
+- Heat system: decay rate (0.04/s), kill increments (base 0.02, elite 0.08, blackhole 0.12), dense combat bonus (0.01/kill), phase bump (0.15), survival rate (0.003/s)
+- Heat visual scaling: border brightness max (0.5), bloom boost max (0.5), grid turbulence max (60), starfield drift max (0.08 px/ms)
+- Recovery window: duration (3500ms), fire rate multiplier (1.8x), shield color (cyan), shield radius (32px)
 
 **`settings.ts`** (runtime-tunable, persisted in localStorage):
 - Spawn rate, starting lives, player/enemy speed, fire rate, starting phase, max enemies
@@ -228,7 +231,8 @@ The `onBulletHit()` virtual method allows enemies to override bullet interaction
   - BlackHole: existing procedural explosion (`playBlackHoleDeath`)
 - **Phase transition SFX:** `playPhaseTransition()` — rising sawtooth sweep + bass impact hit.
 - **Telegraph SFX:** `playTelegraphWarning()` — short square wave buzz.
-- **Music:** 4-layer procedural synthwave (bass pad, rhythm, arpeggio, lead). Layers cross-fade based on a 0-1 intensity value computed from game state. Intensity scales with difficulty phase + enemy count + phase transition bump.
+- **Recovery SFX:** `playRecoveryStart()` — ascending power chord (E4/A4/E5 + shimmer). `playRecoveryExpire()` — descending two-tone warning.
+- **Music:** 4-layer procedural synthwave (bass pad, rhythm, arpeggio, lead). Layers cross-fade based on a 0-1 intensity value computed from game state. Intensity scales with difficulty phase + enemy count + phase transition bump + heat (0.15 * heat).
 - Safari quirk: AudioContext must be created/resumed on user gesture.
 
 ---
@@ -319,6 +323,26 @@ Elite enemy system as composable stat/behavior overlays on existing enemy classe
 - **Elite audio:** `playEliteArrive()` — ascending two-tone chime on spawn. `playEliteKill()` — major chord stab (C5/E5/G5 triangle) + sub thud.
 - **Elite hitstop:** `HITSTOP_ELITE = 65ms` applied on elite kills (stacks with family hitstop via max()).
 - **Factory:** `createEnemy(type, pos, isElite)` applies modifiers when `isElite=true`. `SpawnRequest.isElite` flag flows through wave manager → game.ts.
+
+### Heat System + Recovery Window (ROADMAP Phase 3) — Complete
+Heat system and post-death recovery window added to `game.ts`:
+- **Heat meter:** Global `heat` value (0-1) tracks run intensity. Increases from kills (base 0.02, elite 0.08, blackhole 0.12), dense combat bonus (3+ kills/frame: 0.01/kill), phase transitions (+0.15), survival in intense+ phases (0.003/s). Decays at 0.04/s when no kills for 2+ seconds.
+- **Heat visual hooks:**
+  - Arena border shifts warm (blue→orange/white) with increasing heat via HEAT_BORDER_BRIGHTNESS_MAX
+  - Bloom intensity increases by up to HEAT_BLOOM_BOOST_MAX (0.5) at max heat
+  - Starfield gains diagonal drift motion via `Starfield.setDrift()`/`updateDrift()` scaled by heat
+  - Grid gets random micro-impulse turbulence (up to HEAT_GRID_TURBULENCE_MAX) at heat >0.1
+  - Music intensity gets +0.15 * heat boost via `computeIntensity()`
+- **Heat HUD:** Thin vertical bar on left side of screen with orange→white gradient fill. Label "HEAT" below. Only visible when heat >0.01.
+- **Recovery window:** Activated on non-final respawn (after death slowmo). 3500ms duration.
+  - Player invulnerable for full recovery duration (overrides normal 2s invuln)
+  - Fire rate boosted 1.8x via `Player.fireRateOverride`
+  - Pulsing cyan shield ring around player (`renderRecoveryShield()` in game.ts)
+  - Expiry warning: orange blink ring + descending tone at 800ms remaining
+  - "RECOVERY" HUD banner with progress bar, color shifts to warn color when expiring
+  - Audio: `playRecoveryStart()` — ascending power chord + shimmer. `playRecoveryExpire()` — descending two-tone warning.
+  - Non-stackable: only one recovery per respawn
+- **Key files modified:** `config.ts` (heat/recovery constants), `game.ts` (heat state, recovery state, visual hooks), `player.ts` (fireRateOverride), `hud.ts` (heat meter, recovery banner), `audio.ts` (recovery SFX), `starfield.ts` (drift system).
 
 ### Phase 4 (Scores, Polish & Tuning) — Not Started
 localStorage leaderboard, screenshot-friendly game over screen, debug overlay, difficulty curve tuning, performance profiling, cross-browser testing. See `TASKS.md` for full checklist.

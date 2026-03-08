@@ -1,0 +1,88 @@
+name: "Heat System + Recovery Window"
+tags: [phase3, heat, recovery]
+steps:
+  - action: launch
+    url: "/"
+    waitFor: "canvas#game"
+
+  - action: screenshot
+    name: "40-menu"
+
+  # Start the game
+  - action: click
+    selector: "canvas#game"
+
+  - action: wait
+    ms: 500
+
+  # Shoot toward enemies to build heat
+  - action: mouseMove
+    x: 900
+    y: 300
+
+  - action: mouseDown
+
+  # Move around and shoot for 8s to build some heat
+  - action: keys
+    keys: ["w", "d"]
+    duration: 2000
+
+  - action: keys
+    keys: ["s", "a"]
+    duration: 2000
+
+  - action: screenshot
+    name: "40-gameplay-4s"
+
+  - action: mouseMove
+    x: 400
+    y: 500
+
+  - action: keys
+    keys: ["w", "a"]
+    duration: 2000
+
+  - action: keys
+    keys: ["d", "s"]
+    duration: 2000
+
+  - action: screenshot
+    name: "40-gameplay-8s"
+
+  # Keep playing for heat to build
+  - action: mouseMove
+    x: 800
+    y: 200
+
+  - action: keys
+    keys: ["w"]
+    duration: 3000
+
+  - action: keys
+    keys: ["s", "d"]
+    duration: 3000
+
+  - action: screenshot
+    name: "40-gameplay-14s"
+
+  - action: mouseMove
+    x: 300
+    y: 400
+
+  - action: keys
+    keys: ["a", "w"]
+    duration: 3000
+
+  - action: screenshot
+    name: "40-gameplay-17s"
+
+  - action: keys
+    keys: ["d"]
+    duration: 3000
+
+  - action: mouseUp
+
+  - action: screenshot
+    name: "40-gameplay-20s"
+
+  # Note: GL context check skipped — headless Chromium has no WebGL

@@ -329,6 +329,63 @@ export class AudioManager {
     osc.stop(now + 0.3);
   }
 
+  /** Empowering chime for recovery window start */
+  playRecoveryStart(): void {
+    if (!this._initialized || !this.ctx || !this.sfxGain) return;
+    const ctx = this.ctx;
+    const now = ctx.currentTime;
+    // Rising power chord — bright ascending tones
+    const freqs = [330, 440, 660]; // E4, A4, E5
+    for (let i = 0; i < 3; i++) {
+      const osc = ctx.createOscillator();
+      osc.type = 'sine';
+      const t = now + i * 0.06;
+      osc.frequency.setValueAtTime(freqs[i], t);
+      osc.frequency.exponentialRampToValueAtTime(freqs[i] * 1.2, t + 0.15);
+      const gain = ctx.createGain();
+      gain.gain.setValueAtTime(0.18, t);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.4);
+      osc.connect(gain);
+      gain.connect(this.sfxGain!);
+      osc.start(t);
+      osc.stop(t + 0.45);
+    }
+    // Bright shimmer
+    const shimmer = ctx.createOscillator();
+    shimmer.type = 'triangle';
+    shimmer.frequency.setValueAtTime(1320, now + 0.1);
+    shimmer.frequency.exponentialRampToValueAtTime(880, now + 0.5);
+    const sg = ctx.createGain();
+    sg.gain.setValueAtTime(0.06, now + 0.1);
+    sg.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
+    shimmer.connect(sg);
+    sg.connect(this.sfxGain!);
+    shimmer.start(now + 0.1);
+    shimmer.stop(now + 0.55);
+  }
+
+  /** Warning tone for recovery expiry */
+  playRecoveryExpire(): void {
+    if (!this._initialized || !this.ctx || !this.sfxGain) return;
+    const ctx = this.ctx;
+    const now = ctx.currentTime;
+    // Descending two-tone warning
+    for (let i = 0; i < 2; i++) {
+      const osc = ctx.createOscillator();
+      osc.type = 'sine';
+      const t = now + i * 0.12;
+      osc.frequency.setValueAtTime(660 - i * 220, t);
+      osc.frequency.exponentialRampToValueAtTime(330 - i * 110, t + 0.15);
+      const gain = ctx.createGain();
+      gain.gain.setValueAtTime(0.12, t);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.2);
+      osc.connect(gain);
+      gain.connect(this.sfxGain!);
+      osc.start(t);
+      osc.stop(t + 0.25);
+    }
+  }
+
   /** Procedural BlackHole death explosion — scales with absorbed count */
   playBlackHoleDeath(absorbed: number): void {
     if (!this._initialized || !this.ctx || !this.sfxGain) return;

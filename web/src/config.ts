@@ -278,6 +278,25 @@ export const PHASE_DISPLAY_NAMES: Record<string, string> = {
 export const TELEGRAPH_DURATION = 1200;  // ms
 export const TELEGRAPH_COLOR: [number, number, number] = [1.0, 0.3, 0.1];
 
+// --- Heat System ---
+export const HEAT_DECAY_RATE = 0.04;             // per second during calm (no kills)
+export const HEAT_KILL_BASE = 0.02;              // per regular kill
+export const HEAT_KILL_ELITE = 0.08;             // per elite kill
+export const HEAT_KILL_BLACKHOLE = 0.12;         // per blackhole kill
+export const HEAT_DENSE_COMBAT_BONUS = 0.01;     // per kill when 3+ kills same frame
+export const HEAT_PHASE_BUMP = 0.15;             // on phase transition
+export const HEAT_SURVIVAL_RATE = 0.003;         // per second in intense+ phases
+export const HEAT_BORDER_BRIGHTNESS_MAX = 0.5;   // extra border brightness at max heat
+export const HEAT_BLOOM_BOOST_MAX = 0.5;         // extra bloom intensity at max heat
+export const HEAT_GRID_TURBULENCE_MAX = 60;      // max random grid impulse from heat
+export const HEAT_STARFIELD_DRIFT_MAX = 0.08;    // max starfield drift px/ms at max heat
+
+// --- Recovery Window ---
+export const RECOVERY_DURATION = 3500;           // ms
+export const RECOVERY_FIRE_RATE_MULT = 1.8;      // fire rate multiplier during recovery
+export const RECOVERY_SHIELD_COLOR: [number, number, number] = [0.3, 0.85, 1.0];
+export const RECOVERY_SHIELD_RADIUS = 32;        // px radius of shield ring
+
 // --- Audio ---
 export const SFX_NAMES = [
   'start', 'die', 'die1', 'crash', 'square', 'rhombus',

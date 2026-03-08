@@ -138,7 +138,7 @@ Use elites to create higher-value threats, more memorable kill moments, and more
 
 ## Phase 3: Heat System + Recovery Window
 
-- [ ] Phase complete
+- [x] Phase complete
 
 ### Goal
 
@@ -150,45 +150,48 @@ The player should feel that a strong run is climbing somewhere, and that losing 
 
 ### Tasks
 
-- [ ] Add global `heat` meter to game state
+- [x] Add global `heat` meter to game state
   Intent: Track overall run intensity in one reusable signal.
-- [ ] Increase heat from elite kills, dense combat windows, and survival pacing
+- [x] Increase heat from elite kills, dense combat windows, and survival pacing
   Intent: Tie spectacle growth to strong play and rising pressure.
-- [ ] Add slow passive heat decay during calm periods
+- [x] Add slow passive heat decay during calm periods
   Intent: Make heat breathe instead of only climbing.
-- [ ] Hook heat into border brightness
+- [x] Hook heat into border brightness
   Intent: Let the arena itself communicate rising intensity.
-- [ ] Hook heat into starfield motion intensity
+- [x] Hook heat into starfield motion intensity
   Intent: Increase the sense of acceleration and momentum during stronger runs.
-- [ ] Hook heat into grid turbulence or arena energy
+- [x] Hook heat into grid turbulence or arena energy
   Intent: Make the world feel more unstable as the player performs well.
-- [ ] Hook heat into safe bloom/trail intensity scaling
+- [x] Hook heat into safe bloom/trail intensity scaling
   Intent: Add spectacle without losing control of readability or performance.
-- [ ] Hook heat into music density or intensity behavior without changing core balance
+- [x] Hook heat into music density or intensity behavior without changing core balance
   Intent: Reinforce run escalation through audio while keeping the game mechanically fair.
-- [ ] Add short-lived respawn recovery state to player/game state
+- [x] Add short-lived respawn recovery state to player/game state
   Intent: Create a bounded comeback window after life loss.
-- [ ] Implement default recovery buff: brief shield pulse plus temporary fire-rate boost
+- [x] Implement default recovery buff: brief shield pulse plus temporary fire-rate boost
   Intent: Give the player a satisfying revenge beat without trivializing danger.
-- [ ] Add recovery start and expiry audiovisual cues
+- [x] Add recovery start and expiry audiovisual cues
   Intent: Make the buff readable and emotionally legible.
-- [ ] Add HUD/banner support for recovery state
+- [x] Add HUD/banner support for recovery state
   Intent: Ensure the player knows they are in a temporary empowered state.
-- [ ] Update player rendering to communicate active recovery protection clearly
+- [x] Update player rendering to communicate active recovery protection clearly
   Intent: Support fast recognition in combat, not just menu-level understanding.
 
 ### Exit Criteria
 
-- [ ] A strong run looks and sounds hotter than a weak run
-- [ ] Heat changes spectacle, not hidden difficulty, in v1
-- [ ] Recovery feels strong but short and non-stackable
-- [ ] Respawning creates a clear comeback moment
+- [x] A strong run looks and sounds hotter than a weak run
+- [x] Heat changes spectacle, not hidden difficulty, in v1
+- [x] Recovery feels strong but short and non-stackable
+- [x] Respawning creates a clear comeback moment
 
 ### Notes
 
-- Heat is presentation-first in this phase
-- Keep recovery short enough that it feels clutch rather than abusable
-- Avoid overlapping too many post-process changes at once on mobile
+- Heat is presentation-first in this phase — no mechanical effects on difficulty
+- Recovery is 3.5s duration with 1.8x fire rate + full invulnerability + pulsing cyan shield ring
+- Heat decay kicks in after 2s with no kills (0.04/s), so it breathes naturally
+- Grid turbulence only activates above heat 0.1 to avoid noise during calm early game
+- Starfield drift uses per-layer parallax multipliers (0.3x nebulae, 0.5x galaxies, 0.6x suns, 1.0x stars)
+- Recovery shield shows orange blink warning at 800ms remaining
 
 ---
 

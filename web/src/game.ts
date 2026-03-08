@@ -57,6 +57,21 @@ import {
   ELITE_MODIFIERS,
   MAX_CONCURRENT_ELITES,
   HITSTOP_ELITE,
+  HEAT_DECAY_RATE,
+  HEAT_KILL_BASE,
+  HEAT_KILL_ELITE,
+  HEAT_KILL_BLACKHOLE,
+  HEAT_DENSE_COMBAT_BONUS,
+  HEAT_PHASE_BUMP,
+  HEAT_SURVIVAL_RATE,
+  HEAT_BORDER_BRIGHTNESS_MAX,
+  HEAT_BLOOM_BOOST_MAX,
+  HEAT_GRID_TURBULENCE_MAX,
+  HEAT_STARFIELD_DRIFT_MAX,
+  RECOVERY_DURATION,
+  RECOVERY_FIRE_RATE_MULT,
+  RECOVERY_SHIELD_COLOR,
+  RECOVERY_SHIELD_RADIUS,
 } from './config';
 import { FormationMeta } from './spawner/spawn-patterns';
 
@@ -194,6 +209,15 @@ export class Game {
   // Combat feedback: spawn telegraphs
   private telegraphs: Telegraph[] = [];
 
+  // Heat system (0-1, presentation-first run intensity)
+  private heat = 0;
+  private timeSinceLastKill = 0; // seconds, for heat decay
+
+  // Recovery window (post-respawn buff)
+  private recoveryTimer = 0;     // ms remaining
+  private recoveryActive = false;
+  private recoveryExpirePlayed = false;
+
   constructor(private gameCanvas: HTMLCanvasElement, hudCanvas: HTMLCanvasElement) {
     this.mobile = isMobile();
     this.trailLenEnemy = this.mobile ? MOBILE_TRAIL_LENGTH_ENEMY : TRAIL_LENGTH_ENEMY;
@@ -240,6 +264,8 @@ export class Game {
         this.phaseBannerName = displayName;
         this.phaseBorderPulseTimer = PHASE_BORDER_PULSE_DURATION;
         this.audio.playPhaseTransition();
+        // Heat bump on phase transition
+        this.heat = Math.min(1, this.heat + HEAT_PHASE_BUMP);
       }
     };
     this.starfield = new Starfield(80, gameSettings.arenaWidth, gameSettings.arenaHeight);
@@ -336,6 +362,11 @@ export class Game {
     this.phaseBannerName = '';
     this.phaseBorderPulseTimer = 0;
     this.telegraphs = [];
+    this.heat = 0;
+    this.timeSinceLastKill = 0;
+    this.recoveryTimer = 0;
+    this.recoveryActive = false;
+    this.recoveryExpirePlayed = false;
     this.player.lives = gameSettings.startingLives;
     this.waveManager.spawnRateMultiplier = gameSettings.spawnRateMultiplier;
     if (gameSettings.startingPhase !== 'tutorial') {
@@ -380,7 +411,10 @@ export class Game {
       phaseBump = 0.15 * (this.phaseBorderPulseTimer / PHASE_BORDER_PULSE_DURATION);
     }
 
-    return Math.min(base + enemyBoost + phaseBump, 1);
+    // Heat adds to music density
+    const heatBoost = this.heat * 0.15;
+
+    return Math.min(base + enemyBoost + phaseBump + heatBoost, 1);
   }
 
   private updateGravityWells(): void {
@@ -686,6 +720,16 @@ export class Game {
       const family = this.getEnemyFamily(kill.enemy);
       const isEliteKill = kill.enemy.isElite;
 
+      // Heat: increase on kills
+      if (family === 'blackhole') {
+        this.heat = Math.min(1, this.heat + HEAT_KILL_BLACKHOLE);
+      } else if (isEliteKill) {
+        this.heat = Math.min(1, this.heat + HEAT_KILL_ELITE);
+      } else {
+        this.heat = Math.min(1, this.heat + HEAT_KILL_BASE);
+      }
+      this.timeSinceLastKill = 0;
+
       // Per-family kill signature: VFX + SFX + hitstop
       this.spawnKillSignature(kill.position.x, kill.position.y, kill.color, family, isEliteKill);
       this.audio.playKillSignature(family);
@@ -799,9 +843,10 @@ export class Game {
       }
     }
 
-    // Multi-kill hitstop bonus
+    // Multi-kill hitstop bonus + dense combat heat bonus
     if (frameKillCount >= 3) {
       maxHitstop = Math.max(maxHitstop, HITSTOP_MULTI);
+      this.heat = Math.min(1, this.heat + HEAT_DENSE_COMBAT_BONUS * frameKillCount);
     }
     if (maxHitstop > 0) {
       this.hitstopTimer = maxHitstop;
@@ -879,6 +924,12 @@ export class Game {
     // Camera
     this.camera.follow(this.player.position);
 
+    // --- Heat system update ---
+    this.updateHeat(dt);
+
+    // --- Recovery window update ---
+    this.updateRecovery(dt);
+
     // Music intensity
     this.audio.setMusicIntensity(this.computeIntensity());
   }
@@ -949,6 +1000,71 @@ export class Game {
       tg.elapsed += dtSec;
     }
     this.telegraphs = this.telegraphs.filter(tg => tg.elapsed < tg.duration);
+  }
+
+  /** Update heat: decay, survival trickle, visual hooks */
+  private updateHeat(dt: number): void {
+    const dtSec = dt / 1000;
+    this.timeSinceLastKill += dtSec;
+
+    // Passive heat decay during calm periods (>2s since last kill)
+    if (this.timeSinceLastKill > 2) {
+      this.heat = Math.max(0, this.heat - HEAT_DECAY_RATE * dtSec);
+    }
+
+    // Slow heat increase during intense+ phases from survival pressure
+    if (this.gameTime >= DIFFICULTY_PHASES.intense.start) {
+      this.heat = Math.min(1, this.heat + HEAT_SURVIVAL_RATE * dtSec);
+    }
+
+    // --- Visual hooks ---
+
+    // Bloom intensity boost
+    const baseBloom = gameSettings.bloomIntensity;
+    this.bloom.intensity = baseBloom + this.heat * HEAT_BLOOM_BOOST_MAX;
+
+    // Starfield drift
+    this.starfield.setDrift(this.heat * HEAT_STARFIELD_DRIFT_MAX);
+    this.starfield.updateDrift(dt);
+
+    // Grid turbulence: random micro-impulses scaled by heat
+    if (this.heat > 0.1) {
+      const turbulence = (this.heat - 0.1) / 0.9 * HEAT_GRID_TURBULENCE_MAX;
+      // Apply a few random impulses across the arena
+      const count = Math.ceil(this.heat * 3);
+      const hw = gameSettings.arenaWidth / 2;
+      const hh = gameSettings.arenaHeight / 2;
+      for (let i = 0; i < count; i++) {
+        const rx = (Math.random() - 0.5) * hw * 2;
+        const ry = (Math.random() - 0.5) * hh * 2;
+        this.grid.applyImpulse(rx, ry, turbulence * (0.5 + Math.random() * 0.5), 100 + Math.random() * 100);
+      }
+    }
+  }
+
+  /** Update recovery window state */
+  private updateRecovery(dt: number): void {
+    if (!this.recoveryActive) return;
+
+    this.recoveryTimer -= dt;
+
+    // Keep player invulnerable during recovery
+    if (this.recoveryTimer > 0) {
+      this.player.invulnTimer = Math.max(this.player.invulnTimer, this.recoveryTimer);
+    }
+
+    // Expiry warning at 800ms remaining
+    if (this.recoveryTimer <= 800 && !this.recoveryExpirePlayed) {
+      this.audio.playRecoveryExpire();
+      this.recoveryExpirePlayed = true;
+    }
+
+    // End recovery
+    if (this.recoveryTimer <= 0) {
+      this.recoveryActive = false;
+      this.recoveryTimer = 0;
+      this.player.fireRateOverride = 1;
+    }
   }
 
   /** Create a spawn telegraph from a formation event */
@@ -1322,7 +1438,7 @@ export class Game {
         this.hud.drawGameOver(this.player.score, this.player.enemiesKilled, this.gameTime);
         if (!this.mobile) showDesktopSettings();
       } else {
-        // Respawn and continue playing
+        // Respawn and continue playing with recovery buff
         this.state = 'playing';
         for (const e of this.enemies) {
           if (e.trailId >= 0) this.trails.unregister(e.trailId);
@@ -1332,6 +1448,14 @@ export class Game {
         this.player.respawn();
         this.player.active = true;
         this.camera.snapTo(this.player.position);
+
+        // Activate recovery window
+        this.recoveryActive = true;
+        this.recoveryTimer = RECOVERY_DURATION;
+        this.recoveryExpirePlayed = false;
+        this.player.invulnTimer = RECOVERY_DURATION;
+        this.player.fireRateOverride = RECOVERY_FIRE_RATE_MULT;
+        this.audio.playRecoveryStart();
       }
     }
   }
@@ -1370,6 +1494,10 @@ export class Game {
       if (this.state === 'playing') {
         this.bullets.render(this.renderer);
         this.player.render(this.renderer);
+        // Recovery shield ring
+        if (this.recoveryActive) {
+          this.renderRecoveryShield();
+        }
         // Crosshair: desktop = at mouse cursor world pos, touch = near player at aim angle
         if (this.input.isTouchActive()) {
           const aimAngle = this.player.aimAngle;
@@ -1429,6 +1557,16 @@ export class Game {
     if (this.state === 'playing' || this.state === 'death_slowmo') {
       this.hud.drawPlaying(this.player.score, this.player.lives, this.audio.muted, this.enemies.length, this.input.autoFire);
 
+      // Heat meter
+      if (this.state === 'playing') {
+        this.hud.drawHeatMeter(this.heat);
+      }
+
+      // Recovery banner
+      if (this.recoveryActive && this.state === 'playing') {
+        this.hud.drawRecoveryBanner(this.recoveryTimer / RECOVERY_DURATION);
+      }
+
       // Phase transition banner
       if (this.phaseBannerTimer > 0) {
         const progress = 1 - this.phaseBannerTimer / PHASE_BANNER_DURATION;
@@ -1442,12 +1580,45 @@ export class Game {
     }
   }
 
-  /** Render the arena border — solid neon lines at world edges */
+  /** Render recovery shield ring around player */
+  private renderRecoveryShield(): void {
+    if (!this.recoveryActive) return;
+    const px = this.player.position.x;
+    const py = this.player.position.y;
+    const t = 1 - this.recoveryTimer / RECOVERY_DURATION;
+    const [sr, sg, sb] = RECOVERY_SHIELD_COLOR;
+
+    // Pulsing alpha (faster pulse as it expires)
+    const pulseSpeed = 4 + t * 8;
+    const pulse = 0.5 + 0.5 * Math.sin(this.totalTime * pulseSpeed);
+    const alpha = (1 - t * 0.5) * (0.4 + pulse * 0.4);
+
+    // Shield ring
+    const radius = RECOVERY_SHIELD_RADIUS + pulse * 3;
+    this.renderer.drawCircle(px, py, radius, [sr, sg, sb], 24, alpha);
+
+    // Inner glow ring
+    this.renderer.drawCircle(px, py, radius * 0.8, [sr * 0.8, sg * 0.8, sb * 0.8], 16, alpha * 0.3);
+
+    // Expiry warning: fast blink when <800ms remaining
+    if (this.recoveryTimer <= 800) {
+      const blink = Math.sin(this.totalTime * 20) > 0 ? 0.7 : 0.2;
+      this.renderer.drawCircle(px, py, radius * 1.2, [1, 0.5, 0.2], 16, blink * (1 - t));
+    }
+  }
+
+  /** Render the arena border — solid neon lines at world edges, heat-influenced */
   private renderArenaBorder(): void {
     const hw = gameSettings.arenaWidth / 2;
     const hh = gameSettings.arenaHeight / 2;
-    const [br, bg, bb] = ARENA_BORDER_COLOR;
-    const [cr, cg, cb] = ARENA_BORDER_CORNER_COLOR;
+    // Heat shifts border toward warm colors (orange/white) and increases brightness
+    const heatMix = this.heat * HEAT_BORDER_BRIGHTNESS_MAX;
+    const br = Math.min(1, ARENA_BORDER_COLOR[0] + heatMix * 2.0);  // push toward warm
+    const bg = Math.min(1, ARENA_BORDER_COLOR[1] + heatMix * 0.6);
+    const bb = Math.min(1, ARENA_BORDER_COLOR[2] - heatMix * 0.3);  // reduce blue at high heat
+    const cr = Math.min(1, ARENA_BORDER_CORNER_COLOR[0] + heatMix);
+    const cg = Math.min(1, ARENA_BORDER_CORNER_COLOR[1] + heatMix * 0.5);
+    const cb = Math.min(1, ARENA_BORDER_CORNER_COLOR[2] - heatMix * 0.2);
     const a = ARENA_BORDER_ALPHA;
 
     // Main border lines
