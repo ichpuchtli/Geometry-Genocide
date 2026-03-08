@@ -87,6 +87,53 @@ export class HUD {
     }
   }
 
+  /** Draw phase transition banner with fade-in/out animation */
+  drawPhaseBanner(name: string, progress: number): void {
+    if (!name || progress <= 0 || progress >= 1) return;
+    const w = this.canvas.clientWidth;
+    const h = this.canvas.clientHeight;
+
+    // Fade: quick in, hold, slow out
+    let alpha: number;
+    if (progress < 0.15) {
+      alpha = progress / 0.15; // fade in
+    } else if (progress > 0.7) {
+      alpha = (1 - progress) / 0.3; // fade out
+    } else {
+      alpha = 1;
+    }
+
+    // Slide in from left
+    const slideOffset = progress < 0.15 ? (1 - progress / 0.15) * -60 : 0;
+
+    this.ctx.save();
+    this.ctx.globalAlpha = alpha;
+    this.ctx.textAlign = 'center';
+    this.ctx.textBaseline = 'middle';
+
+    // Background stripe
+    const stripeH = 60;
+    const y = h * 0.35;
+    this.ctx.fillStyle = `rgba(0, 0, 0, ${0.4 * alpha})`;
+    this.ctx.fillRect(0, y - stripeH / 2, w, stripeH);
+
+    // Accent lines
+    this.ctx.strokeStyle = `rgba(255, 100, 30, ${0.6 * alpha})`;
+    this.ctx.lineWidth = 2;
+    this.ctx.beginPath();
+    this.ctx.moveTo(w * 0.2, y - stripeH / 2);
+    this.ctx.lineTo(w * 0.8, y - stripeH / 2);
+    this.ctx.moveTo(w * 0.2, y + stripeH / 2);
+    this.ctx.lineTo(w * 0.8, y + stripeH / 2);
+    this.ctx.stroke();
+
+    // Banner text
+    const bannerX = w / 2 + slideOffset;
+    this.drawGlowText(name, bannerX, y, 'bold 36px monospace', '#ff6020', '#ff3000', 20);
+
+    this.ctx.restore();
+  }
+
   drawMenu(): void {
     this.clear();
     const w = this.canvas.clientWidth;

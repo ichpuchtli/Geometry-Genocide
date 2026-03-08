@@ -3,6 +3,7 @@ import { Vec2 } from '../core/vector';
 import {
   EnemyType,
   FormationSpawn,
+  FormationMeta,
   TUTORIAL_POOL,
   RAMPUP_POOL,
   MIDGAME_POOL,
@@ -43,6 +44,12 @@ export class WaveManager {
   private spawnQueue: SpawnRequest[] = [];
   private queueTimer = 0;
   private currentPhaseName = 'tutorial';
+
+  // Phase change callback
+  onPhaseChange?: (newPhase: string, oldPhase: string) => void;
+
+  // Formation events fired this frame (read by game.ts for telegraphs)
+  formationEvents: FormationMeta[] = [];
 
   // Cadence variation
   private burstMode = false;
@@ -111,10 +118,10 @@ export class WaveManager {
           return this.spawnFromPool(pickCount(1, 3));
         });
         this.addEvent('swarm', 14, 3, 12, 20, (count) => {
-          return formationToRequests(generateSwarm(SWARM_POOL, count));
+          return this.formationToRequests(generateSwarm(SWARM_POOL, count));
         });
         this.addEvent('wall', 22, 4, 8, 14, (count) => {
-          return formationToRequests(generateWall(SWARM_POOL, count));
+          return this.formationToRequests(generateWall(SWARM_POOL, count));
         });
         this.addEvent('squad', 12, 2, 3, 5, (_count) => {
           return this.spawnFromPool(pickCount(3, 5));
@@ -126,16 +133,16 @@ export class WaveManager {
           return this.spawnFromPool(pickCount(2, 4));
         });
         this.addEvent('swarm', 12, 2, 18, 28, (count) => {
-          return formationToRequests(generateSwarm(SWARM_POOL, count));
+          return this.formationToRequests(generateSwarm(SWARM_POOL, count));
         });
         this.addEvent('surround', 18, 3, 8, 14, (count, pp) => {
-          return formationToRequests(generateSurround(this.getPool(), count, pp));
+          return this.formationToRequests(generateSurround(this.getPool(), count, pp));
         });
         this.addEvent('pincer', 16, 3, 10, 16, (count, pp) => {
-          return formationToRequests(generatePincer(this.getPool(), count, pp));
+          return this.formationToRequests(generatePincer(this.getPool(), count, pp));
         });
         this.addEvent('wall', 18, 3, 12, 20, (count) => {
-          return formationToRequests(generateWall(SWARM_POOL, count));
+          return this.formationToRequests(generateWall(SWARM_POOL, count));
         });
         this.addEvent('squad', 8, 1.5, 4, 6, () => {
           return this.spawnFromPool(pickCount(4, 6));
@@ -147,19 +154,19 @@ export class WaveManager {
           return this.spawnFromPool(pickCount(4, 6));
         });
         this.addEvent('swarm', 8, 2, 30, 40, (count) => {
-          return formationToRequests(generateSwarm(SWARM_POOL, count));
+          return this.formationToRequests(generateSwarm(SWARM_POOL, count));
         });
         this.addEvent('surround', 12, 2, 14, 20, (count, pp) => {
-          return formationToRequests(generateSurround(this.getPool(), count, pp));
+          return this.formationToRequests(generateSurround(this.getPool(), count, pp));
         });
         this.addEvent('pincer', 10, 2, 16, 24, (count, pp) => {
-          return formationToRequests(generatePincer(this.getPool(), count, pp));
+          return this.formationToRequests(generatePincer(this.getPool(), count, pp));
         });
         this.addEvent('ambush', 14, 3, 6, 10, (count, pp) => {
-          return formationToRequests(generateAmbush(this.getPool(), count, pp));
+          return this.formationToRequests(generateAmbush(this.getPool(), count, pp));
         });
         this.addEvent('cascade', 8, 2, 15, 20, (count) => {
-          return formationToRequests(generateCascade(this.getPool(), count));
+          return this.formationToRequests(generateCascade(this.getPool(), count));
         });
         break;
 
@@ -168,19 +175,19 @@ export class WaveManager {
           return this.spawnFromPool(pickCount(5, 8));
         });
         this.addEvent('swarm', 6, 1.5, 35, 50, (count) => {
-          return formationToRequests(generateSwarm(SWARM_POOL, count));
+          return this.formationToRequests(generateSwarm(SWARM_POOL, count));
         });
         this.addEvent('surround', 8, 2, 16, 24, (count, pp) => {
-          return formationToRequests(generateSurround(this.getPool(), count, pp));
+          return this.formationToRequests(generateSurround(this.getPool(), count, pp));
         });
         this.addEvent('pincer', 7, 1.5, 20, 30, (count, pp) => {
-          return formationToRequests(generatePincer(this.getPool(), count, pp));
+          return this.formationToRequests(generatePincer(this.getPool(), count, pp));
         });
         this.addEvent('ambush', 10, 2, 8, 12, (count, pp) => {
-          return formationToRequests(generateAmbush(this.getPool(), count, pp));
+          return this.formationToRequests(generateAmbush(this.getPool(), count, pp));
         });
         this.addEvent('cascade', 5, 1.5, 20, 30, (count) => {
-          return formationToRequests(generateCascade(this.getPool(), count));
+          return this.formationToRequests(generateCascade(this.getPool(), count));
         });
         break;
     }
@@ -206,6 +213,17 @@ export class WaveManager {
     return reqs;
   }
 
+  /** Convert FormationResult to SpawnRequests + record formation event for telegraphs */
+  private formationToRequests(result: { spawns: FormationSpawn[]; meta: FormationMeta }): SpawnRequest[] {
+    this.formationEvents.push(result.meta);
+    return result.spawns.map(f => ({
+      type: f.type,
+      position: f.position,
+      delay: f.delay,
+      isAmbush: f.isAmbush,
+    }));
+  }
+
   private tutorialSwarmFired = false;
 
   update(dt: number, playerPos: Vec2): SpawnRequest[] {
@@ -215,14 +233,20 @@ export class WaveManager {
     // Phase transitions
     const newPhase = this.currentPhase;
     if (newPhase !== this.currentPhaseName) {
+      const oldPhase = this.currentPhaseName;
       this.setupPhase(newPhase);
+      if (this.onPhaseChange) this.onPhaseChange(newPhase, oldPhase);
     }
+
+    // Clear formation events from previous frame
+    this.formationEvents = [];
 
     // Tutorial one-shot swarm at 20s
     if (!this.tutorialSwarmFired && this.elapsedTime >= 15) {
       this.tutorialSwarmFired = true;
-      const swarm = generateSwarm(TUTORIAL_POOL, 8);
-      for (const s of swarm) {
+      const result = generateSwarm(TUTORIAL_POOL, 8);
+      this.formationEvents.push(result.meta);
+      for (const s of result.spawns) {
         this.spawnQueue.push({ type: s.type, position: s.position, delay: s.delay });
       }
     }
@@ -303,11 +327,4 @@ function pickCount(min: number, max: number): number {
   return min + Math.floor(Math.random() * (max - min + 1));
 }
 
-function formationToRequests(formation: FormationSpawn[]): SpawnRequest[] {
-  return formation.map(f => ({
-    type: f.type,
-    position: f.position,
-    delay: f.delay,
-    isAmbush: f.isAmbush,
-  }));
-}
+// removed — replaced by WaveManager.formationToRequests instance method

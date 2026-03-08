@@ -1,0 +1,71 @@
+name: "Combat Feedback Phase 1"
+tags: [combat, phase1]
+steps:
+  - action: launch
+    url: "/"
+    waitFor: "canvas#game"
+
+  - action: screenshot
+    name: "10-menu-before-start"
+
+  # Start the game
+  - action: click
+    selector: "canvas#game"
+
+  - action: wait
+    ms: 500
+
+  - action: screenshot
+    name: "10-game-started"
+
+  # Shoot towards enemies
+  - action: mouseMove
+    x: 800
+    y: 300
+
+  - action: mouseDown
+
+  - action: wait
+    ms: 3000
+
+  - action: screenshot
+    name: "10-gameplay-3s"
+
+  # Move aim to different area
+  - action: mouseMove
+    x: 400
+    y: 500
+
+  - action: wait
+    ms: 3000
+
+  - action: screenshot
+    name: "10-gameplay-6s"
+
+  - action: mouseMove
+    x: 900
+    y: 200
+
+  - action: wait
+    ms: 5000
+
+  - action: screenshot
+    name: "10-gameplay-11s"
+
+  # More gameplay
+  - action: mouseMove
+    x: 500
+    y: 400
+
+  - action: wait
+    ms: 5000
+
+  - action: screenshot
+    name: "10-gameplay-16s"
+
+  - action: mouseUp
+
+  - action: screenshot
+    name: "10-final-state"
+
+  # Note: assertNoErrors skipped — headless Chromium has no WebGL

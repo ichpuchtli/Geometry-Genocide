@@ -175,7 +175,7 @@ Cadence system overlaid on top: burst windows (0.5x intervals) alternate with br
 
 Spawn pools are weighted arrays in `spawn-patterns.ts`. More copies of an enemy type = higher spawn chance. Pools are per-phase (tutorial → rampUp → midGame → intense → chaos).
 
-Formation generators (`generateSwarm`, `generateSurround`, etc.) compute positions and stagger delays.
+Formation generators (`generateSwarm`, `generateSurround`, etc.) compute positions, stagger delays, and return `FormationResult` with metadata (formation type, side, center) used by the telegraph system.
 
 ### Collision System
 
@@ -198,6 +198,10 @@ The `onBulletHit()` virtual method allows enemies to override bullet interaction
 - Trail lengths
 - Mobile overrides
 - Audio volume levels
+- Hitstop durations per enemy family (square 35ms, sierpinski 50ms, blackhole 75ms, multi-kill 35ms)
+- Kill signature effect duration (0.4s), ray count (6), ray length (80px)
+- Phase transition banner duration (2.5s), border pulse duration (1.5s), display names
+- Spawn telegraph duration (1.2s), color
 
 **`settings.ts`** (runtime-tunable, persisted in localStorage):
 - Spawn rate, starting lives, player/enemy speed, fire rate, starting phase, max enemies
@@ -214,7 +218,15 @@ The `onBulletHit()` virtual method allows enemies to override bullet interaction
 ### Audio System
 
 - **SFX:** 11 WAV files loaded via Web Audio API. `playSFX(name)` creates a new AudioBufferSourceNode each call.
-- **Music:** 4-layer procedural synthwave (bass pad, rhythm, arpeggio, lead). Layers cross-fade based on a 0-1 intensity value computed from game state. Intensity scales with difficulty phase + enemy count.
+- **Procedural kill SFX:** `playKillSignature(family)` generates per-family death sounds:
+  - Rhombus: sharp crystalline ping (2400→1200 Hz sine)
+  - Square: heavy thud (120→40 Hz sine + noise crunch)
+  - Pinwheel: spinning whoosh (sawtooth sweep 400→1600→200 Hz through bandpass)
+  - Sierpinski: layered fractal tones (3 descending triangle waves at 880/660/440 Hz)
+  - BlackHole: existing procedural explosion (`playBlackHoleDeath`)
+- **Phase transition SFX:** `playPhaseTransition()` — rising sawtooth sweep + bass impact hit.
+- **Telegraph SFX:** `playTelegraphWarning()` — short square wave buzz.
+- **Music:** 4-layer procedural synthwave (bass pad, rhythm, arpeggio, lead). Layers cross-fade based on a 0-1 intensity value computed from game state. Intensity scales with difficulty phase + enemy count + phase transition bump.
 - Safari quirk: AudioContext must be created/resumed on user gesture.
 
 ---
@@ -284,6 +296,15 @@ Twin-stick virtual joysticks, responsive canvas, mobile performance optimization
 - Spacetime fabric grid visual: Grid shader now receives gravity well positions/strengths as uniforms (up to 8 wells). Vertex shader applies perspective contraction (vertices near wells pull toward center, simulating 3D funnel viewed from above). Fragment shader applies depth-based coloring (dark indigo center, bright blue-white rim glow at well edge, alpha boost). Grid.ts preserves well data across update→render gap in `renderWellX/Y/Str/Rad` arrays. New `bhGridPerspectiveDepth` setting (0.0–1.0, default 0.6) controls 3D illusion strength via "BH Depth Effect" slider in settings panel.
 - Auto-fire toggle: `F` key toggles continuous firing without holding mouse button. HUD shows "AUTO-FIRE [F]" indicator when active. `Input.autoFire` boolean, checked in `isMouseDown()`.
 - Cursor visibility: System cursor shown on menu and gameover screens (`cursor: default`), hidden during gameplay (`cursor: none`). Controls hint updated to show `F auto-fire` and `M mute`.
+
+### Readability + Impact Foundation (ROADMAP Phase 1) — Complete
+Combat feedback system added to `game.ts` as a lightweight state layer:
+- **Hitstop:** Freezes gameplay simulation (enemies, bullets, spawner) for 35-75ms on significant kills while keeping visual systems (explosions, grid, camera shake) running. Per-family durations: square (35ms), sierpinski (50ms), blackhole (75ms). Multi-kill bonus (3+ kills same frame: 35ms).
+- **Kill signatures:** Per-enemy-family death effects rendered in additive blend pass (`KillEffect` array in game.ts). Rhombus: crystal burst with narrow rays + white tips. Square: chunky rotating fragment outlines. Pinwheel: spark spiral with rotating particles + bright tips. Sierpinski: layered concentric triangle outlines expanding.
+- **Kill signature audio:** Procedural SFX per family via Web Audio API (`AudioManager.playKillSignature(family)`). Replaces generic `crash` SFX for typed kills.
+- **Phase transitions:** WaveManager emits `onPhaseChange` callback. Game shows animated HUD banner (fade-in/slide-in, hold, fade-out with dark stripe + accent lines). Border pulses white→orange. Music intensity gets temporary +0.15 bump. Phase display names: STAGE 2, STAGE 3, DANGER, CHAOS.
+- **Spawn telegraphs:** Formation generators return `FormationResult` with metadata (formation type, side, center). WaveManager populates `formationEvents[]` each frame. Game renders border warning arcs (pulsing orange lines on the relevant arena edge) for edge formations (wall, swarm, cascade, pincer). Surround/ambush show dashed warning rings at spawn center. Telegraph audio: short square-wave buzz.
+- **Formation metadata flow:** `spawn-patterns.ts` generators → `FormationResult{spawns, meta}` → `WaveManager.formationToRequests()` → `formationEvents[]` → `game.ts` telegraph rendering.
 
 ### Phase 4 (Scores, Polish & Tuning) — Not Started
 localStorage leaderboard, screenshot-friendly game over screen, debug overlay, difficulty curve tuning, performance profiling, cross-browser testing. See `TASKS.md` for full checklist.

@@ -113,6 +113,167 @@ export class AudioManager {
     if (this.music) this.music.stop();
   }
 
+  /** Procedural kill signature SFX per enemy family */
+  playKillSignature(family: string): void {
+    if (!this._initialized || !this.ctx || !this.sfxGain) return;
+    switch (family) {
+      case 'rhombus': this.playKillCrystal(); break;
+      case 'square': case 'square2': this.playKillThud(); break;
+      case 'pinwheel': this.playKillSpin(); break;
+      case 'sierpinski': this.playKillFractal(); break;
+    }
+  }
+
+  /** Sharp crystalline ping for rhombus kills */
+  private playKillCrystal(): void {
+    const ctx = this.ctx!;
+    const now = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(2400, now);
+    osc.frequency.exponentialRampToValueAtTime(1200, now + 0.15);
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(0.25, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+    osc.connect(gain);
+    gain.connect(this.sfxGain!);
+    osc.start(now);
+    osc.stop(now + 0.25);
+  }
+
+  /** Heavy thud for square kills */
+  private playKillThud(): void {
+    const ctx = this.ctx!;
+    const now = ctx.currentTime;
+    // Low thud
+    const osc = ctx.createOscillator();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(120, now);
+    osc.frequency.exponentialRampToValueAtTime(40, now + 0.3);
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(0.4, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+    osc.connect(gain);
+    gain.connect(this.sfxGain!);
+    osc.start(now);
+    osc.stop(now + 0.45);
+    // Noise crunch
+    const noiseBuf = ctx.createBuffer(1, ctx.sampleRate * 0.1 | 0, ctx.sampleRate);
+    const data = noiseBuf.getChannelData(0);
+    for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
+    const noise = ctx.createBufferSource();
+    noise.buffer = noiseBuf;
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.value = 300;
+    const ng = ctx.createGain();
+    ng.gain.setValueAtTime(0.15, now);
+    ng.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+    noise.connect(filter);
+    filter.connect(ng);
+    ng.connect(this.sfxGain!);
+    noise.start(now);
+  }
+
+  /** Spinning whoosh for pinwheel kills */
+  private playKillSpin(): void {
+    const ctx = this.ctx!;
+    const now = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(400, now);
+    osc.frequency.exponentialRampToValueAtTime(1600, now + 0.12);
+    osc.frequency.exponentialRampToValueAtTime(200, now + 0.3);
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'bandpass';
+    filter.frequency.value = 800;
+    filter.Q.value = 2;
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(0.12, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+    osc.connect(filter);
+    filter.connect(gain);
+    gain.connect(this.sfxGain!);
+    osc.start(now);
+    osc.stop(now + 0.4);
+  }
+
+  /** Layered fractal tones for sierpinski kills */
+  private playKillFractal(): void {
+    const ctx = this.ctx!;
+    const now = ctx.currentTime;
+    const freqs = [880, 660, 440];
+    for (let i = 0; i < 3; i++) {
+      const osc = ctx.createOscillator();
+      osc.type = 'triangle';
+      const t = now + i * 0.06;
+      osc.frequency.setValueAtTime(freqs[i], t);
+      osc.frequency.exponentialRampToValueAtTime(freqs[i] * 0.3, t + 0.3);
+      const gain = ctx.createGain();
+      gain.gain.setValueAtTime(0.15, t);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.35);
+      osc.connect(gain);
+      gain.connect(this.sfxGain!);
+      osc.start(t);
+      osc.stop(t + 0.4);
+    }
+  }
+
+  /** Rising sweep + impact for phase transitions */
+  playPhaseTransition(): void {
+    if (!this._initialized || !this.ctx || !this.sfxGain) return;
+    const ctx = this.ctx;
+    const now = ctx.currentTime;
+    // Rising sweep
+    const sweep = ctx.createOscillator();
+    sweep.type = 'sawtooth';
+    sweep.frequency.setValueAtTime(100, now);
+    sweep.frequency.exponentialRampToValueAtTime(800, now + 0.4);
+    const sweepFilter = ctx.createBiquadFilter();
+    sweepFilter.type = 'lowpass';
+    sweepFilter.frequency.setValueAtTime(200, now);
+    sweepFilter.frequency.exponentialRampToValueAtTime(4000, now + 0.4);
+    const sg = ctx.createGain();
+    sg.gain.setValueAtTime(0.25, now);
+    sg.gain.linearRampToValueAtTime(0.35, now + 0.3);
+    sg.gain.exponentialRampToValueAtTime(0.001, now + 0.7);
+    sweep.connect(sweepFilter);
+    sweepFilter.connect(sg);
+    sg.connect(this.sfxGain);
+    sweep.start(now);
+    sweep.stop(now + 0.8);
+    // Impact hit
+    const impact = ctx.createOscillator();
+    impact.type = 'sine';
+    impact.frequency.setValueAtTime(200, now + 0.4);
+    impact.frequency.exponentialRampToValueAtTime(60, now + 0.7);
+    const ig = ctx.createGain();
+    ig.gain.setValueAtTime(0.4, now + 0.4);
+    ig.gain.exponentialRampToValueAtTime(0.001, now + 0.9);
+    impact.connect(ig);
+    ig.connect(this.sfxGain);
+    impact.start(now + 0.4);
+    impact.stop(now + 1.0);
+  }
+
+  /** Short warning buzz for incoming formation telegraph */
+  playTelegraphWarning(): void {
+    if (!this._initialized || !this.ctx || !this.sfxGain) return;
+    const ctx = this.ctx;
+    const now = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(220, now);
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(0.08, now);
+    gain.gain.setValueAtTime(0.12, now + 0.05);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+    osc.connect(gain);
+    gain.connect(this.sfxGain);
+    osc.start(now);
+    osc.stop(now + 0.3);
+  }
+
   /** Procedural BlackHole death explosion — scales with absorbed count */
   playBlackHoleDeath(absorbed: number): void {
     if (!this._initialized || !this.ctx || !this.sfxGain) return;

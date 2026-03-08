@@ -25,9 +25,6 @@ import {
   EXPLOSION_DURATION_DEFAULT,
   EXPLOSION_DURATION_LARGE,
   EXPLOSION_DURATION_DEATH,
-  BLOOM_THRESHOLD,
-  BLOOM_BLUR_PASSES,
-  BLOOM_BLUR_RADIUS,
   TRAIL_LENGTH_ENEMY,
   TRAIL_LENGTH_BULLET,
   MOBILE_TRAIL_LENGTH_ENEMY,
@@ -45,7 +42,20 @@ import {
   DEATH_SLOWMO_SHOCKWAVE_SPEED,
   MIN_SPAWN_DISTANCE,
   SPAWN_DURATION_AMBUSH,
+  HITSTOP_SQUARE,
+  HITSTOP_SIERPINSKI,
+  HITSTOP_BLACKHOLE,
+  HITSTOP_MULTI,
+  KILL_SIG_DURATION,
+  KILL_SIG_RAY_COUNT,
+  KILL_SIG_RAY_LENGTH,
+  PHASE_BANNER_DURATION,
+  PHASE_BORDER_PULSE_DURATION,
+  PHASE_DISPLAY_NAMES,
+  TELEGRAPH_DURATION,
+  TELEGRAPH_COLOR,
 } from './config';
+import { FormationMeta } from './spawner/spawn-patterns';
 
 // Enemy factory imports
 import { Rhombus } from './entities/enemies/rhombus';
@@ -59,6 +69,24 @@ import { gameSettings } from './settings';
 import { showDesktopSettings, hideDesktopSettings } from './ui/settings-panel';
 
 type GameState = 'menu' | 'playing' | 'death_slowmo' | 'gameover';
+
+interface KillEffect {
+  x: number;
+  y: number;
+  color: [number, number, number];
+  family: string;
+  elapsed: number;
+  duration: number;
+  angles: number[]; // ray/spiral angles, randomized per kill
+}
+
+interface Telegraph {
+  formation: string;
+  side?: number;      // 0=top, 1=bottom, 2=left, 3=right
+  center?: Vec2;
+  elapsed: number;
+  duration: number;
+}
 
 function createEnemy(type: string, pos?: Vec2): Enemy {
   let e: Enemy;
@@ -131,6 +159,20 @@ export class Game {
   private slowmoOrigin = new Vec2(0, 0);
   private slowmoIsFinal = false; // true = game over after slowmo, false = respawn
 
+  // Combat feedback: hitstop
+  private hitstopTimer = 0;
+
+  // Combat feedback: kill signature effects
+  private killEffects: KillEffect[] = [];
+
+  // Combat feedback: phase transition
+  private phaseBannerTimer = 0;
+  private phaseBannerName = '';
+  private phaseBorderPulseTimer = 0;
+
+  // Combat feedback: spawn telegraphs
+  private telegraphs: Telegraph[] = [];
+
   constructor(private gameCanvas: HTMLCanvasElement, hudCanvas: HTMLCanvasElement) {
     this.mobile = isMobile();
     this.trailLenEnemy = this.mobile ? MOBILE_TRAIL_LENGTH_ENEMY : TRAIL_LENGTH_ENEMY;
@@ -170,6 +212,15 @@ export class Game {
     this.hud = new HUD(hudCanvas);
     this.joystickRenderer = new VirtualJoystickRenderer(hudCanvas);
     this.waveManager = new WaveManager();
+    this.waveManager.onPhaseChange = (newPhase: string) => {
+      const displayName = PHASE_DISPLAY_NAMES[newPhase];
+      if (displayName) {
+        this.phaseBannerTimer = PHASE_BANNER_DURATION;
+        this.phaseBannerName = displayName;
+        this.phaseBorderPulseTimer = PHASE_BORDER_PULSE_DURATION;
+        this.audio.playPhaseTransition();
+      }
+    };
     this.starfield = new Starfield(80, gameSettings.arenaWidth, gameSettings.arenaHeight);
     this.haptics = new HapticsManager();
 
@@ -258,6 +309,12 @@ export class Game {
     this.trails.clear();
     this.bulletTrailIds.clear();
     this.waveManager.reset();
+    this.hitstopTimer = 0;
+    this.killEffects = [];
+    this.phaseBannerTimer = 0;
+    this.phaseBannerName = '';
+    this.phaseBorderPulseTimer = 0;
+    this.telegraphs = [];
     this.player.lives = gameSettings.startingLives;
     this.waveManager.spawnRateMultiplier = gameSettings.spawnRateMultiplier;
     if (gameSettings.startingPhase !== 'tutorial') {
@@ -295,7 +352,14 @@ export class Game {
 
     // Boost for enemy count
     const enemyBoost = Math.min(this.enemies.length / 40, 0.3);
-    return Math.min(base + enemyBoost, 1);
+
+    // Temporary intensity bump during phase transition
+    let phaseBump = 0;
+    if (this.phaseBorderPulseTimer > 0) {
+      phaseBump = 0.15 * (this.phaseBorderPulseTimer / PHASE_BORDER_PULSE_DURATION);
+    }
+
+    return Math.min(base + enemyBoost + phaseBump, 1);
   }
 
   private updateGravityWells(): void {
@@ -476,6 +540,19 @@ export class Game {
       return;
     }
 
+    // Update combat feedback timers (always, even during hitstop)
+    this.updateCombatFeedback(dt);
+
+    // Hitstop: freeze gameplay, keep visuals alive
+    if (this.hitstopTimer > 0) {
+      this.hitstopTimer -= dt;
+      this.explosions.update(dt);
+      this.updateGravityWells();
+      this.grid.update(dt);
+      this.audio.setMusicIntensity(this.computeIntensity());
+      return;
+    }
+
     this.gameTime += dt / 1000;
 
     // Player
@@ -557,6 +634,11 @@ export class Game {
       this.haptics.medium();
     }
 
+    // Create telegraphs from formation events
+    for (const fm of this.waveManager.formationEvents) {
+      this.createTelegraph(fm);
+    }
+
     // Collision
     const result = checkCollisions(
       this.player,
@@ -564,39 +646,90 @@ export class Game {
       this.enemies,
     );
 
-    // Process kills
+    // Process kills with per-family kill signatures
+    let frameKillCount = 0;
+    let maxHitstop = 0;
     for (const kill of result.killedEnemies) {
       this.player.score += kill.scoreValue;
       if (kill.scoreValue > 0) this.player.enemiesKilled++;
-      this.explosions.spawn(
-        kill.position.x, kill.position.y, kill.color,
-        this.mobile ? Math.floor(EXPLOSION_PARTICLE_COUNT_SMALL * 0.6) : EXPLOSION_PARTICLE_COUNT_SMALL,
-        EXPLOSION_DURATION_DEFAULT,
-      );
+      frameKillCount++;
 
-      // Grid displacement from explosion
-      this.grid.applyImpulse(kill.position.x, kill.position.y, 400, 200);
+      // Determine enemy family for kill signature
+      const family = this.getEnemyFamily(kill.enemy);
 
-      // Screen shake on enemy kill
-      this.camera.shake(SCREEN_SHAKE_SMALL);
+      // Per-family kill signature: VFX + SFX + hitstop
+      this.spawnKillSignature(kill.position.x, kill.position.y, kill.color, family);
+      this.audio.playKillSignature(family);
 
-      // BlackHole death: scaled explosion + dramatic procedural SFX
-      if (kill.enemy instanceof BlackHole) {
-        const absorbed = (kill.enemy as BlackHole).absorbedCount;
-        this.audio.playBlackHoleDeath(absorbed);
-        if (absorbed > 0) {
+      // Per-family explosion + grid + shake
+      switch (family) {
+        case 'blackhole': {
+          const absorbed = (kill.enemy as BlackHole).absorbedCount;
+          this.audio.playBlackHoleDeath(absorbed);
           this.explosions.spawn(
             kill.position.x, kill.position.y, kill.color,
-            this.mobile ? Math.floor(absorbed * 8) : absorbed * 15,
-            EXPLOSION_DURATION_LARGE * 0.8,
+            this.mobile ? 60 : 120, EXPLOSION_DURATION_DEFAULT,
           );
-          this.grid.applyImpulse(kill.position.x, kill.position.y, 600 + absorbed * 50, 300);
-          this.camera.shake(SCREEN_SHAKE_LARGE);
+          if (absorbed > 0) {
+            this.explosions.spawn(
+              kill.position.x, kill.position.y, kill.color,
+              this.mobile ? Math.floor(absorbed * 8) : absorbed * 15,
+              EXPLOSION_DURATION_LARGE * 0.8,
+            );
+            this.grid.applyImpulse(kill.position.x, kill.position.y, 600 + absorbed * 50, 300);
+            this.camera.shake(SCREEN_SHAKE_LARGE);
+          } else {
+            this.grid.applyImpulse(kill.position.x, kill.position.y, 500, 250);
+            this.camera.shake(SCREEN_SHAKE_LARGE);
+          }
+          maxHitstop = Math.max(maxHitstop, HITSTOP_BLACKHOLE);
+          this.haptics.heavy();
+          break;
         }
-        this.haptics.heavy();
-      } else {
-        this.audio.playSFX('crash');
-        this.haptics.light();
+        case 'sierpinski':
+          this.explosions.spawn(
+            kill.position.x, kill.position.y, kill.color,
+            this.mobile ? 40 : 80, EXPLOSION_DURATION_DEFAULT * 1.2,
+          );
+          // Secondary gold flash
+          this.explosions.spawn(
+            kill.position.x, kill.position.y, [1, 0.9, 0.3],
+            this.mobile ? 20 : 40, EXPLOSION_DURATION_DEFAULT * 0.6,
+          );
+          this.grid.applyImpulse(kill.position.x, kill.position.y, 500, 220);
+          this.camera.shake(SCREEN_SHAKE_LARGE * 0.7);
+          maxHitstop = Math.max(maxHitstop, HITSTOP_SIERPINSKI);
+          this.haptics.medium();
+          break;
+        case 'square':
+          this.explosions.spawn(
+            kill.position.x, kill.position.y, kill.color,
+            this.mobile ? 35 : 70, EXPLOSION_DURATION_DEFAULT * 1.1, 0.8,
+          );
+          this.grid.applyImpulse(kill.position.x, kill.position.y, 450, 200);
+          this.camera.shake(SCREEN_SHAKE_SMALL * 1.5);
+          maxHitstop = Math.max(maxHitstop, HITSTOP_SQUARE);
+          this.haptics.medium();
+          break;
+        case 'pinwheel':
+          this.explosions.spawn(
+            kill.position.x, kill.position.y, kill.color,
+            this.mobile ? 30 : 60, EXPLOSION_DURATION_DEFAULT * 0.8, 1.3,
+          );
+          this.grid.applyImpulse(kill.position.x, kill.position.y, 350, 180);
+          this.camera.shake(SCREEN_SHAKE_SMALL);
+          this.haptics.light();
+          break;
+        default: // rhombus, circle, shard, square2, etc.
+          this.explosions.spawn(
+            kill.position.x, kill.position.y, kill.color,
+            this.mobile ? Math.floor(EXPLOSION_PARTICLE_COUNT_SMALL * 0.6) : EXPLOSION_PARTICLE_COUNT_SMALL,
+            EXPLOSION_DURATION_DEFAULT,
+          );
+          this.grid.applyImpulse(kill.position.x, kill.position.y, 400, 200);
+          this.camera.shake(SCREEN_SHAKE_SMALL);
+          this.haptics.light();
+          break;
       }
 
       // Unregister trail
@@ -608,21 +741,18 @@ export class Game {
       const deathResult = kill.enemy.onDeath();
       if (deathResult.spawnEnemies) {
         if (deathResult.staggeredSpawn) {
-          // Theatrical staggered spawn — buildup shockwave then release one by one
           const origin = kill.position.clone();
-          // Initial implosion flash
           this.explosions.spawn(
             origin.x, origin.y, kill.color,
             this.mobile ? 30 : 60, 0.6,
           );
           this.camera.shake(SCREEN_SHAKE_LARGE);
-          // Queue each child with increasing delay
           for (let i = 0; i < deathResult.spawnEnemies.length; i++) {
             const child = deathResult.spawnEnemies[i];
             this.pendingSpawns.push({
               type: child.type,
               position: child.position.clone(),
-              delay: 300 + i * 120, // stagger: 300ms pause then 120ms between each
+              delay: 300 + i * 120,
               origin,
             });
           }
@@ -634,6 +764,14 @@ export class Game {
           }
         }
       }
+    }
+
+    // Multi-kill hitstop bonus
+    if (frameKillCount >= 3) {
+      maxHitstop = Math.max(maxHitstop, HITSTOP_MULTI);
+    }
+    if (maxHitstop > 0) {
+      this.hitstopTimer = maxHitstop;
     }
 
     // Player hit
@@ -710,6 +848,278 @@ export class Game {
 
     // Music intensity
     this.audio.setMusicIntensity(this.computeIntensity());
+  }
+
+  /** Get base enemy family name for kill signature lookup */
+  private getEnemyFamily(enemy: Enemy): string {
+    if (enemy instanceof BlackHole) return 'blackhole';
+    if (enemy instanceof Sierpinski) return 'sierpinski';
+    if (enemy instanceof Square || enemy instanceof Square2) return 'square';
+    if (enemy instanceof Pinwheel) return 'pinwheel';
+    if (enemy instanceof Rhombus) return 'rhombus';
+    if (enemy instanceof Shard) return 'sierpinski';
+    if (enemy instanceof CircleEnemy) return 'blackhole';
+    return 'rhombus'; // default
+  }
+
+  /** Spawn per-family kill signature visual effect */
+  private spawnKillSignature(x: number, y: number, color: [number, number, number], family: string): void {
+    // Only spawn for families with distinct signatures
+    if (family === 'rhombus' || family === 'pinwheel' || family === 'square' || family === 'sierpinski') {
+      const angles: number[] = [];
+      const count = family === 'pinwheel' ? 8 : KILL_SIG_RAY_COUNT;
+      const baseAngle = Math.random() * Math.PI * 2;
+      for (let i = 0; i < count; i++) {
+        angles.push(baseAngle + (i / count) * Math.PI * 2);
+      }
+      this.killEffects.push({
+        x, y, color, family,
+        elapsed: 0,
+        duration: KILL_SIG_DURATION,
+        angles,
+      });
+    }
+  }
+
+  /** Update combat feedback timers (kill effects, banners, telegraphs, border pulse) */
+  private updateCombatFeedback(dt: number): void {
+    const dtSec = dt / 1000;
+    // Kill effects
+    for (const ke of this.killEffects) {
+      ke.elapsed += dtSec;
+    }
+    this.killEffects = this.killEffects.filter(ke => ke.elapsed < ke.duration);
+
+    // Phase banner
+    if (this.phaseBannerTimer > 0) this.phaseBannerTimer -= dt;
+    // Border pulse
+    if (this.phaseBorderPulseTimer > 0) this.phaseBorderPulseTimer -= dt;
+
+    // Telegraphs
+    for (const tg of this.telegraphs) {
+      tg.elapsed += dtSec;
+    }
+    this.telegraphs = this.telegraphs.filter(tg => tg.elapsed < tg.duration);
+  }
+
+  /** Create a spawn telegraph from a formation event */
+  private createTelegraph(fm: FormationMeta): void {
+    this.telegraphs.push({
+      formation: fm.formation,
+      side: fm.side,
+      center: fm.center,
+      elapsed: 0,
+      duration: TELEGRAPH_DURATION / 1000,
+    });
+    this.audio.playTelegraphWarning();
+  }
+
+  /** Render kill signature effects (called during additive blend pass) */
+  private renderKillEffects(): void {
+    for (const ke of this.killEffects) {
+      const t = ke.elapsed / ke.duration;
+      const alpha = Math.max(0, 1 - t);
+      const [r, g, b] = ke.color;
+
+      switch (ke.family) {
+        case 'rhombus': {
+          // Crystal burst: narrow rays emanating outward with bright tips
+          for (const angle of ke.angles) {
+            const len = t * KILL_SIG_RAY_LENGTH;
+            const innerLen = len * 0.3;
+            const x1 = ke.x + Math.cos(angle) * innerLen;
+            const y1 = ke.y + Math.sin(angle) * innerLen;
+            const x2 = ke.x + Math.cos(angle) * len;
+            const y2 = ke.y + Math.sin(angle) * len;
+            // Bright white tip
+            this.renderer.drawLine(x1, y1, x2, y2, 1, 1, 1, alpha * 0.8);
+            // Colored afterglow
+            const x3 = ke.x + Math.cos(angle) * len * 1.2;
+            const y3 = ke.y + Math.sin(angle) * len * 1.2;
+            this.renderer.drawLine(x2, y2, x3, y3, r, g, b, alpha * 0.4);
+          }
+          break;
+        }
+        case 'square': {
+          // Chunky fragments: rectangular shapes flying outward
+          const fragSize = 8 + t * 4;
+          for (const angle of ke.angles) {
+            const dist = t * 60;
+            const cx = ke.x + Math.cos(angle) * dist;
+            const cy = ke.y + Math.sin(angle) * dist;
+            const rot = angle + t * 2;
+            // Draw a small rotated square
+            for (let j = 0; j < 4; j++) {
+              const a1 = rot + (j / 4) * Math.PI * 2;
+              const a2 = rot + ((j + 1) / 4) * Math.PI * 2;
+              this.renderer.drawLine(
+                cx + Math.cos(a1) * fragSize, cy + Math.sin(a1) * fragSize,
+                cx + Math.cos(a2) * fragSize, cy + Math.sin(a2) * fragSize,
+                r, g, b, alpha * 0.7,
+              );
+            }
+          }
+          break;
+        }
+        case 'pinwheel': {
+          // Spark spiral: particles in rotating spiral pattern
+          const spiralRot = t * Math.PI * 3; // 1.5 full rotations
+          for (let i = 0; i < ke.angles.length; i++) {
+            const angle = ke.angles[i] + spiralRot;
+            const dist = t * 70;
+            const x1 = ke.x + Math.cos(angle) * dist;
+            const y1 = ke.y + Math.sin(angle) * dist;
+            const trail = 12;
+            const x2 = ke.x + Math.cos(angle - 0.3) * (dist - trail);
+            const y2 = ke.y + Math.sin(angle - 0.3) * (dist - trail);
+            this.renderer.drawLine(x1, y1, x2, y2, r, g, b, alpha * 0.7);
+            // Bright spark tip
+            this.renderer.drawLine(x1, y1, x1 + Math.cos(angle) * 4, y1 + Math.sin(angle) * 4, 1, 1, 1, alpha * 0.5);
+          }
+          break;
+        }
+        case 'sierpinski': {
+          // Layered fractal collapse: concentric triangles expanding then fading
+          for (let layer = 0; layer < 3; layer++) {
+            const layerT = Math.max(0, t - layer * 0.1);
+            if (layerT <= 0) continue;
+            const layerAlpha = alpha * (1 - layer * 0.25);
+            const radius = layerT * 50 + layer * 15;
+            const rot = t * 1.5 + layer * Math.PI / 6;
+            // Draw triangle
+            for (let j = 0; j < 3; j++) {
+              const a1 = rot + (j / 3) * Math.PI * 2;
+              const a2 = rot + ((j + 1) / 3) * Math.PI * 2;
+              this.renderer.drawLine(
+                ke.x + Math.cos(a1) * radius, ke.y + Math.sin(a1) * radius,
+                ke.x + Math.cos(a2) * radius, ke.y + Math.sin(a2) * radius,
+                r, g, b, layerAlpha * 0.6,
+              );
+            }
+          }
+          break;
+        }
+      }
+    }
+  }
+
+  /** Render spawn telegraph arcs on arena border */
+  private renderTelegraphs(): void {
+    const hw = gameSettings.arenaWidth / 2;
+    const hh = gameSettings.arenaHeight / 2;
+    const [tr, tg, tb] = TELEGRAPH_COLOR;
+
+    for (const tel of this.telegraphs) {
+      const t = tel.elapsed / tel.duration;
+      const pulse = 0.5 + 0.5 * Math.sin(tel.elapsed * 12); // fast pulse
+      const alpha = (1 - t) * 0.6 * pulse;
+
+      if (tel.side !== undefined) {
+        // Edge-based telegraph: glowing arc on the relevant border
+        const segments = 20;
+        let x1: number, y1: number, x2: number, y2: number;
+
+        switch (tel.side) {
+          case 0: // top
+            for (let i = 0; i < segments; i++) {
+              x1 = -hw + (i / segments) * hw * 2;
+              x2 = -hw + ((i + 1) / segments) * hw * 2;
+              y1 = y2 = hh;
+              this.renderer.drawLine(x1, y1, x2, y2, tr, tg, tb, alpha);
+              // Inner glow
+              this.renderer.drawLine(x1, y1 - 6, x2, y2 - 6, tr, tg, tb, alpha * 0.4);
+            }
+            break;
+          case 1: // bottom
+            for (let i = 0; i < segments; i++) {
+              x1 = -hw + (i / segments) * hw * 2;
+              x2 = -hw + ((i + 1) / segments) * hw * 2;
+              y1 = y2 = -hh;
+              this.renderer.drawLine(x1, y1, x2, y2, tr, tg, tb, alpha);
+              this.renderer.drawLine(x1, y1 + 6, x2, y2 + 6, tr, tg, tb, alpha * 0.4);
+            }
+            break;
+          case 2: // left
+            for (let i = 0; i < segments; i++) {
+              y1 = -hh + (i / segments) * hh * 2;
+              y2 = -hh + ((i + 1) / segments) * hh * 2;
+              x1 = x2 = -hw;
+              this.renderer.drawLine(x1, y1, x2, y2, tr, tg, tb, alpha);
+              this.renderer.drawLine(x1 + 6, y1, x2 + 6, y2, tr, tg, tb, alpha * 0.4);
+            }
+            break;
+          case 3: // right
+            for (let i = 0; i < segments; i++) {
+              y1 = -hh + (i / segments) * hh * 2;
+              y2 = -hh + ((i + 1) / segments) * hh * 2;
+              x1 = x2 = hw;
+              this.renderer.drawLine(x1, y1, x2, y2, tr, tg, tb, alpha);
+              this.renderer.drawLine(x1 - 6, y1, x2 - 6, y2, tr, tg, tb, alpha * 0.4);
+            }
+            break;
+        }
+
+        // Pincer: also show opposite side
+        if (tel.formation === 'pincer' && tel.side !== undefined) {
+          const oppSide = tel.side < 2 ? (tel.side === 0 ? 1 : 0) : (tel.side === 2 ? 3 : 2);
+          switch (oppSide) {
+            case 0:
+              this.renderer.drawLine(-hw, hh, hw, hh, tr, tg, tb, alpha * 0.7);
+              break;
+            case 1:
+              this.renderer.drawLine(-hw, -hh, hw, -hh, tr, tg, tb, alpha * 0.7);
+              break;
+            case 2:
+              this.renderer.drawLine(-hw, -hh, -hw, hh, tr, tg, tb, alpha * 0.7);
+              break;
+            case 3:
+              this.renderer.drawLine(hw, -hh, hw, hh, tr, tg, tb, alpha * 0.7);
+              break;
+          }
+        }
+      }
+
+      if (tel.center) {
+        // Position-based telegraph: warning ring (surround/ambush)
+        const radius = tel.formation === 'ambush' ? 300 + t * 50 : 280 + t * 40;
+        const ringSegments = 24;
+        for (let i = 0; i < ringSegments; i++) {
+          const a1 = (i / ringSegments) * Math.PI * 2;
+          const a2 = ((i + 1) / ringSegments) * Math.PI * 2;
+          // Dashed effect: skip every other segment
+          if (i % 2 === 0) continue;
+          this.renderer.drawLine(
+            tel.center.x + Math.cos(a1) * radius,
+            tel.center.y + Math.sin(a1) * radius,
+            tel.center.x + Math.cos(a2) * radius,
+            tel.center.y + Math.sin(a2) * radius,
+            tr, tg, tb, alpha,
+          );
+        }
+      }
+    }
+  }
+
+  /** Render phase transition border pulse */
+  private renderBorderPulse(): void {
+    if (this.phaseBorderPulseTimer <= 0) return;
+    const hw = gameSettings.arenaWidth / 2;
+    const hh = gameSettings.arenaHeight / 2;
+    const t = 1 - this.phaseBorderPulseTimer / PHASE_BORDER_PULSE_DURATION;
+    const alpha = (1 - t) * 0.8;
+
+    // White pulse over the border
+    this.renderer.drawLine(-hw, -hh, hw, -hh, 1, 1, 1, alpha);
+    this.renderer.drawLine(hw, -hh, hw, hh, 1, 1, 1, alpha);
+    this.renderer.drawLine(hw, hh, -hw, hh, 1, 1, 1, alpha);
+    this.renderer.drawLine(-hw, hh, -hw, -hh, 1, 1, 1, alpha);
+
+    // Expanding inner pulse
+    const inset = t * 20;
+    this.renderer.drawLine(-hw + inset, -hh + inset, hw - inset, -hh + inset, 1, 0.6, 0.2, alpha * 0.5);
+    this.renderer.drawLine(hw - inset, -hh + inset, hw - inset, hh - inset, 1, 0.6, 0.2, alpha * 0.5);
+    this.renderer.drawLine(hw - inset, hh - inset, -hw + inset, hh - inset, 1, 0.6, 0.2, alpha * 0.5);
+    this.renderer.drawLine(-hw + inset, hh - inset, -hw + inset, -hh + inset, 1, 0.6, 0.2, alpha * 0.5);
   }
 
   private playEnemySpawnSFX(type: string): void {
@@ -902,8 +1312,11 @@ export class Game {
     // 3. Arena border + Entities — NORMAL blend
     this.renderer.begin(false);
     this.renderArenaBorder();
+    this.renderBorderPulse();
 
     if (this.state === 'playing' || this.state === 'death_slowmo') {
+      // Render spawn telegraphs (behind entities)
+      this.renderTelegraphs();
       for (const e of this.enemies) e.render(this.renderer);
       if (this.state === 'playing') {
         this.bullets.render(this.renderer);
@@ -951,10 +1364,11 @@ export class Game {
       for (const e of this.enemies) e.renderGlow(this.renderer, t);
     }
 
-    // 4. Switch to additive blend for trails, explosions, glow
+    // 4. Switch to additive blend for trails, explosions, glow, kill signatures
     this.renderer.setBlendMode('additive');
     this.trails.render(this.renderer);
     this.explosions.render(this.renderer);
+    this.renderKillEffects();
     // setBlendMode('normal') flushes additive batch and restores blend func
     this.renderer.setBlendMode('normal');
     this.renderer.end();
@@ -965,6 +1379,12 @@ export class Game {
     // --- HUD (drawn on separate 2D canvas, unaffected by bloom) ---
     if (this.state === 'playing' || this.state === 'death_slowmo') {
       this.hud.drawPlaying(this.player.score, this.player.lives, this.audio.muted, this.enemies.length, this.input.autoFire);
+
+      // Phase transition banner
+      if (this.phaseBannerTimer > 0) {
+        const progress = 1 - this.phaseBannerTimer / PHASE_BANNER_DURATION;
+        this.hud.drawPhaseBanner(this.phaseBannerName, progress);
+      }
 
       // Virtual joysticks (drawn on HUD canvas, not during slowmo)
       if (this.state === 'playing') {

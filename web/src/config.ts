@@ -234,10 +234,42 @@ export const DEATH_SLOWMO_DURATION = 4800; // ms of real time
 export const DEATH_SLOWMO_TIME_SCALE = 0.12; // how slow game runs during slowmo
 export const DEATH_SLOWMO_SHOCKWAVE_SPEED = 0.8; // px/ms expansion speed of kill shockwave
 
+// --- Hitstop (combat freeze on major kills) ---
+export const HITSTOP_SQUARE = 35;       // ms
+export const HITSTOP_SIERPINSKI = 50;   // ms
+export const HITSTOP_BLACKHOLE = 75;    // ms
+export const HITSTOP_MULTI = 35;        // ms — bonus for 3+ kills in same frame
+
+// --- Kill Signature Effects ---
+export const KILL_SIG_DURATION = 0.4;   // seconds
+export const KILL_SIG_RAY_COUNT = 6;
+export const KILL_SIG_RAY_LENGTH = 80;
+
+// --- Phase Transition ---
+export const PHASE_BANNER_DURATION = 2500; // ms
+export const PHASE_BORDER_PULSE_DURATION = 1500; // ms
+
+export const PHASE_DISPLAY_NAMES: Record<string, string> = {
+  rampUp: 'STAGE 2',
+  midGame: 'STAGE 3',
+  intense: 'DANGER',
+  chaos: 'CHAOS',
+};
+
+// --- Spawn Telegraphs ---
+export const TELEGRAPH_DURATION = 1200;  // ms
+export const TELEGRAPH_COLOR: [number, number, number] = [1.0, 0.3, 0.1];
+
 // --- Audio ---
 export const SFX_NAMES = [
   'start', 'die', 'die1', 'crash', 'square', 'rhombus',
   'triangle2', 'octagon', 'pinwheel', 'deathstar', 'deathstar2',
+  'rhombus_high', 'rhombus_low', 'rhombus_swarm',
+  'pinwheel_high', 'pinwheel_low', 'pinwheel_swarm',
+  'square_high', 'square_low', 'square_swarm',
+  'triangle2_high', 'triangle2_low', 'triangle2_swarm',
+  'deathstar_high', 'deathstar_low', 'deathstar_swarm',
+  'gameover',
 ] as const;
 export type SFXName = typeof SFX_NAMES[number];
 export const MASTER_VOLUME = 0.5;
