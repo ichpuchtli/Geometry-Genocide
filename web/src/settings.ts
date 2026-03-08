@@ -49,6 +49,7 @@ export interface GameSettings {
   bloomBlurPasses: number;        // 1–12 (Gaussian blur iterations)
   bloomBlurRadius: number;        // 0.5–6.0 (blur kernel size)
   resolutionScale: number;        // 0.25–2.0 (multiplier on device pixel ratio)
+  zoomScale: number;              // 0.5–1.5 (camera zoom multiplier; lower = see more arena)
 }
 
 export const DEFAULTS: GameSettings = {
@@ -81,6 +82,7 @@ export const DEFAULTS: GameSettings = {
   bloomBlurPasses: BLOOM_BLUR_PASSES,
   bloomBlurRadius: BLOOM_BLUR_RADIUS,
   resolutionScale: 1.0,
+  zoomScale: 1.0,
 };
 
 const STORAGE_KEY = 'gg_settings';

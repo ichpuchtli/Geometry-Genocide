@@ -214,6 +214,7 @@ The `onBulletHit()` virtual method allows enemies to override bullet interaction
   - Grid: `gridSpacing` (10–80, triggers grid rebuild), `gridSubsteps` (1–8), `gridSpringStiffness` (100–3000)
   - Bloom: `bloomThreshold` (0.01–0.5), `bloomBlurPasses` (1–12), `bloomBlurRadius` (0.5–6.0)
   - `resolutionScale` (0.25–2.0, multiplies device pixel ratio)
+  - `zoomScale` (0.5–1.5, camera zoom multiplier — lower = see more arena, updates live via resize dispatch)
 
 ### Audio System
 

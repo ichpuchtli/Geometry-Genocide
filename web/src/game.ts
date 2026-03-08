@@ -205,9 +205,9 @@ export class Game {
       const cssH = gameCanvas.clientHeight;
       const aw = gameSettings.arenaWidth;
       const ah = gameSettings.arenaHeight;
-      this.renderer.zoom = this.mobile
+      this.renderer.zoom = (this.mobile
         ? Math.max(cssW / aw, cssH / ah)
-        : Math.min(cssW / aw, cssH / ah);
+        : Math.min(cssW / aw, cssH / ah)) * gameSettings.zoomScale;
     }
     const gl = this.renderer.getGL();
 
@@ -282,9 +282,9 @@ export class Game {
       const cssH = this.gameCanvas.clientHeight;
       const aw = gameSettings.arenaWidth;
       const ah = gameSettings.arenaHeight;
-      this.renderer.zoom = this.mobile
+      this.renderer.zoom = (this.mobile
         ? Math.max(cssW / aw, cssH / ah)
-        : Math.min(cssW / aw, cssH / ah);
+        : Math.min(cssW / aw, cssH / ah)) * gameSettings.zoomScale;
     }
     this.renderer.resize();
     this.camera.resize(this.renderer.width, this.renderer.height);
