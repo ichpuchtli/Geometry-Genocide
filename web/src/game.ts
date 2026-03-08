@@ -774,7 +774,7 @@ export class Game {
             this.mobile ? 20 : 40, EXPLOSION_DURATION_DEFAULT * 0.6,
           );
           this.grid.applyImpulse(kill.position.x, kill.position.y, 500, 220);
-          this.camera.shake(SCREEN_SHAKE_LARGE * 0.7);
+          this.camera.shake(SCREEN_SHAKE_SMALL * 0.5);
           maxHitstop = Math.max(maxHitstop, HITSTOP_SIERPINSKI);
           this.haptics.medium();
           break;
@@ -784,7 +784,7 @@ export class Game {
             this.mobile ? 35 : 70, EXPLOSION_DURATION_DEFAULT * 1.1, 0.8,
           );
           this.grid.applyImpulse(kill.position.x, kill.position.y, 450, 200);
-          this.camera.shake(SCREEN_SHAKE_SMALL * 1.5);
+          this.camera.shake(SCREEN_SHAKE_SMALL * 0.4);
           maxHitstop = Math.max(maxHitstop, HITSTOP_SQUARE);
           this.haptics.medium();
           break;
@@ -794,7 +794,7 @@ export class Game {
             this.mobile ? 30 : 60, EXPLOSION_DURATION_DEFAULT * 0.8, 1.3,
           );
           this.grid.applyImpulse(kill.position.x, kill.position.y, 350, 180);
-          this.camera.shake(SCREEN_SHAKE_SMALL);
+          // No camera shake — grid impulse is enough for small enemies
           this.haptics.light();
           break;
         default: // rhombus, circle, shard, square2, etc.
@@ -804,7 +804,7 @@ export class Game {
             EXPLOSION_DURATION_DEFAULT,
           );
           this.grid.applyImpulse(kill.position.x, kill.position.y, 400, 200);
-          this.camera.shake(SCREEN_SHAKE_SMALL);
+          // No camera shake for basic kills
           this.haptics.light();
           break;
       }
@@ -823,7 +823,7 @@ export class Game {
             origin.x, origin.y, kill.color,
             this.mobile ? 30 : 60, 0.6,
           );
-          this.camera.shake(SCREEN_SHAKE_LARGE);
+          this.camera.shake(SCREEN_SHAKE_SMALL);
           for (let i = 0; i < deathResult.spawnEnemies.length; i++) {
             const child = deathResult.spawnEnemies[i];
             this.pendingSpawns.push({
