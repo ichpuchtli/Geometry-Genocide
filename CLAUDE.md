@@ -268,7 +268,7 @@ Twin-stick virtual joysticks, responsive canvas, mobile performance optimization
 - Settings panel for difficulty tuning (spawn rate, lives, speed, fire rate, phase skip)
 - Spawn animation rework (theatrical grow-in, staggered child spawns)
 - Player ship redesign as Geometry Wars-style claw/pincer
-- Screen-center directional aiming: aim angle = atan2(screen center → cursor), player position irrelevant (mouse acts like virtual right-stick)
+- Player-to-cursor aiming: aim angle = atan2(cursorWorld - playerWorld), standard mouse-aim like Nuclear Throne / Hotline Miami
 - BlackHole overhaul: stationary, player gravitational pull, shrink-per-bullet, overload explosion, gravitational lensing, electric blue-white plasma visuals, procedural death SFX
 - Octagon & DeathStar removal (redundant with BlackHole)
 - Spring-mass grid rewrite, smaller arena (1600x1000), auto-fit zoom
@@ -277,7 +277,7 @@ Twin-stick virtual joysticks, responsive canvas, mobile performance optimization
 - Desktop settings panel: Settings panel (17 sliders + phase dropdown + checkbox) now visible on desktop during menu and gameover states. Right-side sidebar with semi-transparent background, scrollable full-height, hidden during gameplay. `settings-panel.ts` refactored to support multiple mount points (mobile `#settings-mount` + desktop `#desktop-settings`), with cross-instance sync on value changes. `game.ts` calls `showDesktopSettings()`/`hideDesktopSettings()` on state transitions (skipped on mobile). Each slider has a description line explaining what it controls.
 - Spawn rework: Triangle unwired from spawner (circle was its child). Circle removed from all spawn pools — now only spawned by BlackHole overload explosion. BlackHole spawns anywhere in the arena (not at edges). New `spawnAnywhere()` method on Enemy base class.
 - Vulnerable during spawn setting: New boolean toggle in settings panel. When enabled, bullets can kill enemies during their spawn-in animation. Checked in `collision.ts`.
-- Crosshair cursor: Desktop crosshair rendered at mouse world position (4 inward-pointing chevrons with slow rotation animation, neon green). Touch mode renders crosshair near player at aim direction. Aim sensitivity slider (0.5–3.0x) in settings scales mouse offset from screen center. Old `AIM_CHEVRON_*` config replaced with `CROSSHAIR_*` constants. `MOUSE_AIM_SENSITIVITY` removed.
+- Crosshair cursor: Desktop crosshair rendered at mouse world position (4 inward-pointing chevrons with slow rotation animation, neon green). Touch mode renders crosshair near player at aim direction. Desktop aim = atan2(cursorWorld - playerWorld) — standard player-to-cursor aiming. Old `AIM_CHEVRON_*` config replaced with `CROSSHAIR_*` constants.
 - GPU Stress settings: 9 new runtime-tunable sliders for arena size (800–6400 × 500–4000), grid resolution (spacing 10–80, substeps 1–8, stiffness 100–3000), bloom quality (threshold, passes 1–12, radius), and resolution scale (0.25–2.0x DPR). Arena/grid changes rebuild on game restart via `grid.rebuild()` + starfield recreation. All world bounds (`WORLD_WIDTH`/`WORLD_HEIGHT` references in enemy, player, bullet, camera, spawn-patterns) now read from `gameSettings.arenaWidth`/`arenaHeight`. Grid `cols`/`rows`/`totalPoints` moved from module-level constants to instance properties. Large grids (>65535 vertices) use `OES_element_index_uint` for 32-bit index buffers.
 
 ### Phase 4 (Scores, Polish & Tuning) — Not Started

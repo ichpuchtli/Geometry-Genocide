@@ -1,7 +1,6 @@
 import { Vec2 } from './vector';
 import { Camera } from './camera';
 import { JOYSTICK_MAX_RADIUS, JOYSTICK_DEAD_ZONE } from '../config';
-import { gameSettings } from '../settings';
 
 export type InputMode = 'keyboard' | 'touch';
 
@@ -168,15 +167,13 @@ export class Input {
     return new Vec2(wx, wy);
   }
 
-  /** Update aim angle from mouse screen position relative to screen center.
+  /** Update aim angle from player position toward mouse cursor world position.
    *  Called each frame from Player.update(). */
-  updateAimFromPlayer(_playerPos: Vec2): void {
+  updateAimFromPlayer(playerPos: Vec2): void {
     if (this.mode !== 'keyboard') return;
-    const rawDx = this.mouseScreenX - this.canvasWidth / 2;
-    const rawDy = -(this.mouseScreenY - this.canvasHeight / 2); // flip Y: screen down → world up
-    const sens = gameSettings.aimSensitivity;
-    const dx = rawDx * sens;
-    const dy = rawDy * sens;
+    const mouseWorld = this.getMouseWorldPos();
+    const dx = mouseWorld.x - playerPos.x;
+    const dy = mouseWorld.y - playerPos.y;
     if (dx * dx + dy * dy > 1) {
       this._aimAngle = Math.atan2(dy, dx);
     }

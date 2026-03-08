@@ -24,7 +24,6 @@ const SLIDERS: SliderDef[] = [
   { key: 'startingLives', label: 'Starting Lives', desc: 'Number of lives at game start', min: 1, max: 10, step: 1, format: v => `${v}` },
   { key: 'playerSpeedMultiplier', label: 'Player Speed', desc: 'Multiplier on player movement speed', min: 0.5, max: 2.0, step: 0.1, format: v => `${v.toFixed(1)}x` },
   { key: 'fireRateMultiplier', label: 'Fire Rate', desc: 'Multiplier on shooting speed', min: 0.5, max: 3.0, step: 0.1, format: v => `${v.toFixed(1)}x` },
-  { key: 'aimSensitivity', label: 'Aim Sensitivity', desc: 'Mouse aim response — higher = less mouse travel needed', min: 0.5, max: 3.0, step: 0.1, format: v => `${v.toFixed(1)}x` },
   { key: 'enemySpeedMultiplier', label: 'Enemy Speed', desc: 'Multiplier on all enemy movement', min: 0.5, max: 2.0, step: 0.1, format: v => `${v.toFixed(1)}x` },
   { key: 'maxEnemies', label: 'Max Enemies', desc: 'Hard cap on simultaneous enemies', min: 20, max: 150, step: 10, format: v => `${v}` },
   { key: 'bloomIntensity', label: 'Bloom', desc: 'Glow post-processing intensity', min: 0.5, max: 4.0, step: 0.1, format: v => `${v.toFixed(1)}` },

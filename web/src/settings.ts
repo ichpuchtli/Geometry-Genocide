@@ -38,7 +38,6 @@ export interface GameSettings {
   gridDamping: number;            // 1–20 (velocity damping)
   gridMaxDisplacement: number;    // 20–200 (max px displacement from rest)
   vulnerableDuringSpawn: boolean; // false = spawn invulnerability (default), true = can be shot during spawn
-  aimSensitivity: number;         // 0.5–3.0 (scales mouse offset from center; higher = less travel needed)
   // GPU Stress / Arena
   arenaWidth: number;             // 800–6400 (world width in px)
   arenaHeight: number;            // 500–4000 (world height in px)
@@ -71,7 +70,6 @@ export const DEFAULTS: GameSettings = {
   gridDamping: GRID_SPRING_DAMPING,
   gridMaxDisplacement: GRID_MAX_DISPLACEMENT,
   vulnerableDuringSpawn: false,
-  aimSensitivity: 1.0,
   arenaWidth: WORLD_WIDTH,
   arenaHeight: WORLD_HEIGHT,
   gridSpacing: GRID_SPACING,

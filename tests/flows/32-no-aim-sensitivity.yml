@@ -1,0 +1,59 @@
+name: "No Aim Sensitivity Slider"
+tags: [smoke, settings]
+steps:
+  - action: launch
+    url: "/"
+    waitFor: "canvas#game"
+
+  - action: wait
+    ms: 2000
+
+  - action: evalCheck
+    description: "Desktop settings panel exists"
+    script: |
+      var ds = document.getElementById('desktop-settings');
+      return ds && ds.querySelector('.settings-panel') !== null;
+
+  - action: evalCheck
+    description: "Aim Sensitivity slider is NOT present"
+    script: |
+      var ds = document.getElementById('desktop-settings');
+      if (!ds) return false;
+      var labels = ds.querySelectorAll('.sp-label');
+      for (var i = 0; i < labels.length; i++) {
+        if (labels[i].textContent.indexOf('Aim Sensitivity') !== -1) return false;
+      }
+      return true;
+
+  - action: evalCheck
+    description: "Settings panel has exactly 26 sliders (was 27 before removing Aim Sensitivity)"
+    script: |
+      var ds = document.getElementById('desktop-settings');
+      if (!ds) return false;
+      var sliders = ds.querySelectorAll('input[type="range"]');
+      return sliders.length === 26;
+
+  - action: evalCheck
+    description: "Spawn Rate slider still exists"
+    script: |
+      var ds = document.getElementById('desktop-settings');
+      if (!ds) return false;
+      var labels = ds.querySelectorAll('.sp-label');
+      for (var i = 0; i < labels.length; i++) {
+        if (labels[i].textContent === 'Spawn Rate') return true;
+      }
+      return false;
+
+  - action: evalCheck
+    description: "Fire Rate slider still exists"
+    script: |
+      var ds = document.getElementById('desktop-settings');
+      if (!ds) return false;
+      var labels = ds.querySelectorAll('.sp-label');
+      for (var i = 0; i < labels.length; i++) {
+        if (labels[i].textContent === 'Fire Rate') return true;
+      }
+      return false;
+
+  - action: screenshot
+    name: "32-no-aim-sensitivity"
