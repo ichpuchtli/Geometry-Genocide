@@ -892,13 +892,25 @@ export class Game {
       if (this.state === 'playing') {
         this.bullets.render(this.renderer);
         this.player.render(this.renderer);
-        // Aim chevron orbiting player (desktop + mobile)
-        this.aimIndicator.render(
-          this.renderer,
-          this.player.position.x,
-          this.player.position.y,
-          this.player.aimAngle,
-        );
+        // Crosshair: desktop = at mouse cursor world pos, touch = near player at aim angle
+        if (this.input.isTouchActive()) {
+          const aimAngle = this.player.aimAngle;
+          const touchDist = 38;
+          this.aimIndicator.render(
+            this.renderer,
+            this.player.position.x + Math.cos(aimAngle) * touchDist,
+            this.player.position.y + Math.sin(aimAngle) * touchDist,
+            this.totalTime * 1000,
+          );
+        } else {
+          const mouseWorld = this.input.getMouseWorldPos();
+          this.aimIndicator.render(
+            this.renderer,
+            mouseWorld.x,
+            mouseWorld.y,
+            this.totalTime * 1000,
+          );
+        }
       }
 
       // Shockwave ring during death slowmo

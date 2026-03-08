@@ -30,6 +30,7 @@ export interface GameSettings {
   gridDamping: number;            // 1–20 (velocity damping)
   gridMaxDisplacement: number;    // 20–200 (max px displacement from rest)
   vulnerableDuringSpawn: boolean; // false = spawn invulnerability (default), true = can be shot during spawn
+  aimSensitivity: number;         // 0.5–3.0 (scales mouse offset from center; higher = less travel needed)
 }
 
 export const DEFAULTS: GameSettings = {
@@ -52,6 +53,7 @@ export const DEFAULTS: GameSettings = {
   gridDamping: GRID_SPRING_DAMPING,
   gridMaxDisplacement: GRID_MAX_DISPLACEMENT,
   vulnerableDuringSpawn: false,
+  aimSensitivity: 1.0,
 };
 
 const STORAGE_KEY = 'gg_settings';
