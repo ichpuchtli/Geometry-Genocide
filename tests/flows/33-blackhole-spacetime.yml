@@ -15,8 +15,8 @@ steps:
       const settings = JSON.parse(localStorage.getItem('gg_settings') || '{}');
       settings.startingPhase = 'intense';
       settings.startingLives = 10;
-      settings.bhGridPerspectiveDepth = 0.6;
-      settings.bhGridMassBase = 400;
+      settings.bhGridPerspectiveDepth = 0.8;
+      settings.bhGridMassBase = 500;
       settings.bhGridRadiusMultiplier = 3.0;
       localStorage.setItem('gg_settings', JSON.stringify(settings));
       return true;
@@ -28,6 +28,19 @@ steps:
 
   - action: wait
     ms: 300
+
+  # Verify updated defaults are loaded correctly
+  - action: evalCheck
+    description: "Verify bhGridMassBase default is 500"
+    script: |
+      const s = JSON.parse(localStorage.getItem('gg_settings') || '{}');
+      return s.bhGridMassBase === 500;
+
+  - action: evalCheck
+    description: "Verify bhGridPerspectiveDepth default is 0.8"
+    script: |
+      const s = JSON.parse(localStorage.getItem('gg_settings') || '{}');
+      return s.bhGridPerspectiveDepth === 0.8;
 
   # Start game
   - action: click

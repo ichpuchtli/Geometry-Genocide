@@ -33,7 +33,7 @@ const SLIDERS: SliderDef[] = [
   { key: 'bhAttractRadius', label: 'BH Pull Radius', desc: 'How far BlackHole gravity reaches (px)', min: 50, max: 600, step: 10, format: v => `${v}px` },
   { key: 'bhEnemyPull', label: 'BH Enemy Pull', desc: 'Strength of pull on nearby enemies', min: 0.1, max: 5.0, step: 0.1, format: v => v.toFixed(1) },
   { key: 'bhPlayerPull', label: 'BH Player Pull', desc: 'Strength of pull on the player', min: 0.0, max: 5.0, step: 0.1, format: v => v.toFixed(1) },
-  { key: 'bhGridMassBase', label: 'BH Grid Depth', desc: 'Grid warping depth at 0 absorbed enemies', min: 0, max: 500, step: 10, format: v => `${v}` },
+  { key: 'bhGridMassBase', label: 'BH Grid Depth', desc: 'Grid warping depth at 0 absorbed enemies', min: 0, max: 800, step: 10, format: v => `${v}` },
   { key: 'bhGridMassPerAbsorb', label: 'BH Grid/Absorb', desc: 'Additional grid depth per absorbed enemy', min: 0, max: 100, step: 5, format: v => `${v}` },
   { key: 'bhGridRadiusMultiplier', label: 'BH Grid Radius', desc: 'Grid warp radius as multiple of pull radius', min: 0.5, max: 5.0, step: 0.1, format: v => `${v.toFixed(1)}x` },
   { key: 'bhGridPerspectiveDepth', label: 'BH Depth Effect', desc: 'Strength of 3D spacetime depression illusion (0=flat, 1=max)', min: 0.0, max: 1.0, step: 0.05, format: v => v.toFixed(2) },

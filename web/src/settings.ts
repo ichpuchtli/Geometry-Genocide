@@ -30,7 +30,7 @@ export interface GameSettings {
   bhAttractRadius: number;        // 50–600 (px, how far gravity reaches)
   bhEnemyPull: number;            // 0.1–5.0 (px/ms², enemy pull strength)
   bhPlayerPull: number;           // 0.0–5.0 (px/ms², player pull strength)
-  bhGridMassBase: number;         // 0–500 (grid well depth at 0 absorbed)
+  bhGridMassBase: number;         // 0–800 (grid well depth at 0 absorbed)
   bhGridMassPerAbsorb: number;    // 0–100 (additional grid depth per absorbed enemy)
   bhGridRadiusMultiplier: number; // 0.5–5.0 (grid well radius as multiple of attract radius)
   bhGridPerspectiveDepth: number; // 0.0–1.0 (strength of 3D spacetime depression illusion)
@@ -63,12 +63,12 @@ export const DEFAULTS: GameSettings = {
   bloomIntensity: BLOOM_INTENSITY,
   trailLength: TRAIL_LENGTH_ENEMY,
   bhAttractRadius: 400,
-  bhEnemyPull: 2.5,
-  bhPlayerPull: 3.5,
-  bhGridMassBase: 400,
+  bhEnemyPull: 3.0,
+  bhPlayerPull: 4.0,
+  bhGridMassBase: 500,
   bhGridMassPerAbsorb: 40,
   bhGridRadiusMultiplier: 3.0,
-  bhGridPerspectiveDepth: 0.6,
+  bhGridPerspectiveDepth: 0.8,
   gridAnchorStiffness: GRID_ANCHOR_STIFFNESS,
   gridDamping: GRID_SPRING_DAMPING,
   gridMaxDisplacement: GRID_MAX_DISPLACEMENT,

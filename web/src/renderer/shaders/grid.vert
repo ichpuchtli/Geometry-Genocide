@@ -29,10 +29,10 @@ void main() {
         if (dist < radius && dist > 1.0) {
             float falloff = 1.0 - dist / radius;
             float ff2 = falloff * falloff; // squared for smooth funnel
-            float normStr = abs(u_wellStrengths[i]) / 500.0;
+            float normStr = abs(u_wellStrengths[i]) / 400.0;
             float d = ff2 * normStr;
-            // Contract: pull vertex toward well center
-            pos += normalize(toWell) * d * u_perspectiveDepth * 0.15 * dist;
+            // Contract: pull vertex toward well center (use radius not dist so inner vertices move most)
+            pos += normalize(toWell) * d * u_perspectiveDepth * 0.15 * radius;
             depth += d;
         }
     }
