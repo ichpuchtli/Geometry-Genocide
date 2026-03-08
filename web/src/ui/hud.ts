@@ -1,4 +1,5 @@
-import { HUD_FONT, HUD_COLOR } from '../config';
+import { HUD_FONT, HUD_COLOR, MedalDef, PHASE_DISPLAY_NAMES, WEAPON_STAGES } from '../config';
+import { RunStats } from '../game';
 
 export class HUD {
   private ctx: CanvasRenderingContext2D;
@@ -300,36 +301,169 @@ export class HUD {
     this.ctx.restore();
   }
 
-  drawGameOver(score: number, enemiesKilled: number, timeSurvived: number): void {
+  drawGameOver(stats: RunStats, medals: MedalDef[], animTime: number): void {
     this.clear();
     const w = this.canvas.clientWidth;
     const h = this.canvas.clientHeight;
     this.ctx.textAlign = 'center';
     this.ctx.textBaseline = 'middle';
 
-    // Light overlay so the frozen chaos is still visible behind
-    this.ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+    // Background overlay — darkens over time
+    const bgAlpha = Math.min(0.55, 0.25 + animTime * 0.1);
+    this.ctx.fillStyle = `rgba(0, 0, 0, ${bgAlpha})`;
     this.ctx.fillRect(0, 0, w, h);
 
-    // Game Over with red glow
-    this.drawGlowText('GAME OVER', w / 2, h / 2 - 100, 'bold 52px monospace', '#ff3030', '#ff0000', 30);
+    // Responsive layout — scale for small screens
+    const scale = Math.min(1, w / 600);
+    const cx = w / 2;
 
-    // Score with bright green glow
-    this.drawGlowText(`${score}`, w / 2, h / 2 - 30, 'bold 44px monospace', '#20ff20', '#20ff20', 20);
-    this.drawGlowText('SCORE', w / 2, h / 2 + 10, '16px monospace', '#0a770a', '#0a770a', 5);
+    // Fade-in factor for initial appearance
+    const fadeIn = Math.min(1, animTime * 2);
 
-    // Stats
-    const mins = Math.floor(timeSurvived / 60);
-    const secs = Math.floor(timeSurvived % 60);
-    this.drawGlowText(
-      `Time: ${mins}:${secs.toString().padStart(2, '0')}  |  Kills: ${enemiesKilled}`,
-      w / 2, h / 2 + 55,
-      '18px monospace', '#10aa10', '#10aa10', 8,
-    );
+    // "GAME OVER" header
+    this.ctx.save();
+    this.ctx.globalAlpha = fadeIn;
+    this.drawGlowText('GAME OVER', cx, h * 0.12, `bold ${Math.round(48 * scale)}px monospace`, '#ff3030', '#ff0000', 25);
+    this.ctx.restore();
 
-    // Play again
-    const replayText = this.touchMode ? 'Tap to Play Again' : 'Click to Play Again';
-    this.drawGlowText(replayText, w / 2, h / 2 + 110, '20px monospace', '#10dd10', '#10dd10', 12);
+    // Score — big number
+    const scoreAlpha = Math.min(1, Math.max(0, (animTime - 0.2) * 3));
+    this.ctx.save();
+    this.ctx.globalAlpha = scoreAlpha;
+    this.drawGlowText(`${stats.score}`, cx, h * 0.22, `bold ${Math.round(42 * scale)}px monospace`, '#20ff20', '#20ff20', 18);
+    this.drawGlowText('SCORE', cx, h * 0.22 + 28 * scale, `${Math.round(13 * scale)}px monospace`, '#0a770a', '#0a770a', 4);
+    this.ctx.restore();
+
+    // Stats grid — staggered reveal
+    const statsY = h * 0.34;
+    const lineH = Math.round(20 * scale);
+    const mins = Math.floor(stats.timeSurvived / 60);
+    const secs = Math.floor(stats.timeSurvived % 60);
+    const phaseName = PHASE_DISPLAY_NAMES[stats.phaseReached] || stats.phaseReached.toUpperCase();
+    const weaponName = ['Single', 'Fast', 'Dual', 'Fast Dual', 'Triple'][stats.weaponStage] || 'Single';
+
+    const statLines = [
+      { label: 'TIME', value: `${mins}:${secs.toString().padStart(2, '0')}` },
+      { label: 'KILLS', value: `${stats.kills}` },
+      { label: 'PHASE', value: phaseName },
+      { label: 'WEAPON', value: weaponName },
+    ];
+
+    // Second column for combat stats (only show non-zero)
+    const combatStats: { label: string; value: string }[] = [];
+    if (stats.elitesKilled > 0) combatStats.push({ label: 'ELITES', value: `${stats.elitesKilled}` });
+    if (stats.blackholesKilled > 0) combatStats.push({ label: 'BLACK HOLES', value: `${stats.blackholesKilled}` });
+    if (stats.minibossDefeated) combatStats.push({ label: 'BOSS', value: 'DEFEATED' });
+    if (stats.recoveriesUsed > 0) combatStats.push({ label: 'RECOVERIES', value: `${stats.recoveriesUsed}` });
+    const heatPct = Math.round(stats.peakHeat * 100);
+    if (heatPct > 0) combatStats.push({ label: 'PEAK HEAT', value: `${heatPct}%` });
+
+    const fontSize = `${Math.round(14 * scale)}px monospace`;
+    const labelColor = '#0a770a';
+    const valueColor = '#10cc10';
+
+    // Draw stats in two columns
+    const colW = Math.min(160 * scale, w * 0.22);
+    const leftX = cx - colW;
+    const rightX = cx + colW;
+
+    for (let i = 0; i < statLines.length; i++) {
+      const delay = 0.4 + i * 0.15;
+      const alpha = Math.min(1, Math.max(0, (animTime - delay) * 4));
+      const y = statsY + i * lineH;
+      this.ctx.save();
+      this.ctx.globalAlpha = alpha;
+      this.ctx.textAlign = 'right';
+      this.drawGlowText(statLines[i].label, leftX - 8, y, fontSize, labelColor, labelColor, 3);
+      this.ctx.textAlign = 'left';
+      this.drawGlowText(statLines[i].value, leftX + 8, y, fontSize, valueColor, valueColor, 5);
+      this.ctx.restore();
+    }
+
+    for (let i = 0; i < combatStats.length; i++) {
+      const delay = 0.5 + i * 0.15;
+      const alpha = Math.min(1, Math.max(0, (animTime - delay) * 4));
+      const y = statsY + i * lineH;
+      this.ctx.save();
+      this.ctx.globalAlpha = alpha;
+      this.ctx.textAlign = 'right';
+      this.drawGlowText(combatStats[i].label, rightX - 8, y, fontSize, labelColor, labelColor, 3);
+      this.ctx.textAlign = 'left';
+      this.drawGlowText(combatStats[i].value, rightX + 8, y, fontSize, valueColor, valueColor, 5);
+      this.ctx.restore();
+    }
+
+    // Separator line before medals
+    const sepY = statsY + Math.max(statLines.length, combatStats.length) * lineH + lineH * 0.5;
+    const sepAlpha = Math.min(1, Math.max(0, (animTime - 1.0) * 3));
+    this.ctx.save();
+    this.ctx.globalAlpha = sepAlpha * 0.4;
+    this.ctx.strokeStyle = '#20ff20';
+    this.ctx.lineWidth = 1;
+    this.ctx.beginPath();
+    this.ctx.moveTo(cx - colW * 1.2, sepY);
+    this.ctx.lineTo(cx + colW * 1.2, sepY);
+    this.ctx.stroke();
+    this.ctx.restore();
+
+    // Medals section
+    if (medals.length > 0) {
+      const medalStartY = sepY + lineH;
+      const medalDelay = 1.5; // matches medal reveal SFX timing
+      const medalFontSize = `bold ${Math.round(13 * scale)}px monospace`;
+      const descFontSize = `${Math.round(11 * scale)}px monospace`;
+      const medalLineH = Math.round(32 * scale);
+
+      for (let i = 0; i < medals.length; i++) {
+        const delay = medalDelay + i * 0.25;
+        const alpha = Math.min(1, Math.max(0, (animTime - delay) * 3));
+        if (alpha <= 0) continue;
+
+        const y = medalStartY + i * medalLineH;
+        const m = medals[i];
+        const colorStr = `rgb(${Math.round(m.color[0] * 255)},${Math.round(m.color[1] * 255)},${Math.round(m.color[2] * 255)})`;
+        const glowStr = `rgba(${Math.round(m.color[0] * 255)},${Math.round(m.color[1] * 255)},${Math.round(m.color[2] * 255)},0.7)`;
+
+        // Scale-in pop effect
+        const pop = alpha < 0.5 ? 1 + (1 - alpha * 2) * 0.15 : 1;
+
+        this.ctx.save();
+        this.ctx.globalAlpha = alpha;
+        this.ctx.textAlign = 'center';
+
+        // Medal name with colored glow
+        this.ctx.save();
+        this.ctx.translate(cx, y);
+        this.ctx.scale(pop, pop);
+        this.drawGlowText(m.name, 0, 0, medalFontSize, colorStr, glowStr, 12);
+        this.ctx.restore();
+
+        // Description below
+        this.drawGlowText(m.description, cx, y + 14 * scale, descFontSize, '#0a770a', '#0a770a', 3);
+        this.ctx.restore();
+      }
+    } else {
+      // No medals — show encouragement
+      const noMedalAlpha = Math.min(1, Math.max(0, (animTime - 1.5) * 2));
+      this.ctx.save();
+      this.ctx.globalAlpha = noMedalAlpha;
+      this.ctx.textAlign = 'center';
+      this.drawGlowText('Keep playing to earn medals!', cx, sepY + lineH, `${Math.round(13 * scale)}px monospace`, '#0a770a', '#0a770a', 5);
+      this.ctx.restore();
+    }
+
+    // Play again prompt — fade in after all medals revealed
+    const replayDelay = medals.length > 0 ? 1.5 + medals.length * 0.25 + 0.5 : 2.0;
+    const replayAlpha = Math.min(1, Math.max(0, (animTime - replayDelay) * 2));
+    if (replayAlpha > 0) {
+      const pulse = 0.7 + 0.3 * Math.sin(animTime * 3);
+      this.ctx.save();
+      this.ctx.globalAlpha = replayAlpha * pulse;
+      this.ctx.textAlign = 'center';
+      const replayText = this.touchMode ? 'Tap to Play Again' : 'Click to Play Again';
+      this.drawGlowText(replayText, cx, h * 0.92, `${Math.round(18 * scale)}px monospace`, '#10dd10', '#10dd10', 10);
+      this.ctx.restore();
+    }
   }
 
   drawLoading(progress: number): void {

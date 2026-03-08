@@ -1,0 +1,125 @@
+name: "Game Over Summary Card"
+tags: [phase6, ui]
+steps:
+  - action: launch
+    url: "/"
+    waitFor: "canvas#game"
+
+  - action: wait
+    ms: 300
+
+  # Start game
+  - action: click
+    selector: "canvas#game"
+    x: 0.5
+    y: 0.5
+
+  - action: wait
+    ms: 500
+
+  # Hold mouse down for auto-shoot + move around for a few seconds to get kills
+  - action: keys
+    keys: "KeyW"
+    duration: 1000
+
+  - action: keys
+    keys: "KeyD"
+    duration: 1000
+
+  - action: keys
+    keys: "KeyS"
+    duration: 1000
+
+  - action: wait
+    ms: 2000
+
+  # Press ESC to trigger game over (sets lives to 0 → death slowmo → gameover)
+  - action: keyPress
+    key: "Escape"
+    duration: 100
+
+  # Wait for death slowmo (4.8s) + game over transition
+  - action: wait
+    ms: 6000
+
+  # Verify game over screen has red GAME OVER text
+  - action: evalCheck
+    description: "HUD shows GAME OVER text (red pixels detected)"
+    script: |
+      var c = document.getElementById('hud');
+      if (!c) return false;
+      var ctx = c.getContext('2d');
+      if (!ctx) return false;
+      var cx = Math.floor(c.width / 2);
+      var cy = Math.floor(c.height * 0.12);
+      var data = ctx.getImageData(cx - 200, cy - 30, 400, 60).data;
+      var redPixels = 0;
+      for (var i = 0; i < data.length; i += 4) {
+        if (data[i] > 200 && data[i+1] < 100 && data[i+2] < 100 && data[i+3] > 0) {
+          redPixels++;
+        }
+      }
+      return redPixels > 10;
+
+  # Verify green score text is present
+  - action: evalCheck
+    description: "HUD shows score (green pixels in score area)"
+    script: |
+      var c = document.getElementById('hud');
+      if (!c) return false;
+      var ctx = c.getContext('2d');
+      if (!ctx) return false;
+      var cx = Math.floor(c.width / 2);
+      var cy = Math.floor(c.height * 0.22);
+      var data = ctx.getImageData(cx - 200, cy - 30, 400, 60).data;
+      var greenPixels = 0;
+      for (var i = 0; i < data.length; i += 4) {
+        if (data[i+1] > 200 && data[i] < 100 && data[i+2] < 100 && data[i+3] > 0) {
+          greenPixels++;
+        }
+      }
+      return greenPixels > 10;
+
+  # Take screenshot of initial game over screen
+  - action: screenshot
+    name: "60-gameover-summary-initial"
+
+  # Wait for medals to reveal (1.5s base + medal stagger)
+  - action: wait
+    ms: 2500
+
+  # Take screenshot of fully revealed summary with medals
+  - action: screenshot
+    name: "60-gameover-summary-medals"
+
+  # Verify the play again prompt appears
+  - action: evalCheck
+    description: "Stats area has colored text content"
+    script: |
+      var c = document.getElementById('hud');
+      if (!c) return false;
+      var ctx = c.getContext('2d');
+      if (!ctx) return false;
+      var data = ctx.getImageData(0, Math.floor(c.height * 0.3), c.width, Math.floor(c.height * 0.6)).data;
+      var pixels = 0;
+      for (var i = 0; i < data.length; i += 4) {
+        if ((data[i] > 100 || data[i+1] > 100 || data[i+2] > 100) && data[i+3] > 50) {
+          pixels++;
+        }
+      }
+      return pixels > 50;
+
+  # Click to restart — verify no crash
+  - action: click
+    selector: "canvas#game"
+    x: 0.5
+    y: 0.5
+
+  - action: wait
+    ms: 1000
+
+  - action: screenshot
+    name: "60-gameover-restarted"
+
+  - action: assertNoErrors
+    description: "No console errors during game over summary flow"

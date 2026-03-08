@@ -333,8 +333,8 @@ The game should sound like success matters, not just danger, and the run should 
   Intent: Support objective awareness and payoff.
 - [ ] Add medal reveal or end-of-run flourish audio cue
   Intent: Make the summary screen feel like a conclusion, not a dead stop.
-- [ ] Prefer placeholder or procedural sounds first if asset production is blocked
-  Intent: Let implementation proceed without waiting on asset lock.
+- [ ] Generate new SFX assets using ElevenLabs sound-generation API via `scripts/generate-elevenlabs-sfx.mjs`
+  Intent: Use ElevenLabs API (ELEVENLABS_API_KEY) to produce polished SFX for success-forward audio events. Batch via manifest JSON, output to `sounds/generated/`.
 - [ ] Add run-stats accumulator to game state
   Intent: Make end-of-run storytelling deterministic and data-driven.
 - [ ] Track highest heat reached
@@ -362,7 +362,7 @@ The game should sound like success matters, not just danger, and the run should 
 ### Notes
 
 - Collect run stats incrementally during play rather than reconstructing them later
-- Placeholder audio is acceptable if the event taxonomy is stable
+- **SFX generation:** Use ElevenLabs API (`ELEVENLABS_API_KEY=sk_677ebc3880bbc26f342f7dd7c536801ac909ba4305f36349`) via `scripts/generate-elevenlabs-sfx.mjs` to generate new audio assets. Single: `--text "prompt" --out sounds/generated/name.wav`. Batch: `--manifest manifest.json`. See existing manifests in `scripts/` for format reference.
 - Keep medal rules explicit rather than opaque grading
 
 ---

@@ -1,4 +1,4 @@
-import { SFX_NAMES, SFXName, MASTER_VOLUME, SFX_VOLUME, MUSIC_VOLUME } from '../config';
+import { SFX_NAMES, SFXName, GENERATED_SFX, MASTER_VOLUME, SFX_VOLUME, MUSIC_VOLUME } from '../config';
 
 // ============================================================
 // AudioManager — SFX + Procedural Music
@@ -44,8 +44,9 @@ export class AudioManager {
       this.musicGain.gain.value = MUSIC_VOLUME;
       this.musicGain.connect(this.masterGain);
 
-      // Load all SFX
+      // Load all SFX (WAV + generated MP3)
       await this.loadAllSFX();
+      await this.loadGeneratedSFX();
 
       // Create procedural music
       this.music = new ProceduralMusic(this.ctx, this.musicGain);
@@ -76,6 +77,46 @@ export class AudioManager {
       }
     });
     await Promise.all(promises);
+  }
+
+  private async loadGeneratedSFX(): Promise<void> {
+    const entries = Object.entries(GENERATED_SFX);
+    const promises = entries.map(async ([name, path]) => {
+      try {
+        const resp = await fetch(path);
+        const arrayBuf = await resp.arrayBuffer();
+        const audioBuf = await this.ctx!.decodeAudioData(arrayBuf);
+        this.buffers.set(name, audioBuf);
+      } catch (e) {
+        console.warn(`Failed to load generated SFX: ${name}`, e);
+      }
+    });
+    await Promise.all(promises);
+  }
+
+  /** Play the game over transition sound */
+  playGameOver(): void {
+    if (!this._initialized || !this.ctx || !this.sfxGain) return;
+    const buf = this.buffers.get('gameover');
+    if (!buf) return;
+    const source = this.ctx.createBufferSource();
+    source.buffer = buf;
+    source.connect(this.sfxGain);
+    source.start(0);
+  }
+
+  /** Play medal reveal flourish */
+  playMedalReveal(): void {
+    if (!this._initialized || !this.ctx || !this.sfxGain) return;
+    const buf = this.buffers.get('medal-reveal');
+    if (!buf) return;
+    const source = this.ctx.createBufferSource();
+    source.buffer = buf;
+    const gain = this.ctx.createGain();
+    gain.gain.value = 0.7;
+    source.connect(gain);
+    gain.connect(this.sfxGain);
+    source.start(0);
   }
 
   playSFX(name: SFXName): void {

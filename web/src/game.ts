@@ -19,6 +19,7 @@ import { checkCollisions } from './core/collision';
 import { Vec2 } from './core/vector';
 import { HapticsManager } from './core/haptics';
 import {
+  WEAPON_STAGES,
   EXPLOSION_PARTICLE_COUNT_SMALL,
   EXPLOSION_PARTICLE_COUNT_LARGE,
   EXPLOSION_PARTICLE_COUNT_DEATH,
@@ -79,8 +80,46 @@ import {
   MINIBOSS_DEFEATED_BANNER_DURATION,
   MINIBOSS_SPAWN_SUPPRESS_MULT,
   MINIBOSS_HEAT_ON_DEATH,
+  MEDALS,
+  MedalDef,
 } from './config';
 import { FormationMeta } from './spawner/spawn-patterns';
+
+/** Run statistics accumulated during a single game */
+export interface RunStats {
+  score: number;
+  kills: number;
+  timeSurvived: number;
+  phaseReached: string;
+  peakHeat: number;
+  elitesKilled: number;
+  blackholesKilled: number;
+  minibossDefeated: boolean;
+  livesUsed: number;
+  recoveriesUsed: number;
+  weaponStage: number;      // index into WEAPON_STAGES
+}
+
+function computeMedals(stats: RunStats): MedalDef[] {
+  const earned: MedalDef[] = [];
+  for (const m of MEDALS) {
+    let qualifies = false;
+    switch (m.id) {
+      case 'untouchable': qualifies = stats.livesUsed === 0; break;
+      case 'chaos_walker': qualifies = stats.phaseReached === 'chaos'; break;
+      case 'survivor': qualifies = stats.phaseReached === 'intense' || stats.phaseReached === 'chaos'; break;
+      case 'boss_slayer': qualifies = stats.minibossDefeated; break;
+      case 'elite_hunter': qualifies = stats.elitesKilled >= 5; break;
+      case 'gravity_master': qualifies = stats.blackholesKilled >= 3; break;
+      case 'inferno': qualifies = stats.peakHeat >= 0.85; break;
+      case 'comeback_kid': qualifies = stats.recoveriesUsed >= 2; break;
+      case 'centurion': qualifies = stats.kills >= 100; break;
+      case 'thousand': qualifies = stats.kills >= 1000; break;
+    }
+    if (qualifies) earned.push(m);
+  }
+  return earned;
+}
 
 // Enemy factory imports
 import { Rhombus } from './entities/enemies/rhombus';
@@ -229,6 +268,15 @@ export class Game {
   private recoveryActive = false;
   private recoveryExpirePlayed = false;
 
+  // Run stats tracking
+  private runStats: RunStats = {
+    score: 0, kills: 0, timeSurvived: 0, phaseReached: 'tutorial',
+    peakHeat: 0, elitesKilled: 0, blackholesKilled: 0,
+    minibossDefeated: false, livesUsed: 0, recoveriesUsed: 0, weaponStage: 0,
+  };
+  private gameOverMedals: MedalDef[] = [];
+  private medalRevealPlayed = false;
+
   // Miniboss encounter state
   private minibossActive = false;
   private minibossDefeated = false;
@@ -284,6 +332,8 @@ export class Game {
         this.phaseBannerName = displayName;
         this.phaseBorderPulseTimer = PHASE_BORDER_PULSE_DURATION;
         this.audio.playPhaseTransition();
+        // Track phase reached for run stats
+        this.runStats.phaseReached = newPhase;
         // Heat bump on phase transition
         this.heat = Math.min(1, this.heat + HEAT_PHASE_BUMP);
       }
@@ -387,6 +437,13 @@ export class Game {
     this.recoveryTimer = 0;
     this.recoveryActive = false;
     this.recoveryExpirePlayed = false;
+    this.runStats = {
+      score: 0, kills: 0, timeSurvived: 0, phaseReached: 'tutorial',
+      peakHeat: 0, elitesKilled: 0, blackholesKilled: 0,
+      minibossDefeated: false, livesUsed: 0, recoveriesUsed: 0, weaponStage: 0,
+    };
+    this.gameOverMedals = [];
+    this.medalRevealPlayed = false;
     this.minibossActive = false;
     this.minibossDefeated = false;
     this.minibossWarningTimer = 0;
@@ -562,6 +619,12 @@ export class Game {
   private updateGameOver(dt: number): void {
     this.gameOverTime += dt / 1000;
 
+    // Play medal reveal sound after short delay (1.5s for stats to settle)
+    if (!this.medalRevealPlayed && this.gameOverMedals.length > 0 && this.gameOverTime >= 1.5) {
+      this.audio.playMedalReveal();
+      this.medalRevealPlayed = true;
+    }
+
     // Keep explosions animating
     this.explosions.update(dt);
 
@@ -589,6 +652,9 @@ export class Game {
 
     // Update gravity wells for grid warping
     this.updateGravityWells();
+
+    // Redraw HUD with animation progress
+    this.hud.drawGameOver(this.runStats, this.gameOverMedals, this.gameOverTime);
   }
 
   update(dt: number): void {
@@ -746,6 +812,11 @@ export class Game {
       // Determine enemy family for kill signature
       const family = this.getEnemyFamily(kill.enemy);
       const isEliteKill = kill.enemy.isElite;
+
+      // Run stats: track kills by type
+      if (isEliteKill) this.runStats.elitesKilled++;
+      if (family === 'blackhole') this.runStats.blackholesKilled++;
+      if (family === 'mandelbrot') this.runStats.minibossDefeated = true;
 
       // Heat: increase on kills
       if (family === 'mandelbrot') {
@@ -925,6 +996,7 @@ export class Game {
     // Player hit
     if (result.playerHit) {
       this.player.lives--;
+      this.runStats.livesUsed++;
       if (this.player.lives <= 0) {
         this.onPlayerDeath();
         return;
@@ -1002,6 +1074,11 @@ export class Game {
 
     // --- Miniboss encounter update ---
     this.updateMiniboss(dt);
+
+    // Track weapon stage for run stats
+    const wStage = this.player.getWeaponStage();
+    const wIdx = WEAPON_STAGES.indexOf(wStage);
+    if (wIdx > this.runStats.weaponStage) this.runStats.weaponStage = wIdx;
 
     // Music intensity
     this.audio.setMusicIntensity(this.computeIntensity());
@@ -1091,6 +1168,9 @@ export class Game {
     if (this.gameTime >= DIFFICULTY_PHASES.intense.start) {
       this.heat = Math.min(1, this.heat + HEAT_SURVIVAL_RATE * dtSec);
     }
+
+    // Track peak heat for run stats
+    if (this.heat > this.runStats.peakHeat) this.runStats.peakHeat = this.heat;
 
     // --- Visual hooks ---
 
@@ -1646,11 +1726,19 @@ export class Game {
     // End slowmo
     if (this.slowmoTimer >= DEATH_SLOWMO_DURATION) {
       if (this.slowmoIsFinal) {
+        // Finalize run stats
+        this.runStats.score = this.player.score;
+        this.runStats.kills = this.player.enemiesKilled;
+        this.runStats.timeSurvived = this.gameTime;
+        this.gameOverMedals = computeMedals(this.runStats);
+        this.medalRevealPlayed = false;
+
         // Transition to game over screen
         this.state = 'gameover';
         this.gameOverTime = 0;
         this.gameCanvas.style.cursor = 'default';
-        this.hud.drawGameOver(this.player.score, this.player.enemiesKilled, this.gameTime);
+        this.audio.playGameOver();
+        this.hud.drawGameOver(this.runStats, this.gameOverMedals, 0);
         if (!this.mobile) showDesktopSettings();
       } else {
         // Respawn and continue playing with recovery buff
@@ -1665,6 +1753,7 @@ export class Game {
         this.camera.snapTo(this.player.position);
 
         // Activate recovery window
+        this.runStats.recoveriesUsed++;
         this.recoveryActive = true;
         this.recoveryTimer = RECOVERY_DURATION;
         this.recoveryExpirePlayed = false;

@@ -22,8 +22,9 @@ steps:
     key: "Escape"
     duration: 100
 
+  # Wait for death slowmo (4.8s) + game over transition
   - action: wait
-    ms: 500
+    ms: 6000
 
   - action: evalCheck
     description: "HUD shows game over screen"
@@ -33,16 +34,15 @@ steps:
       var ctx = c.getContext('2d');
       if (!ctx) return false;
       var cx = Math.floor(c.width / 2);
-      var cy = Math.floor(c.height / 2);
-      var size = Math.min(300, c.width, c.height);
-      var data = ctx.getImageData(cx - size/2, cy - size/2, size, size).data;
+      var cy = Math.floor(c.height * 0.12);
+      var data = ctx.getImageData(cx - 200, cy - 30, 400, 60).data;
       var redPixels = 0;
       for (var i = 0; i < data.length; i += 4) {
         if (data[i] > 200 && data[i+1] < 100 && data[i+2] < 100 && data[i+3] > 0) {
           redPixels++;
         }
       }
-      return redPixels > 20;
+      return redPixels > 10;
 
   - action: screenshot
     name: "13-game-over"
