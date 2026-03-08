@@ -152,8 +152,8 @@ export class SpringMassGrid {
       gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indices), gl.STATIC_DRAW);
     }
 
-    // Vertex data: [posX, posY, displacement, velocityMag] per point
-    this.vertexData = new Float32Array(tp * 4);
+    // Vertex data: [posX, posY, displacement, velocityMag, anchored] per point
+    this.vertexData = new Float32Array(tp * 5);
     gl.bindBuffer(gl.ARRAY_BUFFER, this.vertexBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, this.vertexData.byteLength, gl.DYNAMIC_DRAW);
 
@@ -364,7 +364,7 @@ export class SpringMassGrid {
     // Fill vertex data
     const vd = this.vertexData;
     for (let i = 0; i < tp; i++) {
-      const off = i * 4;
+      const off = i * 5;
       vd[off] = this.posX[i];
       vd[off + 1] = this.posY[i];
       // displacement magnitude
@@ -373,6 +373,8 @@ export class SpringMassGrid {
       vd[off + 2] = Math.sqrt(dx * dx + dy * dy);
       // velocity magnitude
       vd[off + 3] = Math.sqrt(this.velX[i] * this.velX[i] + this.velY[i] * this.velY[i]);
+      // anchored flag (perimeter vertices)
+      vd[off + 4] = this.anchored[i];
     }
 
     // Upload
@@ -408,20 +410,26 @@ export class SpringMassGrid {
     }
     gl.uniform1f(this.uPerspectiveDepth, gameSettings.bhGridPerspectiveDepth);
 
-    // Vertex attribs (stride = 16 bytes: 4 floats)
+    // Vertex attribs (stride = 20 bytes: 5 floats)
+    const stride = 20;
     const aPos = gl.getAttribLocation(this.program, 'a_position');
     const aDisp = gl.getAttribLocation(this.program, 'a_displacement');
     const aVel = gl.getAttribLocation(this.program, 'a_velocity');
+    const aAnchored = gl.getAttribLocation(this.program, 'a_anchored');
 
     gl.enableVertexAttribArray(aPos);
-    gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 16, 0);
+    gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, stride, 0);
     if (aDisp >= 0) {
       gl.enableVertexAttribArray(aDisp);
-      gl.vertexAttribPointer(aDisp, 1, gl.FLOAT, false, 16, 8);
+      gl.vertexAttribPointer(aDisp, 1, gl.FLOAT, false, stride, 8);
     }
     if (aVel >= 0) {
       gl.enableVertexAttribArray(aVel);
-      gl.vertexAttribPointer(aVel, 1, gl.FLOAT, false, 16, 12);
+      gl.vertexAttribPointer(aVel, 1, gl.FLOAT, false, stride, 12);
+    }
+    if (aAnchored >= 0) {
+      gl.enableVertexAttribArray(aAnchored);
+      gl.vertexAttribPointer(aAnchored, 1, gl.FLOAT, false, stride, 16);
     }
 
     // Draw
@@ -433,6 +441,7 @@ export class SpringMassGrid {
     gl.disableVertexAttribArray(aPos);
     if (aDisp >= 0) gl.disableVertexAttribArray(aDisp);
     if (aVel >= 0) gl.disableVertexAttribArray(aVel);
+    if (aAnchored >= 0) gl.disableVertexAttribArray(aAnchored);
   }
 
   clear(): void {

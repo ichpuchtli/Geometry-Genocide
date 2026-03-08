@@ -1,0 +1,100 @@
+name: "BlackHole Grid Edge Fix"
+tags: [visual, blackhole, grid]
+steps:
+  - action: launch
+    url: "/"
+    waitFor: "canvas#game"
+
+  - action: wait
+    ms: 300
+
+  # Set starting phase to intense, lots of lives, high BH settings
+  - action: evalCheck
+    description: "Configure settings for BlackHole edge testing"
+    script: |
+      const settings = JSON.parse(localStorage.getItem('gg_settings') || '{}');
+      settings.startingPhase = 'intense';
+      settings.startingLives = 99;
+      settings.spawnRate = 2.0;
+      settings.bhGridPerspectiveDepth = 0.8;
+      settings.bhGridMassBase = 600;
+      settings.bhGridRadiusMultiplier = 3.0;
+      settings.bhAttractRadius = 400;
+      localStorage.setItem('gg_settings', JSON.stringify(settings));
+      return true;
+
+  # Reload to pick up settings
+  - action: launch
+    url: "/"
+    waitFor: "canvas#game"
+
+  - action: wait
+    ms: 300
+
+  # Start game
+  - action: click
+    selector: "canvas#game"
+    x: 0.5
+    y: 0.5
+
+  - action: wait
+    ms: 200
+
+  # Enable auto-fire and move toward edges where blackholes may spawn
+  - action: keyPress
+    key: "f"
+
+  # Move to top-left corner area (near arena edges)
+  - action: mouseMove
+    x: 200
+    y: 200
+
+  - action: keys
+    keys: ["w", "a"]
+    duration: 3000
+
+  - action: screenshot
+    name: "36-grid-edge-topleft"
+
+  # Move to bottom-right corner
+  - action: mouseMove
+    x: 900
+    y: 600
+
+  - action: keys
+    keys: ["s", "d"]
+    duration: 3000
+
+  - action: screenshot
+    name: "36-grid-edge-bottomright"
+
+  # Move around center to see blackhole effects
+  - action: mouseMove
+    x: 600
+    y: 400
+
+  - action: keys
+    keys: ["w", "d"]
+    duration: 2000
+
+  - action: keys
+    keys: ["s", "a"]
+    duration: 2000
+
+  - action: screenshot
+    name: "36-grid-edge-gameplay"
+
+  # More gameplay for additional blackhole encounters
+  - action: keys
+    keys: ["d"]
+    duration: 2000
+
+  - action: keys
+    keys: ["w"]
+    duration: 2000
+
+  - action: screenshot
+    name: "36-grid-edge-final"
+
+  - action: assertNoErrors
+    description: "No console errors during BlackHole grid edge testing"

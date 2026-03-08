@@ -1,6 +1,7 @@
 attribute vec2 a_position;
 attribute float a_displacement;
 attribute float a_velocity;
+attribute float a_anchored;
 
 uniform vec2 u_resolution;
 uniform vec2 u_camera;
@@ -21,6 +22,8 @@ void main() {
     float depth = 0.0;
 
     // Apply perspective contraction toward gravity wells
+    // Skip entirely for anchored (perimeter) vertices to prevent edge detachment
+    float movable = 1.0 - a_anchored;
     for (int i = 0; i < 8; i++) {
         if (i >= u_wellCount) break;
         vec2 toWell = u_wellPositions[i] - pos;
@@ -31,8 +34,11 @@ void main() {
             float ff2 = falloff * falloff; // squared for smooth funnel
             float normStr = abs(u_wellStrengths[i]) / 400.0;
             float d = ff2 * normStr;
-            // Contract: pull vertex toward well center (use radius not dist so inner vertices move most)
-            pos += normalize(toWell) * d * u_perspectiveDepth * 0.15 * radius;
+            // Contract: pull vertex toward well center
+            float contractAmount = d * u_perspectiveDepth * 0.15 * radius;
+            // Clamp to 80% of distance to prevent self-intersection artifacts
+            contractAmount = min(contractAmount, dist * 0.8);
+            pos += normalize(toWell) * contractAmount * movable;
             depth += d;
         }
     }
