@@ -1,6 +1,7 @@
 import { createProgram } from './webgl-context';
 import entityVert from './shaders/entity.vert';
 import entityFrag from './shaders/entity.frag';
+import { gameSettings } from '../settings';
 
 // Each vertex: x, y, r, g, b, a (6 floats)
 const FLOATS_PER_VERTEX = 6;
@@ -67,7 +68,7 @@ export class Renderer {
   }
 
   resize(): void {
-    const dpr = window.devicePixelRatio || 1;
+    const dpr = (window.devicePixelRatio || 1) * gameSettings.resolutionScale;
     const cssW = this.canvas.clientWidth;
     const cssH = this.canvas.clientHeight;
     this.canvas.width = cssW * dpr;

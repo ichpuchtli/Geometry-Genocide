@@ -3,38 +3,40 @@ import gridVert from './shaders/grid.vert';
 import gridFrag from './shaders/grid.frag';
 import {
   WORLD_WIDTH, WORLD_HEIGHT,
-  GRID_SPACING, GRID_SPRING_STIFFNESS,
+  GRID_SPACING,
   GRID_SUBSTEPS,
   GRID_MOBILE_SUBSTEPS, GRID_COLOR_BASE, GRID_COLOR_STRETCH, GRID_COLOR_COMPRESS,
 } from '../config';
 import { gameSettings } from '../settings';
 
-const cols = Math.floor(WORLD_WIDTH / GRID_SPACING) + 1;
-const rows = Math.floor(WORLD_HEIGHT / GRID_SPACING) + 1;
-const totalPoints = cols * rows;
-
 export class SpringMassGrid {
   private gl: WebGLRenderingContext;
   private program: WebGLProgram;
 
+  // Grid dimensions (instance, updated by rebuild())
+  private cols = 0;
+  private rows = 0;
+  private totalPoints = 0;
+  private spacing = GRID_SPACING;
+
   // SoA physics data
-  private restX: Float32Array;
-  private restY: Float32Array;
-  private posX: Float32Array;
-  private posY: Float32Array;
-  private velX: Float32Array;
-  private velY: Float32Array;
-  private accX: Float32Array;
-  private accY: Float32Array;
-  private anchored: Uint8Array;
+  private restX!: Float32Array;
+  private restY!: Float32Array;
+  private posX!: Float32Array;
+  private posY!: Float32Array;
+  private velX!: Float32Array;
+  private velY!: Float32Array;
+  private accX!: Float32Array;
+  private accY!: Float32Array;
+  private anchored!: Uint8Array;
 
   // Rendering
-  private vertexData: Float32Array;
+  private vertexData!: Float32Array;
   private vertexBuffer: WebGLBuffer;
   private indexBuffer: WebGLBuffer;
-  private indexCount: number;
+  private indexCount = 0;
 
-  private substeps: number;
+  private mobile: boolean;
 
   // Gravity wells accumulated per frame
   private wellX: number[] = [];
@@ -51,7 +53,7 @@ export class SpringMassGrid {
 
   constructor(gl: WebGLRenderingContext, mobile: boolean) {
     this.gl = gl;
-    this.substeps = mobile ? GRID_MOBILE_SUBSTEPS : GRID_SUBSTEPS;
+    this.mobile = mobile;
     this.program = createProgram(gl, gridVert, gridFrag);
 
     this.uResolution = gl.getUniformLocation(this.program, 'u_resolution')!;
@@ -60,25 +62,43 @@ export class SpringMassGrid {
     this.uColorStretch = gl.getUniformLocation(this.program, 'u_colorStretch')!;
     this.uColorCompress = gl.getUniformLocation(this.program, 'u_colorCompress')!;
 
+    this.vertexBuffer = gl.createBuffer()!;
+    this.indexBuffer = gl.createBuffer()!;
+
+    this.rebuild(WORLD_WIDTH, WORLD_HEIGHT, GRID_SPACING);
+  }
+
+  /** Rebuild the entire grid with new dimensions/spacing. Call on arena resize. */
+  rebuild(worldWidth: number, worldHeight: number, spacing: number): void {
+    const gl = this.gl;
+    this.spacing = spacing;
+    this.cols = Math.floor(worldWidth / spacing) + 1;
+    this.rows = Math.floor(worldHeight / spacing) + 1;
+    this.totalPoints = this.cols * this.rows;
+
+    const tp = this.totalPoints;
+    const cols = this.cols;
+    const rows = this.rows;
+
     // Allocate SoA arrays
-    this.restX = new Float32Array(totalPoints);
-    this.restY = new Float32Array(totalPoints);
-    this.posX = new Float32Array(totalPoints);
-    this.posY = new Float32Array(totalPoints);
-    this.velX = new Float32Array(totalPoints);
-    this.velY = new Float32Array(totalPoints);
-    this.accX = new Float32Array(totalPoints);
-    this.accY = new Float32Array(totalPoints);
-    this.anchored = new Uint8Array(totalPoints);
+    this.restX = new Float32Array(tp);
+    this.restY = new Float32Array(tp);
+    this.posX = new Float32Array(tp);
+    this.posY = new Float32Array(tp);
+    this.velX = new Float32Array(tp);
+    this.velY = new Float32Array(tp);
+    this.accX = new Float32Array(tp);
+    this.accY = new Float32Array(tp);
+    this.anchored = new Uint8Array(tp);
 
     // Compute rest positions centered at origin
-    const hw = WORLD_WIDTH / 2;
-    const hh = WORLD_HEIGHT / 2;
+    const hw = worldWidth / 2;
+    const hh = worldHeight / 2;
     for (let r = 0; r < rows; r++) {
       for (let c = 0; c < cols; c++) {
         const idx = r * cols + c;
-        const x = -hw + c * GRID_SPACING;
-        const y = -hh + r * GRID_SPACING;
+        const x = -hw + c * spacing;
+        const y = -hh + r * spacing;
         this.restX[idx] = x;
         this.restY[idx] = y;
         this.posX[idx] = x;
@@ -90,38 +110,44 @@ export class SpringMassGrid {
       }
     }
 
-    // Build static index buffer for GL_LINES
+    // Build index buffer for GL_LINES
     const indices: number[] = [];
     for (let r = 0; r < rows; r++) {
       for (let c = 0; c < cols; c++) {
         const idx = r * cols + c;
-        // Right neighbor
-        if (c < cols - 1) {
-          indices.push(idx, idx + 1);
-        }
-        // Up neighbor
-        if (r < rows - 1) {
-          indices.push(idx, idx + cols);
-        }
+        if (c < cols - 1) indices.push(idx, idx + 1);
+        if (r < rows - 1) indices.push(idx, idx + cols);
       }
     }
     this.indexCount = indices.length;
 
-    this.indexBuffer = gl.createBuffer()!;
+    // Use Uint32 for large grids that exceed 16-bit index range
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.indexBuffer);
-    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indices), gl.STATIC_DRAW);
+    if (tp > 65535) {
+      const ext = gl.getExtension('OES_element_index_uint');
+      if (!ext) console.warn('OES_element_index_uint not available, grid may be limited');
+      gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint32Array(indices), gl.STATIC_DRAW);
+    } else {
+      gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indices), gl.STATIC_DRAW);
+    }
 
     // Vertex data: [posX, posY, displacement, velocityMag] per point
-    this.vertexData = new Float32Array(totalPoints * 4);
-    this.vertexBuffer = gl.createBuffer()!;
+    this.vertexData = new Float32Array(tp * 4);
     gl.bindBuffer(gl.ARRAY_BUFFER, this.vertexBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, this.vertexData.byteLength, gl.DYNAMIC_DRAW);
+
+    // Clear wells
+    this.wellX.length = 0;
+    this.wellY.length = 0;
+    this.wellStr.length = 0;
+    this.wellRad.length = 0;
   }
 
   /** One-shot radial impulse — directly modifies velocities */
   applyImpulse(x: number, y: number, strength: number, radius: number): void {
     const r2 = radius * radius;
-    for (let i = 0; i < totalPoints; i++) {
+    const tp = this.totalPoints;
+    for (let i = 0; i < tp; i++) {
       if (this.anchored[i]) continue;
       const dx = this.posX[i] - x;
       const dy = this.posY[i] - y;
@@ -146,13 +172,16 @@ export class SpringMassGrid {
 
   /** Run spring-mass physics */
   update(dt: number): void {
-    const substeps = this.substeps;
+    const substeps = this.mobile ? Math.min(gameSettings.gridSubsteps, GRID_MOBILE_SUBSTEPS) : gameSettings.gridSubsteps;
     const subDt = dt / 1000 / substeps;
-    const k = GRID_SPRING_STIFFNESS;
+    const k = gameSettings.gridSpringStiffness;
     const anchorK = gameSettings.gridAnchorStiffness;
     const damping = gameSettings.gridDamping;
     const maxDisp = gameSettings.gridMaxDisplacement;
-    const spacing = GRID_SPACING;
+    const spacing = this.spacing;
+    const cols = this.cols;
+    const rows = this.rows;
+    const tp = this.totalPoints;
 
     for (let s = 0; s < substeps; s++) {
       // Zero accelerations
@@ -240,7 +269,7 @@ export class SpringMassGrid {
         const wStr = this.wellStr[w];
         const wRad = this.wellRad[w];
         const wR2 = wRad * wRad;
-        for (let i = 0; i < totalPoints; i++) {
+        for (let i = 0; i < tp; i++) {
           if (this.anchored[i]) continue;
           const dx = wx - this.posX[i];
           const dy = wy - this.posY[i];
@@ -256,7 +285,7 @@ export class SpringMassGrid {
       }
 
       // Symplectic Euler integration + displacement clamping
-      for (let i = 0; i < totalPoints; i++) {
+      for (let i = 0; i < tp; i++) {
         if (this.anchored[i]) continue;
         this.velX[i] += this.accX[i] * subDt;
         this.velY[i] += this.accY[i] * subDt;
@@ -292,10 +321,11 @@ export class SpringMassGrid {
 
   render(cameraX: number, cameraY: number, viewW: number, viewH: number): void {
     const gl = this.gl;
+    const tp = this.totalPoints;
 
     // Fill vertex data
     const vd = this.vertexData;
-    for (let i = 0; i < totalPoints; i++) {
+    for (let i = 0; i < tp; i++) {
       const off = i * 4;
       vd[off] = this.posX[i];
       vd[off + 1] = this.posY[i];
@@ -338,7 +368,8 @@ export class SpringMassGrid {
 
     // Draw
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.indexBuffer);
-    gl.drawElements(gl.LINES, this.indexCount, gl.UNSIGNED_SHORT, 0);
+    const indexType = tp > 65535 ? gl.UNSIGNED_INT : gl.UNSIGNED_SHORT;
+    gl.drawElements(gl.LINES, this.indexCount, indexType, 0);
 
     // Clean up
     gl.disableVertexAttribArray(aPos);
@@ -347,7 +378,8 @@ export class SpringMassGrid {
   }
 
   clear(): void {
-    for (let i = 0; i < totalPoints; i++) {
+    const tp = this.totalPoints;
+    for (let i = 0; i < tp; i++) {
       this.posX[i] = this.restX[i];
       this.posY[i] = this.restY[i];
       this.velX[i] = 0;

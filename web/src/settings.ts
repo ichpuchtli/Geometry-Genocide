@@ -1,11 +1,19 @@
 import {
   PLAYER_STARTING_LIVES,
   BLOOM_INTENSITY,
+  BLOOM_THRESHOLD,
+  BLOOM_BLUR_PASSES,
+  BLOOM_BLUR_RADIUS,
   TRAIL_LENGTH_ENEMY,
   MOBILE_MAX_ENEMIES,
   GRID_ANCHOR_STIFFNESS,
   GRID_SPRING_DAMPING,
   GRID_MAX_DISPLACEMENT,
+  GRID_SPACING,
+  GRID_SUBSTEPS,
+  GRID_SPRING_STIFFNESS,
+  WORLD_WIDTH,
+  WORLD_HEIGHT,
 } from './config';
 
 export interface GameSettings {
@@ -31,6 +39,16 @@ export interface GameSettings {
   gridMaxDisplacement: number;    // 20–200 (max px displacement from rest)
   vulnerableDuringSpawn: boolean; // false = spawn invulnerability (default), true = can be shot during spawn
   aimSensitivity: number;         // 0.5–3.0 (scales mouse offset from center; higher = less travel needed)
+  // GPU Stress / Arena
+  arenaWidth: number;             // 800–6400 (world width in px)
+  arenaHeight: number;            // 500–4000 (world height in px)
+  gridSpacing: number;            // 10–80 (px between grid nodes)
+  gridSubsteps: number;           // 1–8 (physics substeps per frame)
+  gridSpringStiffness: number;    // 100–3000 (neighbor spring strength)
+  bloomThreshold: number;         // 0.01–0.5 (brightness extract cutoff)
+  bloomBlurPasses: number;        // 1–12 (Gaussian blur iterations)
+  bloomBlurRadius: number;        // 0.5–6.0 (blur kernel size)
+  resolutionScale: number;        // 0.25–2.0 (multiplier on device pixel ratio)
 }
 
 export const DEFAULTS: GameSettings = {
@@ -54,6 +72,15 @@ export const DEFAULTS: GameSettings = {
   gridMaxDisplacement: GRID_MAX_DISPLACEMENT,
   vulnerableDuringSpawn: false,
   aimSensitivity: 1.0,
+  arenaWidth: WORLD_WIDTH,
+  arenaHeight: WORLD_HEIGHT,
+  gridSpacing: GRID_SPACING,
+  gridSubsteps: GRID_SUBSTEPS,
+  gridSpringStiffness: GRID_SPRING_STIFFNESS,
+  bloomThreshold: BLOOM_THRESHOLD,
+  bloomBlurPasses: BLOOM_BLUR_PASSES,
+  bloomBlurRadius: BLOOM_BLUR_RADIUS,
+  resolutionScale: 1.0,
 };
 
 const STORAGE_KEY = 'gg_settings';

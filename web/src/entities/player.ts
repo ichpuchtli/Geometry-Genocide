@@ -13,8 +13,6 @@ import {
   PLAYER_SHIP_COLOR2,
   PLAYER_SHIP_FILL_COLOR,
   PLAYER_SHIP_FILL_ALPHA,
-  WORLD_WIDTH,
-  WORLD_HEIGHT,
   WEAPON_STAGES,
 } from '../config';
 import { gameSettings } from '../settings';
@@ -110,8 +108,8 @@ export class Player extends Entity {
     this.move(dt);
 
     // Clamp to world bounds
-    const hw = WORLD_WIDTH / 2;
-    const hh = WORLD_HEIGHT / 2;
+    const hw = gameSettings.arenaWidth / 2;
+    const hh = gameSettings.arenaHeight / 2;
     if (this.position.x < -hw) this.position.x = -hw;
     if (this.position.x > hw) this.position.x = hw;
     if (this.position.y < -hh) this.position.y = -hh;

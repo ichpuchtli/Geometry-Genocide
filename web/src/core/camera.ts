@@ -1,5 +1,6 @@
 import { Vec2 } from './vector';
-import { CAMERA_LERP_SPEED, WORLD_WIDTH, WORLD_HEIGHT } from '../config';
+import { CAMERA_LERP_SPEED } from '../config';
+import { gameSettings } from '../settings';
 
 export class Camera {
   position = new Vec2(0, 0);
@@ -72,8 +73,8 @@ export class Camera {
     if (!this.clampToArena) return;
     const halfW = this.viewportWidth / 2;
     const halfH = this.viewportHeight / 2;
-    const hw = WORLD_WIDTH / 2;
-    const hh = WORLD_HEIGHT / 2;
+    const hw = gameSettings.arenaWidth / 2;
+    const hh = gameSettings.arenaHeight / 2;
 
     if (this.position.x - halfW < -hw) this.position.x = -hw + halfW;
     if (this.position.x + halfW > hw) this.position.x = hw - halfW;

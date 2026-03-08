@@ -1,7 +1,8 @@
 import { Entity } from '../entity';
 import { Vec2 } from '../../core/vector';
 import { Renderer } from '../../renderer/sprite-batch';
-import { WORLD_WIDTH, WORLD_HEIGHT, ENEMY_COLLISION_RADIUS, SPAWN_DURATION_DEFAULT } from '../../config';
+import { ENEMY_COLLISION_RADIUS, SPAWN_DURATION_DEFAULT } from '../../config';
+import { gameSettings } from '../../settings';
 
 export type EnemyDeathResult = {
   spawnEnemies?: { type: string; position: Vec2 }[];
@@ -35,21 +36,23 @@ export abstract class Enemy extends Entity {
 
   /** Place at a random position along the world edges */
   spawnAtEdge(): void {
-    const hw = WORLD_WIDTH / 2;
-    const hh = WORLD_HEIGHT / 2;
+    const aw = gameSettings.arenaWidth;
+    const ah = gameSettings.arenaHeight;
+    const hw = aw / 2;
+    const hh = ah / 2;
     const side = Math.floor(Math.random() * 4);
     switch (side) {
       case 0: // top
-        this.position.set((Math.random() - 0.5) * WORLD_WIDTH, hh - 10);
+        this.position.set((Math.random() - 0.5) * aw, hh - 10);
         break;
       case 1: // bottom
-        this.position.set((Math.random() - 0.5) * WORLD_WIDTH, -hh + 10);
+        this.position.set((Math.random() - 0.5) * aw, -hh + 10);
         break;
       case 2: // left
-        this.position.set(-hw + 10, (Math.random() - 0.5) * WORLD_HEIGHT);
+        this.position.set(-hw + 10, (Math.random() - 0.5) * ah);
         break;
       case 3: // right
-        this.position.set(hw - 10, (Math.random() - 0.5) * WORLD_HEIGHT);
+        this.position.set(hw - 10, (Math.random() - 0.5) * ah);
         break;
     }
   }
@@ -57,8 +60,8 @@ export abstract class Enemy extends Entity {
   /** Place at a random position anywhere within the arena */
   spawnAnywhere(): void {
     const margin = 50;
-    const hw = WORLD_WIDTH / 2 - margin;
-    const hh = WORLD_HEIGHT / 2 - margin;
+    const hw = gameSettings.arenaWidth / 2 - margin;
+    const hh = gameSettings.arenaHeight / 2 - margin;
     this.position.set(
       (Math.random() - 0.5) * 2 * hw,
       (Math.random() - 0.5) * 2 * hh,
@@ -86,8 +89,8 @@ export abstract class Enemy extends Entity {
 
   /** Bounce off world edges */
   protected bounce(): void {
-    const hw = WORLD_WIDTH / 2;
-    const hh = WORLD_HEIGHT / 2;
+    const hw = gameSettings.arenaWidth / 2;
+    const hh = gameSettings.arenaHeight / 2;
     if (Math.abs(this.position.x) >= hw) {
       this.velocity.x *= -1;
       this.position.x *= 0.99;

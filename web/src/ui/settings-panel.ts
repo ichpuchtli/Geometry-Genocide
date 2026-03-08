@@ -40,6 +40,16 @@ const SLIDERS: SliderDef[] = [
   { key: 'gridAnchorStiffness', label: 'Grid Anchor', desc: 'Spring return-to-rest strength (higher = stiffer)', min: 1, max: 100, step: 1, format: v => `${v}` },
   { key: 'gridDamping', label: 'Grid Damping', desc: 'Velocity damping (higher = less wobble)', min: 1, max: 20, step: 1, format: v => `${v}` },
   { key: 'gridMaxDisplacement', label: 'Grid Max Disp', desc: 'Maximum grid node displacement from rest (px)', min: 20, max: 200, step: 5, format: v => `${v}px` },
+  // GPU Stress
+  { key: 'arenaWidth', label: 'Arena Width', desc: 'World width in pixels (restart required)', min: 800, max: 6400, step: 200, format: v => `${v}px` },
+  { key: 'arenaHeight', label: 'Arena Height', desc: 'World height in pixels (restart required)', min: 500, max: 4000, step: 200, format: v => `${v}px` },
+  { key: 'gridSpacing', label: 'Grid Spacing', desc: 'Distance between grid nodes — lower = more nodes (restart required)', min: 10, max: 80, step: 5, format: v => `${v}px` },
+  { key: 'gridSubsteps', label: 'Grid Substeps', desc: 'Physics substeps per frame (higher = more accurate + expensive)', min: 1, max: 8, step: 1, format: v => `${v}` },
+  { key: 'gridSpringStiffness', label: 'Grid Stiffness', desc: 'Neighbor spring strength (higher = tighter grid)', min: 100, max: 3000, step: 100, format: v => `${v}` },
+  { key: 'bloomThreshold', label: 'Bloom Threshold', desc: 'Brightness cutoff for bloom extract', min: 0.01, max: 0.5, step: 0.01, format: v => v.toFixed(2) },
+  { key: 'bloomBlurPasses', label: 'Bloom Passes', desc: 'Gaussian blur iterations (higher = softer glow + more GPU)', min: 1, max: 12, step: 1, format: v => `${v}` },
+  { key: 'bloomBlurRadius', label: 'Bloom Radius', desc: 'Blur kernel size (higher = wider glow)', min: 0.5, max: 6.0, step: 0.5, format: v => v.toFixed(1) },
+  { key: 'resolutionScale', label: 'Resolution Scale', desc: 'Multiplier on device pixel ratio (2.0 = supersampling)', min: 0.25, max: 2.0, step: 0.25, format: v => `${v.toFixed(2)}x` },
 ];
 
 // Track all panel instances so Reset Defaults can sync them all

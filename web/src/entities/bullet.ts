@@ -7,9 +7,8 @@ import {
   BULLET_COLOR,
   BULLET_COLOR2,
   BULLET_POOL_SIZE,
-  WORLD_WIDTH,
-  WORLD_HEIGHT,
 } from '../config';
+import { gameSettings } from '../settings';
 
 export class Bullet extends Entity {
   angle = 0;
@@ -25,8 +24,8 @@ export class Bullet extends Entity {
     if (!this.active) return;
     this.move(dt);
     // Deactivate when leaving world
-    const hw = WORLD_WIDTH / 2 + 50;
-    const hh = WORLD_HEIGHT / 2 + 50;
+    const hw = gameSettings.arenaWidth / 2 + 50;
+    const hh = gameSettings.arenaHeight / 2 + 50;
     if (
       this.position.x < -hw || this.position.x > hw ||
       this.position.y < -hh || this.position.y > hh

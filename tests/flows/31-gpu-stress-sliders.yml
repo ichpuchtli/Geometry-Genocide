@@ -1,0 +1,153 @@
+name: "GPU Stress Sliders"
+tags: [smoke, settings, gpu]
+steps:
+  - action: launch
+    url: "/"
+    waitFor: "canvas#game"
+
+  - action: wait
+    ms: 2000
+
+  - action: evalCheck
+    description: "Settings panel has 26+ sliders (17 original + 9 new GPU stress)"
+    script: |
+      var ds = document.getElementById('desktop-settings');
+      if (!ds) return false;
+      var sliders = ds.querySelectorAll('input[type="range"]');
+      return sliders.length >= 26;
+
+  - action: evalCheck
+    description: "Arena Width slider exists with correct range"
+    script: |
+      var ds = document.getElementById('desktop-settings');
+      if (!ds) return false;
+      var labels = ds.querySelectorAll('.sp-label');
+      for (var i = 0; i < labels.length; i++) {
+        if (labels[i].textContent === 'Arena Width') {
+          var row = labels[i].closest('.sp-row');
+          var input = row && row.querySelector('input[type="range"]');
+          return input && input.min === '800' && input.max === '6400';
+        }
+      }
+      return false;
+
+  - action: evalCheck
+    description: "Arena Height slider exists with correct range"
+    script: |
+      var ds = document.getElementById('desktop-settings');
+      if (!ds) return false;
+      var labels = ds.querySelectorAll('.sp-label');
+      for (var i = 0; i < labels.length; i++) {
+        if (labels[i].textContent === 'Arena Height') {
+          var row = labels[i].closest('.sp-row');
+          var input = row && row.querySelector('input[type="range"]');
+          return input && input.min === '500' && input.max === '4000';
+        }
+      }
+      return false;
+
+  - action: evalCheck
+    description: "Grid Spacing slider exists with correct range"
+    script: |
+      var ds = document.getElementById('desktop-settings');
+      if (!ds) return false;
+      var labels = ds.querySelectorAll('.sp-label');
+      for (var i = 0; i < labels.length; i++) {
+        if (labels[i].textContent === 'Grid Spacing') {
+          var row = labels[i].closest('.sp-row');
+          var input = row && row.querySelector('input[type="range"]');
+          return input && input.min === '10' && input.max === '80';
+        }
+      }
+      return false;
+
+  - action: evalCheck
+    description: "Grid Substeps slider exists"
+    script: |
+      var ds = document.getElementById('desktop-settings');
+      if (!ds) return false;
+      var labels = ds.querySelectorAll('.sp-label');
+      for (var i = 0; i < labels.length; i++) {
+        if (labels[i].textContent === 'Grid Substeps') return true;
+      }
+      return false;
+
+  - action: evalCheck
+    description: "Grid Stiffness slider exists"
+    script: |
+      var ds = document.getElementById('desktop-settings');
+      if (!ds) return false;
+      var labels = ds.querySelectorAll('.sp-label');
+      for (var i = 0; i < labels.length; i++) {
+        if (labels[i].textContent === 'Grid Stiffness') return true;
+      }
+      return false;
+
+  - action: evalCheck
+    description: "Bloom Threshold slider exists"
+    script: |
+      var ds = document.getElementById('desktop-settings');
+      if (!ds) return false;
+      var labels = ds.querySelectorAll('.sp-label');
+      for (var i = 0; i < labels.length; i++) {
+        if (labels[i].textContent === 'Bloom Threshold') return true;
+      }
+      return false;
+
+  - action: evalCheck
+    description: "Bloom Passes slider exists"
+    script: |
+      var ds = document.getElementById('desktop-settings');
+      if (!ds) return false;
+      var labels = ds.querySelectorAll('.sp-label');
+      for (var i = 0; i < labels.length; i++) {
+        if (labels[i].textContent === 'Bloom Passes') return true;
+      }
+      return false;
+
+  - action: evalCheck
+    description: "Bloom Radius slider exists"
+    script: |
+      var ds = document.getElementById('desktop-settings');
+      if (!ds) return false;
+      var labels = ds.querySelectorAll('.sp-label');
+      for (var i = 0; i < labels.length; i++) {
+        if (labels[i].textContent === 'Bloom Radius') return true;
+      }
+      return false;
+
+  - action: evalCheck
+    description: "Resolution Scale slider exists with correct range"
+    script: |
+      var ds = document.getElementById('desktop-settings');
+      if (!ds) return false;
+      var labels = ds.querySelectorAll('.sp-label');
+      for (var i = 0; i < labels.length; i++) {
+        if (labels[i].textContent === 'Resolution Scale') {
+          var row = labels[i].closest('.sp-row');
+          var input = row && row.querySelector('input[type="range"]');
+          return input && input.min === '0.25' && input.max === '2';
+        }
+      }
+      return false;
+
+  - action: evalCheck
+    description: "All new sliders have description text"
+    script: |
+      var ds = document.getElementById('desktop-settings');
+      if (!ds) return false;
+      var newLabels = ['Arena Width', 'Arena Height', 'Grid Spacing', 'Grid Substeps', 'Grid Stiffness', 'Bloom Threshold', 'Bloom Passes', 'Bloom Radius', 'Resolution Scale'];
+      var labels = ds.querySelectorAll('.sp-label');
+      var found = 0;
+      for (var i = 0; i < labels.length; i++) {
+        if (newLabels.indexOf(labels[i].textContent) !== -1) {
+          var row = labels[i].closest('.sp-row');
+          var desc = row && row.querySelector('.sp-desc');
+          if (desc && desc.textContent.length > 5) found++;
+        }
+      }
+      return found === newLabels.length;
+
+  - action: screenshot
+    name: "31-gpu-stress-sliders"
+

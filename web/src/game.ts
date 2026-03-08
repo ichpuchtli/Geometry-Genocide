@@ -26,7 +26,6 @@ import {
   EXPLOSION_DURATION_LARGE,
   EXPLOSION_DURATION_DEATH,
   BLOOM_THRESHOLD,
-  BLOOM_INTENSITY,
   BLOOM_BLUR_PASSES,
   BLOOM_BLUR_RADIUS,
   TRAIL_LENGTH_ENEMY,
@@ -38,8 +37,6 @@ import {
   SCREEN_SHAKE_SMALL,
   SCREEN_SHAKE_LARGE,
   SCREEN_SHAKE_DEATH,
-  WORLD_WIDTH,
-  WORLD_HEIGHT,
   ARENA_BORDER_COLOR,
   ARENA_BORDER_CORNER_COLOR,
   ARENA_BORDER_ALPHA,
@@ -143,18 +140,19 @@ export class Game {
     {
       const cssW = gameCanvas.clientWidth;
       const cssH = gameCanvas.clientHeight;
-      // Desktop: fit entire arena on screen (Math.min). Mobile: fill viewport edge-to-edge (Math.max).
+      const aw = gameSettings.arenaWidth;
+      const ah = gameSettings.arenaHeight;
       this.renderer.zoom = this.mobile
-        ? Math.max(cssW / WORLD_WIDTH, cssH / WORLD_HEIGHT)
-        : Math.min(cssW / WORLD_WIDTH, cssH / WORLD_HEIGHT);
+        ? Math.max(cssW / aw, cssH / ah)
+        : Math.min(cssW / aw, cssH / ah);
     }
     const gl = this.renderer.getGL();
 
     this.bloom = new BloomPass(gl);
-    this.bloom.threshold = BLOOM_THRESHOLD;
-    this.bloom.intensity = BLOOM_INTENSITY;
-    this.bloom.blurPasses = this.mobile ? 2 : BLOOM_BLUR_PASSES;
-    this.bloom.blurRadius = BLOOM_BLUR_RADIUS;
+    this.bloom.threshold = gameSettings.bloomThreshold;
+    this.bloom.intensity = gameSettings.bloomIntensity;
+    this.bloom.blurPasses = this.mobile ? 2 : gameSettings.bloomBlurPasses;
+    this.bloom.blurRadius = gameSettings.bloomBlurRadius;
 
     this.grid = new SpringMassGrid(gl, this.mobile);
     this.trails = new TrailSystem();
@@ -172,7 +170,7 @@ export class Game {
     this.hud = new HUD(hudCanvas);
     this.joystickRenderer = new VirtualJoystickRenderer(hudCanvas);
     this.waveManager = new WaveManager();
-    this.starfield = new Starfield(80, WORLD_WIDTH, WORLD_HEIGHT);
+    this.starfield = new Starfield(80, gameSettings.arenaWidth, gameSettings.arenaHeight);
     this.haptics = new HapticsManager();
 
     // Click/touch to start + init audio
@@ -205,9 +203,11 @@ export class Game {
     {
       const cssW = this.gameCanvas.clientWidth;
       const cssH = this.gameCanvas.clientHeight;
+      const aw = gameSettings.arenaWidth;
+      const ah = gameSettings.arenaHeight;
       this.renderer.zoom = this.mobile
-        ? Math.max(cssW / WORLD_WIDTH, cssH / WORLD_HEIGHT)
-        : Math.min(cssW / WORLD_WIDTH, cssH / WORLD_HEIGHT);
+        ? Math.max(cssW / aw, cssH / ah)
+        : Math.min(cssW / aw, cssH / ah);
     }
     this.renderer.resize();
     this.camera.resize(this.renderer.width, this.renderer.height);
@@ -250,7 +250,6 @@ export class Game {
     this.pendingSpawns = [];
     this.explosions.clear();
     this.trails.clear();
-    this.grid.clear();
     this.bulletTrailIds.clear();
     this.waveManager.reset();
     this.player.lives = gameSettings.startingLives;
@@ -261,7 +260,12 @@ export class Game {
     } else {
       this.gameTime = 0;
     }
+    // Rebuild grid + starfield with current arena/grid settings
+    this.grid.rebuild(gameSettings.arenaWidth, gameSettings.arenaHeight, gameSettings.gridSpacing);
+    this.starfield = new Starfield(80, gameSettings.arenaWidth, gameSettings.arenaHeight);
     this.applyVisualSettings();
+    // Recompute zoom and canvas resolution for new arena + resolution scale
+    this.resize();
     this.camera.snapTo(this.player.position);
     this.hud.clear();
 
@@ -380,8 +384,8 @@ export class Game {
 
   /** Pull player toward active BlackHoles */
   private applyBlackHolePlayerPull(dt: number): void {
-    const hw = WORLD_WIDTH / 2;
-    const hh = WORLD_HEIGHT / 2;
+    const hw = gameSettings.arenaWidth / 2;
+    const hh = gameSettings.arenaHeight / 2;
     for (const e of this.enemies) {
       if (!e.active || e.isSpawning || !(e instanceof BlackHole)) continue;
       const dx = e.position.x - this.player.position.x;
@@ -959,8 +963,8 @@ export class Game {
 
   /** Render the arena border — solid neon lines at world edges */
   private renderArenaBorder(): void {
-    const hw = WORLD_WIDTH / 2;
-    const hh = WORLD_HEIGHT / 2;
+    const hw = gameSettings.arenaWidth / 2;
+    const hh = gameSettings.arenaHeight / 2;
     const [br, bg, bb] = ARENA_BORDER_COLOR;
     const [cr, cg, cb] = ARENA_BORDER_CORNER_COLOR;
     const a = ARENA_BORDER_ALPHA;
@@ -1020,6 +1024,9 @@ export class Game {
 
   private applyVisualSettings(): void {
     this.bloom.intensity = gameSettings.bloomIntensity;
+    this.bloom.threshold = gameSettings.bloomThreshold;
+    this.bloom.blurPasses = this.mobile ? Math.min(gameSettings.bloomBlurPasses, 2) : gameSettings.bloomBlurPasses;
+    this.bloom.blurRadius = gameSettings.bloomBlurRadius;
     this.trailLenEnemy = this.mobile
       ? Math.min(gameSettings.trailLength, MOBILE_TRAIL_LENGTH_ENEMY)
       : gameSettings.trailLength;

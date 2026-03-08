@@ -1,5 +1,5 @@
 import { Vec2 } from '../core/vector';
-import { WORLD_WIDTH, WORLD_HEIGHT } from '../config';
+import { gameSettings } from '../settings';
 
 // Each line can be commented out individually to disable that enemy type
 export type EnemyType =
@@ -78,11 +78,10 @@ export interface FormationSpawn {
   isAmbush?: boolean;  // if true, use longer spawn animation
 }
 
-const hw = WORLD_WIDTH / 2;
-const hh = WORLD_HEIGHT / 2;
-
 /** Swarm: 15-30 enemies from a single edge quadrant, tightly packed */
 export function generateSwarm(pool: EnemyType[], count: number): FormationSpawn[] {
+  const hw = gameSettings.arenaWidth / 2;
+  const hh = gameSettings.arenaHeight / 2;
   const type = pickRandom(pool);
   const side = Math.floor(Math.random() * 4);
   const spawns: FormationSpawn[] = [];
@@ -103,6 +102,8 @@ export function generateSwarm(pool: EnemyType[], count: number): FormationSpawn[
 
 /** Surround: enemies in a ring around the player */
 export function generateSurround(pool: EnemyType[], count: number, playerPos: Vec2, radius = 300): FormationSpawn[] {
+  const hw = gameSettings.arenaWidth / 2;
+  const hh = gameSettings.arenaHeight / 2;
   const spawns: FormationSpawn[] = [];
   for (let i = 0; i < count; i++) {
     const angle = (i / count) * Math.PI * 2;
@@ -115,6 +116,10 @@ export function generateSurround(pool: EnemyType[], count: number, playerPos: Ve
 
 /** Wall: line of enemies spanning one full world edge */
 export function generateWall(pool: EnemyType[], count: number): FormationSpawn[] {
+  const aw = gameSettings.arenaWidth;
+  const ah = gameSettings.arenaHeight;
+  const hw = aw / 2;
+  const hh = ah / 2;
   const type = pickRandom(pool);
   const side = Math.floor(Math.random() * 4);
   const spawns: FormationSpawn[] = [];
@@ -122,10 +127,10 @@ export function generateWall(pool: EnemyType[], count: number): FormationSpawn[]
     const t = (i / (count - 1)) - 0.5; // -0.5 to 0.5
     let x: number, y: number;
     switch (side) {
-      case 0: x = t * WORLD_WIDTH; y = hh - 10; break;
-      case 1: x = t * WORLD_WIDTH; y = -hh + 10; break;
-      case 2: x = -hw + 10; y = t * WORLD_HEIGHT; break;
-      default: x = hw - 10; y = t * WORLD_HEIGHT; break;
+      case 0: x = t * aw; y = hh - 10; break;
+      case 1: x = t * aw; y = -hh + 10; break;
+      case 2: x = -hw + 10; y = t * ah; break;
+      default: x = hw - 10; y = t * ah; break;
     }
     spawns.push({ type, position: new Vec2(x, y), delay: 0 });
   }
@@ -134,6 +139,8 @@ export function generateWall(pool: EnemyType[], count: number): FormationSpawn[]
 
 /** Pincer: two groups from opposite sides */
 export function generatePincer(pool: EnemyType[], count: number, playerPos: Vec2): FormationSpawn[] {
+  const hw = gameSettings.arenaWidth / 2;
+  const hh = gameSettings.arenaHeight / 2;
   const type = pickRandom(pool);
   const spawns: FormationSpawn[] = [];
   // Determine which axis player is more centered on, attack from that axis
@@ -159,6 +166,8 @@ export function generatePincer(pool: EnemyType[], count: number, playerPos: Vec2
 
 /** Ambush: enemies spawn 300-500px from player (NOT at edges) */
 export function generateAmbush(pool: EnemyType[], count: number, playerPos: Vec2): FormationSpawn[] {
+  const hw = gameSettings.arenaWidth / 2;
+  const hh = gameSettings.arenaHeight / 2;
   const spawns: FormationSpawn[] = [];
   for (let i = 0; i < count; i++) {
     const angle = Math.random() * Math.PI * 2;
@@ -172,15 +181,19 @@ export function generateAmbush(pool: EnemyType[], count: number, playerPos: Vec2
 
 /** Cascade: rapid-fire from a single edge point with accelerating rate */
 export function generateCascade(pool: EnemyType[], count: number): FormationSpawn[] {
+  const aw = gameSettings.arenaWidth;
+  const ah = gameSettings.arenaHeight;
+  const hw = aw / 2;
+  const hh = ah / 2;
   const type = pickRandom(pool);
   const side = Math.floor(Math.random() * 4);
   const edgePos = (Math.random() - 0.5) * 0.6; // position along edge (-0.3 to 0.3)
   let x: number, y: number;
   switch (side) {
-    case 0: x = edgePos * WORLD_WIDTH; y = hh - 10; break;
-    case 1: x = edgePos * WORLD_WIDTH; y = -hh + 10; break;
-    case 2: x = -hw + 10; y = edgePos * WORLD_HEIGHT; break;
-    default: x = hw - 10; y = edgePos * WORLD_HEIGHT; break;
+    case 0: x = edgePos * aw; y = hh - 10; break;
+    case 1: x = edgePos * aw; y = -hh + 10; break;
+    case 2: x = -hw + 10; y = edgePos * ah; break;
+    default: x = hw - 10; y = edgePos * ah; break;
   }
   const spawns: FormationSpawn[] = [];
   let totalDelay = 0;
