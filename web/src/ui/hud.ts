@@ -54,7 +54,7 @@ export class HUD {
     }
   }
 
-  drawPlaying(score: number, lives: number, muted?: boolean, enemyCount?: number): void {
+  drawPlaying(score: number, lives: number, muted?: boolean, enemyCount?: number, autoFire?: boolean): void {
     this.clear();
     this.ctx.textBaseline = 'top';
 
@@ -75,13 +75,15 @@ export class HUD {
     this.drawGlowText(debugText, 20, this.canvas.clientHeight - 10, '14px monospace', fpsColor, fpsColor, 5);
     this.ctx.textBaseline = 'top';
 
-    // Audio mute indicator (top-center)
-    if (muted !== undefined) {
-      this.ctx.textAlign = 'center';
-      const icon = muted ? 'MUTED [M]' : '';
-      if (icon) {
-        this.drawGlowText(icon, this.canvas.clientWidth / 2, 20, '14px monospace', '#aa3030', '#aa3030', 5);
-      }
+    // Status indicators (top-center)
+    this.ctx.textAlign = 'center';
+    const indicators: string[] = [];
+    if (muted) indicators.push('MUTED [M]');
+    if (autoFire) indicators.push('AUTO-FIRE [F]');
+    if (indicators.length > 0) {
+      const text = indicators.join('  ');
+      const color = muted ? '#aa3030' : '#30aa30';
+      this.drawGlowText(text, this.canvas.clientWidth / 2, 20, '14px monospace', color, color, 5);
     }
   }
 
@@ -103,7 +105,7 @@ export class HUD {
     // Controls hint
     const controlsText = this.touchMode
       ? 'Left stick: move  |  Right stick: aim & shoot'
-      : 'WASD to move  |  Mouse to aim  |  Click to shoot  |  ESC to quit';
+      : 'WASD to move  |  Mouse to aim  |  Click to shoot  |  F auto-fire  |  M mute';
     this.drawGlowText(controlsText, w / 2, h / 2 + 100, '13px monospace', '#0a770a', '#0a770a', 5);
 
     // Credit

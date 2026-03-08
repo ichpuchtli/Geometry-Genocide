@@ -182,10 +182,13 @@ export class Game {
       this.onInteract();
     }, { passive: false });
 
-    // Mute toggle (M key)
+    // Keyboard shortcuts
     window.addEventListener('keydown', (e) => {
       if (e.code === 'KeyM') {
         this.audio.toggleMute();
+      }
+      if (e.code === 'KeyF') {
+        this.input.autoFire = !this.input.autoFire;
       }
     });
 
@@ -197,6 +200,8 @@ export class Game {
     this.hud.setTouchMode(this.mobile);
     this.hud.drawMenu();
     if (!this.mobile) showDesktopSettings();
+    // Show system cursor on menu
+    gameCanvas.style.cursor = 'default';
   }
 
   private resize(): void {
@@ -243,6 +248,7 @@ export class Game {
 
   private startGame(): void {
     this.state = 'playing';
+    this.gameCanvas.style.cursor = 'none';
     if (!this.mobile) hideDesktopSettings();
     this.player.reset();
     this.bullets.clear();
@@ -853,6 +859,7 @@ export class Game {
         // Transition to game over screen
         this.state = 'gameover';
         this.gameOverTime = 0;
+        this.gameCanvas.style.cursor = 'default';
         this.hud.drawGameOver(this.player.score, this.player.enemiesKilled, this.gameTime);
         if (!this.mobile) showDesktopSettings();
       } else {
@@ -957,7 +964,7 @@ export class Game {
 
     // --- HUD (drawn on separate 2D canvas, unaffected by bloom) ---
     if (this.state === 'playing' || this.state === 'death_slowmo') {
-      this.hud.drawPlaying(this.player.score, this.player.lives, this.audio.muted, this.enemies.length);
+      this.hud.drawPlaying(this.player.score, this.player.lives, this.audio.muted, this.enemies.length, this.input.autoFire);
 
       // Virtual joysticks (drawn on HUD canvas, not during slowmo)
       if (this.state === 'playing') {

@@ -15,6 +15,7 @@ export class Input {
   private keys = new Map<string, boolean>();
   private mouseDown = false;
   private camera: Camera | null = null;
+  autoFire = false;
 
   // Mouse position aim (desktop) — screen CSS coordinates
   private mouseScreenX = 0;
@@ -151,7 +152,7 @@ export class Input {
       const rv = this.getStickVector(this.rightStick);
       return rv.magnitudeSq() > 0;
     }
-    return this.mouseDown;
+    return this.mouseDown || this.autoFire;
   }
 
   isTouchActive(): boolean {
