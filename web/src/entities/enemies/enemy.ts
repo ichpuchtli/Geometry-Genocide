@@ -32,6 +32,7 @@ export abstract class Enemy extends Entity {
   // Elite metadata
   baseType = '';
   isElite = false;
+  isMiniboss = false;
 
   constructor() {
     super();

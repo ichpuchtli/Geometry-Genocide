@@ -3,12 +3,12 @@
 # Usage: ./tests/playwright.sh [flow-file|tag|all|screenshot] [flags]
 #
 # Examples:
-#   ./tests/playwright.sh                    # run all flows (headless)
+#   ./tests/playwright.sh                    # run all flows (headed — WebGL works)
 #   ./tests/playwright.sh smoke              # run flows tagged 'smoke'
 #   ./tests/playwright.sh dom                # run flows tagged 'dom'
-#   ./tests/playwright.sh screenshot         # take a headed screenshot (WebGL works)
+#   ./tests/playwright.sh screenshot         # take a screenshot
 #   ./tests/playwright.sh screenshot --name menu-check
-#   ./tests/playwright.sh all --headed       # run all flows with visible browser
+#   ./tests/playwright.sh all --headless     # run all flows without visible browser
 #   ./tests/playwright.sh --dev              # use running dev server (port 5173)
 
 set -euo pipefail
@@ -18,7 +18,7 @@ WEB="$ROOT/web"
 TESTS="$ROOT/tests"
 SCREENSHOTS="$TESTS/screenshots"
 PORT=4173
-HEADED=""
+HEADLESS=""
 USE_DEV=""
 SCREENSHOT_NAME=""
 TARGET="${1:-all}"
@@ -30,7 +30,8 @@ mkdir -p "$SCREENSHOTS"
 shift || true
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --headed) HEADED="1"; shift ;;
+    --headless) HEADLESS="1"; shift ;;
+    --headed) shift ;; # headed is now the default, accept flag for backwards compat
     --dev) USE_DEV="1"; PORT=5173; shift ;;
     --name) SCREENSHOT_NAME="$2"; shift 2 ;;
     --base-url) PORT=""; shift 2 ;; # handled below
@@ -39,11 +40,6 @@ while [[ $# -gt 0 ]]; do
 done
 
 BASE_URL="http://localhost:$PORT"
-
-# Screenshots always use headed mode (WebGL needs real GPU)
-if [[ "$TARGET" == "screenshot" ]]; then
-  HEADED="1"
-fi
 
 cleanup() {
   if [[ -n "$SERVER_PID" ]]; then
@@ -148,7 +144,7 @@ take_screenshot() {
 run_flows() {
   cd "$WEB"
   local env_vars="NODE_PATH=$WEB/node_modules"
-  [[ -n "$HEADED" ]] && env_vars="$env_vars HEADED=1"
+  [[ -n "$HEADLESS" ]] && env_vars="$env_vars HEADLESS=1"
 
   env $env_vars npx tsx "$TESTS/run-flow.ts" "$TARGET" --base-url "$BASE_URL"
   cd "$ROOT"

@@ -197,6 +197,109 @@ export class HUD {
     this.drawGlowText('Geometry Wars-inspired arcade shooter', w / 2, h - 20, '11px monospace', '#064006', '#064006', 3);
   }
 
+  /** Draw miniboss HP bar at top of screen */
+  drawMinibossHP(name: string, hp: number, maxHp: number, stage: number): void {
+    const w = this.canvas.clientWidth;
+    const barW = Math.min(300, w * 0.4);
+    const barH = 8;
+    const barX = (w - barW) / 2;
+    const barY = 55;
+
+    this.ctx.save();
+
+    // Boss name
+    this.ctx.textAlign = 'center';
+    this.ctx.textBaseline = 'bottom';
+    const stageText = stage > 1 ? ` — STAGE ${stage}` : '';
+    this.drawGlowText(name + stageText, w / 2, barY - 4, 'bold 14px monospace', '#cc2020', '#880000', 8);
+
+    // HP bar background
+    this.ctx.fillStyle = 'rgba(80, 0, 0, 0.5)';
+    this.ctx.fillRect(barX, barY, barW, barH);
+
+    // HP bar fill
+    const hpFrac = hp / maxHp;
+    const fill = hpFrac > 0.5 ? '#cc2020' : hpFrac > 0.25 ? '#cc6620' : '#cccc20';
+    this.ctx.fillStyle = fill;
+    this.ctx.shadowColor = fill;
+    this.ctx.shadowBlur = 6;
+    this.ctx.fillRect(barX, barY, barW * hpFrac, barH);
+    this.ctx.shadowBlur = 0;
+
+    // Border
+    this.ctx.strokeStyle = 'rgba(200, 60, 60, 0.6)';
+    this.ctx.lineWidth = 1;
+    this.ctx.strokeRect(barX, barY, barW, barH);
+
+    this.ctx.restore();
+  }
+
+  /** Draw "BOSS DEFEATED" banner with golden glow */
+  drawMinibossDefeatedBanner(progress: number): void {
+    if (progress <= 0 || progress >= 1) return;
+    const w = this.canvas.clientWidth;
+    const h = this.canvas.clientHeight;
+
+    // Fade: quick in, hold, slow out
+    let alpha: number;
+    if (progress < 0.15) {
+      alpha = progress / 0.15;
+    } else if (progress > 0.65) {
+      alpha = (1 - progress) / 0.35;
+    } else {
+      alpha = 1;
+    }
+
+    this.ctx.save();
+    this.ctx.globalAlpha = alpha;
+    this.ctx.textAlign = 'center';
+    this.ctx.textBaseline = 'middle';
+
+    // Background stripe
+    const stripeH = 70;
+    const y = h * 0.35;
+    this.ctx.fillStyle = `rgba(0, 0, 0, ${0.5 * alpha})`;
+    this.ctx.fillRect(0, y - stripeH / 2, w, stripeH);
+
+    // Golden accent lines
+    this.ctx.strokeStyle = `rgba(255, 200, 50, ${0.7 * alpha})`;
+    this.ctx.lineWidth = 2;
+    this.ctx.beginPath();
+    this.ctx.moveTo(w * 0.15, y - stripeH / 2);
+    this.ctx.lineTo(w * 0.85, y - stripeH / 2);
+    this.ctx.moveTo(w * 0.15, y + stripeH / 2);
+    this.ctx.lineTo(w * 0.85, y + stripeH / 2);
+    this.ctx.stroke();
+
+    // Banner text
+    this.drawGlowText('BOSS DEFEATED', w / 2, y, 'bold 36px monospace', '#ffc832', '#ff8800', 25);
+
+    this.ctx.restore();
+  }
+
+  /** Draw miniboss warning banner (pulsing red "WARNING") */
+  drawMinibossWarning(progress: number): void {
+    if (progress <= 0 || progress >= 1) return;
+    const w = this.canvas.clientWidth;
+    const h = this.canvas.clientHeight;
+
+    const pulse = 0.6 + 0.4 * Math.sin(progress * Math.PI * 8);
+    const alpha = progress < 0.1 ? progress / 0.1 : progress > 0.9 ? (1 - progress) / 0.1 : 1;
+
+    this.ctx.save();
+    this.ctx.globalAlpha = alpha * pulse;
+    this.ctx.textAlign = 'center';
+    this.ctx.textBaseline = 'middle';
+
+    const y = h * 0.35;
+    this.ctx.fillStyle = `rgba(60, 0, 0, ${0.4 * alpha})`;
+    this.ctx.fillRect(0, y - 30, w, 60);
+
+    this.drawGlowText('WARNING', w / 2, y, 'bold 40px monospace', '#ff2020', '#cc0000', 30);
+
+    this.ctx.restore();
+  }
+
   drawGameOver(score: number, enemiesKilled: number, timeSurvived: number): void {
     this.clear();
     const w = this.canvas.clientWidth;

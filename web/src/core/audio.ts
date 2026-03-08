@@ -442,6 +442,189 @@ export class AudioManager {
     }
   }
 
+  /** Low rumbling warning for incoming miniboss */
+  playMinibossWarning(): void {
+    if (!this._initialized || !this.ctx || !this.sfxGain) return;
+    const ctx = this.ctx;
+    const now = ctx.currentTime;
+    // Deep pulsing rumble
+    const rumble = ctx.createOscillator();
+    rumble.type = 'sawtooth';
+    rumble.frequency.setValueAtTime(40, now);
+    rumble.frequency.setValueAtTime(45, now + 0.5);
+    rumble.frequency.setValueAtTime(40, now + 1.0);
+    rumble.frequency.setValueAtTime(50, now + 1.5);
+    const rumbleFilter = ctx.createBiquadFilter();
+    rumbleFilter.type = 'lowpass';
+    rumbleFilter.frequency.value = 120;
+    const rg = ctx.createGain();
+    rg.gain.setValueAtTime(0.0, now);
+    rg.gain.linearRampToValueAtTime(0.35, now + 0.3);
+    rg.gain.setValueAtTime(0.35, now + 2.0);
+    rg.gain.exponentialRampToValueAtTime(0.001, now + 2.8);
+    rumble.connect(rumbleFilter);
+    rumbleFilter.connect(rg);
+    rg.connect(this.sfxGain);
+    rumble.start(now);
+    rumble.stop(now + 3.0);
+    // Warning klaxon — descending square wave pulses
+    for (let i = 0; i < 3; i++) {
+      const klaxon = ctx.createOscillator();
+      klaxon.type = 'square';
+      const t = now + i * 0.8;
+      klaxon.frequency.setValueAtTime(300, t);
+      klaxon.frequency.exponentialRampToValueAtTime(180, t + 0.3);
+      const kFilter = ctx.createBiquadFilter();
+      kFilter.type = 'lowpass';
+      kFilter.frequency.value = 800;
+      const kg = ctx.createGain();
+      kg.gain.setValueAtTime(0.15, t);
+      kg.gain.exponentialRampToValueAtTime(0.001, t + 0.5);
+      klaxon.connect(kFilter);
+      kFilter.connect(kg);
+      kg.connect(this.sfxGain!);
+      klaxon.start(t);
+      klaxon.stop(t + 0.6);
+    }
+  }
+
+  /** Dramatic bass drop for miniboss arrival */
+  playMinibossArrive(): void {
+    if (!this._initialized || !this.ctx || !this.sfxGain) return;
+    const ctx = this.ctx;
+    const now = ctx.currentTime;
+    // Rising sweep into bass drop
+    const sweep = ctx.createOscillator();
+    sweep.type = 'sawtooth';
+    sweep.frequency.setValueAtTime(60, now);
+    sweep.frequency.exponentialRampToValueAtTime(400, now + 0.5);
+    const sweepFilter = ctx.createBiquadFilter();
+    sweepFilter.type = 'lowpass';
+    sweepFilter.frequency.setValueAtTime(100, now);
+    sweepFilter.frequency.exponentialRampToValueAtTime(2000, now + 0.5);
+    const sg = ctx.createGain();
+    sg.gain.setValueAtTime(0.2, now);
+    sg.gain.linearRampToValueAtTime(0.4, now + 0.45);
+    sg.gain.exponentialRampToValueAtTime(0.001, now + 0.8);
+    sweep.connect(sweepFilter);
+    sweepFilter.connect(sg);
+    sg.connect(this.sfxGain);
+    sweep.start(now);
+    sweep.stop(now + 0.9);
+    // Bass impact
+    const impact = ctx.createOscillator();
+    impact.type = 'sine';
+    impact.frequency.setValueAtTime(100, now + 0.5);
+    impact.frequency.exponentialRampToValueAtTime(25, now + 1.2);
+    const ig = ctx.createGain();
+    ig.gain.setValueAtTime(0.6, now + 0.5);
+    ig.gain.exponentialRampToValueAtTime(0.001, now + 1.5);
+    impact.connect(ig);
+    ig.connect(this.sfxGain);
+    impact.start(now + 0.5);
+    impact.stop(now + 1.6);
+  }
+
+  /** Cracking impact for miniboss stage break */
+  playMinibossStageBreak(): void {
+    if (!this._initialized || !this.ctx || !this.sfxGain) return;
+    const ctx = this.ctx;
+    const now = ctx.currentTime;
+    // Heavy crack
+    const crack = ctx.createOscillator();
+    crack.type = 'sawtooth';
+    crack.frequency.setValueAtTime(600, now);
+    crack.frequency.exponentialRampToValueAtTime(80, now + 0.15);
+    const cf = ctx.createBiquadFilter();
+    cf.type = 'lowpass';
+    cf.frequency.setValueAtTime(3000, now);
+    cf.frequency.exponentialRampToValueAtTime(200, now + 0.2);
+    const cg = ctx.createGain();
+    cg.gain.setValueAtTime(0.4, now);
+    cg.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+    crack.connect(cf);
+    cf.connect(cg);
+    cg.connect(this.sfxGain);
+    crack.start(now);
+    crack.stop(now + 0.4);
+    // Sub thud
+    const sub = ctx.createOscillator();
+    sub.type = 'sine';
+    sub.frequency.setValueAtTime(120, now);
+    sub.frequency.exponentialRampToValueAtTime(30, now + 0.3);
+    const subg = ctx.createGain();
+    subg.gain.setValueAtTime(0.35, now);
+    subg.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+    sub.connect(subg);
+    subg.connect(this.sfxGain);
+    sub.start(now);
+    sub.stop(now + 0.5);
+  }
+
+  /** Massive explosion chord for miniboss death */
+  playMinibossDeath(): void {
+    if (!this._initialized || !this.ctx || !this.sfxGain) return;
+    const ctx = this.ctx;
+    const now = ctx.currentTime;
+    // Deep bass boom
+    const boom = ctx.createOscillator();
+    boom.type = 'sine';
+    boom.frequency.setValueAtTime(80, now);
+    boom.frequency.exponentialRampToValueAtTime(15, now + 1.5);
+    const bg = ctx.createGain();
+    bg.gain.setValueAtTime(0.7, now);
+    bg.gain.exponentialRampToValueAtTime(0.001, now + 2.0);
+    boom.connect(bg);
+    bg.connect(this.sfxGain);
+    boom.start(now);
+    boom.stop(now + 2.2);
+    // Triumph chord: C4, E4, G4, C5
+    const freqs = [262, 330, 392, 523];
+    for (const freq of freqs) {
+      const osc = ctx.createOscillator();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(freq, now + 0.1);
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0.15, now + 0.1);
+      g.gain.exponentialRampToValueAtTime(0.001, now + 1.2);
+      osc.connect(g);
+      g.connect(this.sfxGain!);
+      osc.start(now + 0.1);
+      osc.stop(now + 1.3);
+    }
+    // Noise crash
+    const noiseLen = 1.5;
+    const noiseBuf = ctx.createBuffer(1, ctx.sampleRate * noiseLen, ctx.sampleRate);
+    const data = noiseBuf.getChannelData(0);
+    for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
+    const noise = ctx.createBufferSource();
+    noise.buffer = noiseBuf;
+    const nf = ctx.createBiquadFilter();
+    nf.type = 'bandpass';
+    nf.frequency.setValueAtTime(800, now);
+    nf.frequency.exponentialRampToValueAtTime(100, now + noiseLen);
+    nf.Q.value = 1;
+    const ng = ctx.createGain();
+    ng.gain.setValueAtTime(0.3, now);
+    ng.gain.exponentialRampToValueAtTime(0.001, now + noiseLen);
+    noise.connect(nf);
+    nf.connect(ng);
+    ng.connect(this.sfxGain);
+    noise.start(now);
+    // Shimmer tail
+    const shimmer = ctx.createOscillator();
+    shimmer.type = 'sine';
+    shimmer.frequency.setValueAtTime(1047, now + 0.5);
+    shimmer.frequency.exponentialRampToValueAtTime(523, now + 2.0);
+    const shg = ctx.createGain();
+    shg.gain.setValueAtTime(0.08, now + 0.5);
+    shg.gain.exponentialRampToValueAtTime(0.001, now + 2.0);
+    shimmer.connect(shg);
+    shg.connect(this.sfxGain);
+    shimmer.start(now + 0.5);
+    shimmer.stop(now + 2.2);
+  }
+
   /** Resume AudioContext if suspended (call on user gesture) */
   async resume(): Promise<void> {
     if (this.ctx && this.ctx.state === 'suspended') {

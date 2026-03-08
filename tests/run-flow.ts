@@ -2,7 +2,7 @@
 /**
  * Maestro-style declarative test runner.
  * Reads YAML flow files and executes them against a running Vite preview server
- * using Playwright (headless Chromium).
+ * using Playwright (headed Chromium by default for WebGL support).
  *
  * Usage:
  *   npx tsx tests/run-flow.ts <flow-file|all> [--tag <tag>] [--base-url <url>]
@@ -326,14 +326,14 @@ async function main() {
 
   console.log(`\n  MAESTRO  Running ${flows.length} flow(s)${tagFilter ? ` [tag: ${tagFilter}]` : ''}\n`);
 
-  const headed = !!process.env.HEADED;
+  const headless = !!process.env.HEADLESS;
 
   const browser = await chromium.launch({
-    headless: !headed,
+    headless: headless,
     args: [
       '--no-sandbox',
       '--enable-webgl',
-      '--use-gl=swiftshader',
+      '--use-gl=angle',
       '--enable-gpu-rasterization',
       '--ignore-gpu-blocklist',
     ],

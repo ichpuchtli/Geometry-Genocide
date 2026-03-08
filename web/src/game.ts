@@ -71,6 +71,14 @@ import {
   RECOVERY_FIRE_RATE_MULT,
   RECOVERY_SHIELD_COLOR,
   RECOVERY_SHIELD_RADIUS,
+  MINIBOSS_SPAWN_TIME,
+  MINIBOSS_WARNING_DURATION,
+  MINIBOSS_HITSTOP_STAGE,
+  MINIBOSS_HITSTOP_DEATH,
+  MINIBOSS_RESPAWN_DELAY,
+  MINIBOSS_DEFEATED_BANNER_DURATION,
+  MINIBOSS_SPAWN_SUPPRESS_MULT,
+  MINIBOSS_HEAT_ON_DEATH,
 } from './config';
 import { FormationMeta } from './spawner/spawn-patterns';
 
@@ -82,6 +90,8 @@ import { CircleEnemy } from './entities/enemies/circle';
 import { BlackHole } from './entities/enemies/blackhole';
 import { Shard } from './entities/enemies/shard';
 import { Sierpinski } from './entities/enemies/sierpinski';
+import { Mandelbrot } from './entities/enemies/mandelbrot';
+import { MiniMandel } from './entities/enemies/minimandel';
 import { gameSettings } from './settings';
 import { showDesktopSettings, hideDesktopSettings } from './ui/settings-panel';
 
@@ -116,6 +126,8 @@ function createEnemy(type: string, pos?: Vec2, isElite = false): Enemy {
     case 'blackhole': e = new BlackHole(); break;
     case 'shard': e = new Shard(pos); e.speed *= gameSettings.enemySpeedMultiplier; return e;
     case 'sierpinski': e = new Sierpinski(); break;
+    case 'mandelbrot': e = new Mandelbrot(); break;
+    case 'minimandel': { const mm = new MiniMandel(pos); mm.speed *= gameSettings.enemySpeedMultiplier; return mm; }
     default: e = new Rhombus(); break;
   }
   e.baseType = type;
@@ -216,6 +228,15 @@ export class Game {
   private recoveryTimer = 0;     // ms remaining
   private recoveryActive = false;
   private recoveryExpirePlayed = false;
+
+  // Miniboss encounter state
+  private minibossActive = false;
+  private minibossDefeated = false;
+  private minibossWarningTimer = 0; // ms remaining in warning phase
+  private minibossRef: Mandelbrot | null = null;
+  private minibossDefeatedBannerTimer = 0;
+  private minibossRespawnTimer = 0;   // ms until re-trigger after player death
+  private savedSpawnRateMultiplier = 1.0;
 
   constructor(private gameCanvas: HTMLCanvasElement, hudCanvas: HTMLCanvasElement) {
     this.mobile = isMobile();
@@ -366,6 +387,13 @@ export class Game {
     this.recoveryTimer = 0;
     this.recoveryActive = false;
     this.recoveryExpirePlayed = false;
+    this.minibossActive = false;
+    this.minibossDefeated = false;
+    this.minibossWarningTimer = 0;
+    this.minibossRef = null;
+    this.minibossDefeatedBannerTimer = 0;
+    this.minibossRespawnTimer = 0;
+    this.savedSpawnRateMultiplier = 1.0;
     this.player.lives = gameSettings.startingLives;
     this.waveManager.spawnRateMultiplier = gameSettings.spawnRateMultiplier;
     if (gameSettings.startingPhase !== 'tutorial') {
@@ -720,7 +748,9 @@ export class Game {
       const isEliteKill = kill.enemy.isElite;
 
       // Heat: increase on kills
-      if (family === 'blackhole') {
+      if (family === 'mandelbrot') {
+        this.heat = MINIBOSS_HEAT_ON_DEATH;
+      } else if (family === 'blackhole') {
         this.heat = Math.min(1, this.heat + HEAT_KILL_BLACKHOLE);
       } else if (isEliteKill) {
         this.heat = Math.min(1, this.heat + HEAT_KILL_ELITE);
@@ -729,9 +759,18 @@ export class Game {
       }
       this.timeSinceLastKill = 0;
 
+      // Notify Mandelbrot parent when MiniMandel dies
+      if (kill.enemy instanceof MiniMandel && kill.enemy.parent && kill.enemy.parent.active) {
+        kill.enemy.parent.onMinionDeath();
+      }
+
       // Per-family kill signature: VFX + SFX + hitstop
       this.spawnKillSignature(kill.position.x, kill.position.y, kill.color, family, isEliteKill);
-      this.audio.playKillSignature(family);
+      if (family === 'mandelbrot') {
+        this.audio.playMinibossDeath();
+      } else {
+        this.audio.playKillSignature(family);
+      }
       if (isEliteKill) {
         this.audio.playEliteKill();
         maxHitstop = Math.max(maxHitstop, HITSTOP_ELITE);
@@ -739,6 +778,40 @@ export class Game {
 
       // Per-family explosion + grid + shake
       switch (family) {
+        case 'mandelbrot': {
+          // Massive boss death explosion
+          this.explosions.spawn(
+            kill.position.x, kill.position.y, [1, 0.4, 0.1],
+            this.mobile ? 120 : 250, EXPLOSION_DURATION_LARGE,
+          );
+          // Secondary white flash
+          this.explosions.spawn(
+            kill.position.x, kill.position.y, [1, 1, 0.8],
+            this.mobile ? 60 : 120, EXPLOSION_DURATION_DEFAULT,
+          );
+          // Third layer — red ember spread
+          this.explosions.spawn(
+            kill.position.x, kill.position.y, kill.color,
+            this.mobile ? 40 : 80, EXPLOSION_DURATION_LARGE * 1.2, 0.3,
+          );
+          this.grid.applyImpulse(kill.position.x, kill.position.y, 1200, 500);
+          this.camera.shake(SCREEN_SHAKE_DEATH);
+          maxHitstop = Math.max(maxHitstop, MINIBOSS_HITSTOP_DEATH);
+          this.haptics.death();
+          // Kill all active MiniMandels
+          for (const e of this.enemies) {
+            if (e.active && e instanceof MiniMandel) {
+              e.active = false;
+              this.explosions.spawn(e.position.x, e.position.y, e.color,
+                this.mobile ? 20 : 40, EXPLOSION_DURATION_DEFAULT * 0.6);
+              this.grid.applyImpulse(e.position.x, e.position.y, 300, 150);
+              if (e.trailId >= 0) this.trails.unregister(e.trailId);
+            }
+          }
+          // End miniboss encounter
+          this.onMinibossDefeated();
+          break;
+        }
         case 'blackhole': {
           const absorbed = kill.enemy instanceof BlackHole ? kill.enemy.absorbedCount : 0;
           this.audio.playBlackHoleDeath(absorbed);
@@ -794,7 +867,7 @@ export class Game {
           // No camera shake — grid impulse is enough for small enemies
           this.haptics.light();
           break;
-        default: // rhombus, circle, shard, square2, etc.
+        default: // rhombus, circle, shard, square2, minimandel, etc.
           this.explosions.spawn(
             kill.position.x, kill.position.y, kill.color,
             this.mobile ? Math.floor(EXPLOSION_PARTICLE_COUNT_SMALL * 0.6) : EXPLOSION_PARTICLE_COUNT_SMALL,
@@ -927,12 +1000,17 @@ export class Game {
     // --- Recovery window update ---
     this.updateRecovery(dt);
 
+    // --- Miniboss encounter update ---
+    this.updateMiniboss(dt);
+
     // Music intensity
     this.audio.setMusicIntensity(this.computeIntensity());
   }
 
   /** Get base enemy family name for kill signature lookup */
   private getEnemyFamily(enemy: Enemy): string {
+    if (enemy instanceof Mandelbrot) return 'mandelbrot';
+    if (enemy instanceof MiniMandel) return 'minimandel';
     if (enemy instanceof BlackHole) return 'blackhole';
     if (enemy instanceof Sierpinski) return 'sierpinski';
     if (enemy instanceof Square || enemy instanceof Square2) return 'square';
@@ -946,7 +1024,7 @@ export class Game {
   /** Spawn per-family kill signature visual effect */
   private spawnKillSignature(x: number, y: number, color: [number, number, number], family: string, isElite = false): void {
     // Only spawn for families with distinct signatures
-    if (family === 'rhombus' || family === 'pinwheel' || family === 'square' || family === 'sierpinski') {
+    if (family === 'rhombus' || family === 'pinwheel' || family === 'square' || family === 'sierpinski' || family === 'mandelbrot') {
       const angles: number[] = [];
       const baseCount = family === 'pinwheel' ? 8 : KILL_SIG_RAY_COUNT;
       const count = isElite ? Math.floor(baseCount * 1.5) : baseCount;
@@ -1060,6 +1138,117 @@ export class Game {
     }
   }
 
+  /** Miniboss encounter state machine */
+  private updateMiniboss(dt: number): void {
+    // Defeated banner timer
+    if (this.minibossDefeatedBannerTimer > 0) {
+      this.minibossDefeatedBannerTimer -= dt;
+    }
+
+    // Re-spawn timer (player died during boss fight)
+    if (this.minibossRespawnTimer > 0) {
+      this.minibossRespawnTimer -= dt;
+      if (this.minibossRespawnTimer <= 0) {
+        this.startMinibossWarning();
+      }
+    }
+
+    // Check if it's time to trigger the miniboss
+    if (!this.minibossDefeated && !this.minibossActive && this.minibossWarningTimer <= 0
+        && this.minibossRespawnTimer <= 0
+        && this.waveManager.elapsedTime >= MINIBOSS_SPAWN_TIME) {
+      this.startMinibossWarning();
+    }
+
+    // Warning countdown
+    if (this.minibossWarningTimer > 0) {
+      this.minibossWarningTimer -= dt;
+      if (this.minibossWarningTimer <= 0) {
+        this.spawnMiniboss();
+      }
+      return;
+    }
+
+    // Active miniboss: process minion spawns + stage transitions
+    if (this.minibossActive && this.minibossRef && this.minibossRef.active) {
+      // Process pending minion spawns from the Mandelbrot
+      while (this.minibossRef.pendingMinions.length > 0) {
+        const minionPos = this.minibossRef.pendingMinions.shift()!;
+        const mm = new MiniMandel(minionPos);
+        mm.parent = this.minibossRef;
+        mm.speed *= gameSettings.enemySpeedMultiplier;
+        mm.trailId = this.trails.register(mm.color, this.trailLenEnemy);
+        this.enemies.push(mm);
+        this.grid.applyImpulse(minionPos.x, minionPos.y, 60, 80);
+      }
+
+      // Check for stage transitions
+      if (this.minibossRef.checkStageTransition()) {
+        this.audio.playMinibossStageBreak();
+        this.hitstopTimer = Math.max(this.hitstopTimer, MINIBOSS_HITSTOP_STAGE);
+        this.camera.shake(SCREEN_SHAKE_LARGE);
+        this.grid.applyImpulse(
+          this.minibossRef.position.x, this.minibossRef.position.y, 600, 300,
+        );
+        this.haptics.heavy();
+      }
+    }
+
+    // Miniboss died outside of normal kill flow (e.g., player death shockwave)
+    if (this.minibossActive && this.minibossRef && !this.minibossRef.active) {
+      // Boss was destroyed by shockwave — allow re-spawn
+      if (!this.minibossDefeated) {
+        this.minibossActive = false;
+        this.minibossRef = null;
+        // Restore spawn rate
+        this.waveManager.spawnRateMultiplier = this.savedSpawnRateMultiplier;
+        this.minibossRespawnTimer = MINIBOSS_RESPAWN_DELAY;
+      }
+    }
+  }
+
+  private startMinibossWarning(): void {
+    this.minibossWarningTimer = MINIBOSS_WARNING_DURATION;
+    this.audio.playMinibossWarning();
+    // Red border pulse for warning
+    this.phaseBorderPulseTimer = MINIBOSS_WARNING_DURATION;
+  }
+
+  private spawnMiniboss(): void {
+    this.minibossActive = true;
+    // Find a spawn position away from the player
+    const hw = gameSettings.arenaWidth / 2;
+    const hh = gameSettings.arenaHeight / 2;
+    const px = this.player.position.x;
+    const py = this.player.position.y;
+    // Spawn on the far side of the arena from the player
+    const spawnX = px > 0 ? -hw * 0.4 : hw * 0.4;
+    const spawnY = py > 0 ? -hh * 0.4 : hh * 0.4;
+
+    const boss = createEnemy('mandelbrot', new Vec2(spawnX, spawnY)) as Mandelbrot;
+    boss.trailId = this.trails.register(boss.color, this.trailLenEnemy);
+    this.enemies.push(boss);
+    this.minibossRef = boss;
+
+    // Suppress normal spawning during fight
+    this.savedSpawnRateMultiplier = this.waveManager.spawnRateMultiplier;
+    this.waveManager.spawnRateMultiplier = MINIBOSS_SPAWN_SUPPRESS_MULT;
+
+    this.audio.playMinibossArrive();
+    this.grid.applyImpulse(spawnX, spawnY, 800, 400);
+    this.camera.shake(SCREEN_SHAKE_LARGE);
+    this.haptics.heavy();
+  }
+
+  private onMinibossDefeated(): void {
+    this.minibossActive = false;
+    this.minibossDefeated = true;
+    this.minibossDefeatedBannerTimer = MINIBOSS_DEFEATED_BANNER_DURATION;
+    this.minibossRef = null;
+    // Restore spawn rate
+    this.waveManager.spawnRateMultiplier = this.savedSpawnRateMultiplier;
+  }
+
   /** Create a spawn telegraph from a formation event */
   private createTelegraph(fm: FormationMeta): void {
     this.telegraphs.push({
@@ -1154,6 +1343,39 @@ export class Game {
                 r, g, b, layerAlpha * 0.6,
               );
             }
+          }
+          break;
+        }
+        case 'mandelbrot': {
+          // Massive fractal overload burst — multiple expanding cardioid layers + rays
+          for (let layer = 0; layer < 5; layer++) {
+            const layerT = Math.max(0, t - layer * 0.06);
+            if (layerT <= 0) continue;
+            const layerAlpha = alpha * (1 - layer * 0.15);
+            const radius = layerT * 120 + layer * 20;
+            const rot = t * 2 + layer * Math.PI / 5;
+            // Cardioid outlines expanding
+            const segs = 20;
+            for (let j = 0; j < segs; j++) {
+              const theta1 = rot + (j / segs) * Math.PI * 2;
+              const theta2 = rot + ((j + 1) / segs) * Math.PI * 2;
+              const r1 = (1 - Math.cos(theta1)) * radius * 0.5;
+              const r2 = (1 - Math.cos(theta2)) * radius * 0.5;
+              this.renderer.drawLine(
+                ke.x + Math.cos(theta1) * r1, ke.y + Math.sin(theta1) * r1,
+                ke.x + Math.cos(theta2) * r2, ke.y + Math.sin(theta2) * r2,
+                layer < 2 ? 1 : r, layer < 2 ? 0.8 : g, layer < 2 ? 0.3 : b, layerAlpha * 0.5,
+              );
+            }
+          }
+          // Bright white rays
+          for (const angle of ke.angles) {
+            const len = t * 150;
+            const x1 = ke.x + Math.cos(angle) * 20;
+            const y1 = ke.y + Math.sin(angle) * 20;
+            const x2 = ke.x + Math.cos(angle) * len;
+            const y2 = ke.y + Math.sin(angle) * len;
+            this.renderer.drawLine(x1, y1, x2, y2, 1, 1, 1, alpha * 0.6);
           }
           break;
         }
@@ -1559,6 +1781,23 @@ export class Game {
       if (this.phaseBannerTimer > 0) {
         const progress = 1 - this.phaseBannerTimer / PHASE_BANNER_DURATION;
         this.hud.drawPhaseBanner(this.phaseBannerName, progress);
+      }
+
+      // Miniboss warning banner
+      if (this.minibossWarningTimer > 0) {
+        const progress = 1 - this.minibossWarningTimer / MINIBOSS_WARNING_DURATION;
+        this.hud.drawMinibossWarning(progress);
+      }
+
+      // Miniboss HP bar
+      if (this.minibossActive && this.minibossRef && this.minibossRef.active) {
+        this.hud.drawMinibossHP('MANDELBROT', this.minibossRef.hp, this.minibossRef.maxHp, this.minibossRef.stage);
+      }
+
+      // Miniboss defeated banner
+      if (this.minibossDefeatedBannerTimer > 0) {
+        const progress = 1 - this.minibossDefeatedBannerTimer / MINIBOSS_DEFEATED_BANNER_DURATION;
+        this.hud.drawMinibossDefeatedBanner(progress);
       }
 
       // Virtual joysticks (drawn on HUD canvas, not during slowmo)

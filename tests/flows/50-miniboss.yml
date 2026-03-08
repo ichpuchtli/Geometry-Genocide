@@ -1,0 +1,84 @@
+name: "Miniboss Encounter"
+tags: [phase4, miniboss, boss]
+steps:
+  - action: launch
+    url: "/"
+    waitFor: "canvas#game"
+
+  # Set starting phase to intense via localStorage so miniboss spawns at 240s
+  - action: evalCheck
+    script: |
+      const settings = JSON.parse(localStorage.getItem('gg_settings') || '{}');
+      settings.startingPhase = 'intense';
+      localStorage.setItem('gg_settings', JSON.stringify(settings));
+      return true;
+    description: "Set starting phase to intense"
+
+  # Reload to pick up settings
+  - action: launch
+    url: "/"
+    waitFor: "canvas#game"
+
+  - action: screenshot
+    name: "50-menu"
+
+  # Start the game
+  - action: click
+    selector: "canvas#game"
+
+  - action: wait
+    ms: 500
+
+  # Move and shoot to survive while waiting for WARNING
+  - action: mouseMove
+    x: 900
+    y: 300
+
+  - action: mouseDown
+
+  - action: keys
+    keys: ["w", "d"]
+    duration: 2000
+
+  - action: screenshot
+    name: "50-warning-phase"
+
+  # Keep playing through the warning + boss spawn
+  - action: keys
+    keys: ["s", "a"]
+    duration: 2000
+
+  - action: screenshot
+    name: "50-boss-spawned"
+
+  # Play against the boss for a few seconds
+  - action: mouseMove
+    x: 400
+    y: 400
+
+  - action: keys
+    keys: ["w"]
+    duration: 3000
+
+  - action: screenshot
+    name: "50-boss-fight-3s"
+
+  - action: mouseMove
+    x: 700
+    y: 200
+
+  - action: keys
+    keys: ["a", "s"]
+    duration: 3000
+
+  - action: screenshot
+    name: "50-boss-fight-6s"
+
+  - action: keys
+    keys: ["d", "w"]
+    duration: 3000
+
+  - action: screenshot
+    name: "50-boss-fight-9s"
+
+  - action: mouseUp

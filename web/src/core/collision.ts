@@ -67,13 +67,16 @@ export function checkCollisions(
       const minDist = player.collisionRadius + e.collisionRadius;
       if (dist < minDist * minDist) {
         result.playerHit = true;
-        e.active = false;
-        result.killedEnemies.push({
-          enemy: e,
-          position: e.position.clone(),
-          color: e.color,
-          scoreValue: 0, // no score for enemies that kill you
-        });
+        // Miniboss survives player collision — player dies, boss lives
+        if (!e.isMiniboss) {
+          e.active = false;
+          result.killedEnemies.push({
+            enemy: e,
+            position: e.position.clone(),
+            color: e.color,
+            scoreValue: 0, // no score for enemies that kill you
+          });
+        }
         break;
       }
     }

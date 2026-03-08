@@ -11,6 +11,9 @@ export type EnemyType =
   // --- Child types (spawned by parents, not in pools) ---
   | 'circle'   // spawned only by BlackHole overload explosion
   | 'shard'
+  // --- Boss types (spawned by encounter system, not in pools) ---
+  | 'mandelbrot'
+  | 'minimandel'
   ;
 
 // Pools are weighted by repetition. More copies = higher spawn chance.
