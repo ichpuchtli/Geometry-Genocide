@@ -289,7 +289,6 @@ export const HEAT_SURVIVAL_RATE = 0.003;         // per second in intense+ phase
 export const HEAT_BORDER_BRIGHTNESS_MAX = 0.5;   // extra border brightness at max heat
 export const HEAT_BLOOM_BOOST_MAX = 0.5;         // extra bloom intensity at max heat
 export const HEAT_GRID_TURBULENCE_MAX = 60;      // max random grid impulse from heat
-export const HEAT_STARFIELD_DRIFT_MAX = 0.08;    // max starfield drift px/ms at max heat
 
 // --- Recovery Window ---
 export const RECOVERY_DURATION = 3500;           // ms
@@ -301,12 +300,6 @@ export const RECOVERY_SHIELD_RADIUS = 32;        // px radius of shield ring
 export const SFX_NAMES = [
   'start', 'die', 'die1', 'crash', 'square', 'rhombus',
   'triangle2', 'octagon', 'pinwheel', 'deathstar', 'deathstar2',
-  'rhombus_high', 'rhombus_low', 'rhombus_swarm',
-  'pinwheel_high', 'pinwheel_low', 'pinwheel_swarm',
-  'square_high', 'square_low', 'square_swarm',
-  'triangle2_high', 'triangle2_low', 'triangle2_swarm',
-  'deathstar_high', 'deathstar_low', 'deathstar_swarm',
-  'gameover',
 ] as const;
 export type SFXName = typeof SFX_NAMES[number];
 export const MASTER_VOLUME = 0.5;

@@ -42,9 +42,6 @@ export class Starfield {
   private nebulae: Nebula[] = [];
   private suns: Sun[] = [];
   private parallax = 0.3;
-  private driftX = 0;  // accumulated drift offset
-  private driftY = 0;
-  private driftSpeed = 0; // px/ms, set by heat system
 
   constructor(count: number, worldW: number, worldH: number) {
     const spread = 1.5;
@@ -148,29 +145,13 @@ export class Starfield {
     }
   }
 
-  /** Set drift speed from heat system (px/ms) */
-  setDrift(speed: number): void {
-    this.driftSpeed = speed;
-  }
-
-  /** Advance drift offset — call each frame with dt in ms */
-  updateDrift(dt: number): void {
-    // Drift diagonally (upper-left to lower-right) for a sense of forward motion
-    this.driftX += this.driftSpeed * dt * 0.7;
-    this.driftY += this.driftSpeed * dt * 0.5;
-  }
-
   render(renderer: Renderer, cameraX: number, cameraY: number): void {
     const px = this.parallax;
 
-    // Apply drift offset
-    const driftOffX = this.driftX;
-    const driftOffY = this.driftY;
-
     // Nebulae first (background, very faint)
     for (const n of this.nebulae) {
-      const nx = n.x - cameraX * px + driftOffX * 0.3;
-      const ny = n.y - cameraY * px + driftOffY * 0.3;
+      const nx = n.x - cameraX * px;
+      const ny = n.y - cameraY * px;
       const [cr, cg, cb] = n.color;
       for (const blob of n.blobs) {
         const bx = nx + blob.dx;
@@ -193,8 +174,8 @@ export class Starfield {
 
     // Galaxies
     for (const g of this.galaxies) {
-      const gx = g.x - cameraX * px + driftOffX * 0.5;
-      const gy = g.y - cameraY * px + driftOffY * 0.5;
+      const gx = g.x - cameraX * px;
+      const gy = g.y - cameraY * px;
       const [cr, cg, cb] = g.color;
 
       // Core glow
@@ -224,8 +205,8 @@ export class Starfield {
 
     // Suns (bright dots with corona rays)
     for (const s of this.suns) {
-      const sx = s.x - cameraX * px + driftOffX * 0.6;
-      const sy = s.y - cameraY * px + driftOffY * 0.6;
+      const sx = s.x - cameraX * px;
+      const sy = s.y - cameraY * px;
       const [cr, cg, cb] = s.color;
       const r = s.radius;
 
@@ -260,8 +241,8 @@ export class Starfield {
 
     // Regular stars
     for (const s of this.stars) {
-      const sx = s.x - cameraX * px + driftOffX;
-      const sy = s.y - cameraY * px + driftOffY;
+      const sx = s.x - cameraX * px;
+      const sy = s.y - cameraY * px;
       const b = s.brightness;
       const sz = s.size;
       renderer.drawLine(sx - sz, sy, sx + sz, sy, b, b, b * 1.3, 1.0);

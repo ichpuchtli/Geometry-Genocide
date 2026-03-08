@@ -67,7 +67,6 @@ import {
   HEAT_BORDER_BRIGHTNESS_MAX,
   HEAT_BLOOM_BOOST_MAX,
   HEAT_GRID_TURBULENCE_MAX,
-  HEAT_STARFIELD_DRIFT_MAX,
   RECOVERY_DURATION,
   RECOVERY_FIRE_RATE_MULT,
   RECOVERY_SHIELD_COLOR,
@@ -1020,10 +1019,6 @@ export class Game {
     // Bloom intensity boost
     const baseBloom = gameSettings.bloomIntensity;
     this.bloom.intensity = baseBloom + this.heat * HEAT_BLOOM_BOOST_MAX;
-
-    // Starfield drift
-    this.starfield.setDrift(this.heat * HEAT_STARFIELD_DRIFT_MAX);
-    this.starfield.updateDrift(dt);
 
     // Grid turbulence: random micro-impulses scaled by heat
     if (this.heat > 0.1) {

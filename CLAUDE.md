@@ -203,7 +203,7 @@ The `onBulletHit()` virtual method allows enemies to override bullet interaction
 - Phase transition banner duration (2.5s), border pulse duration (1.5s), display names
 - Spawn telegraph duration (1.2s), color
 - Heat system: decay rate (0.04/s), kill increments (base 0.02, elite 0.08, blackhole 0.12), dense combat bonus (0.01/kill), phase bump (0.15), survival rate (0.003/s)
-- Heat visual scaling: border brightness max (0.5), bloom boost max (0.5), grid turbulence max (60), starfield drift max (0.08 px/ms)
+- Heat visual scaling: border brightness max (0.5), bloom boost max (0.5), grid turbulence max (60)
 - Recovery window: duration (3500ms), fire rate multiplier (1.8x), shield color (cyan), shield radius (32px)
 
 **`settings.ts`** (runtime-tunable, persisted in localStorage):
@@ -331,10 +331,9 @@ Heat system and post-death recovery window added to `game.ts`:
 - **Heat visual hooks:**
   - Arena border shifts warm (blue→orange/white) with increasing heat via HEAT_BORDER_BRIGHTNESS_MAX
   - Bloom intensity increases by up to HEAT_BLOOM_BOOST_MAX (0.5) at max heat
-  - Starfield gains diagonal drift motion via `Starfield.setDrift()`/`updateDrift()` scaled by heat
   - Grid gets random micro-impulse turbulence (up to HEAT_GRID_TURBULENCE_MAX) at heat >0.1
   - Music intensity gets +0.15 * heat boost via `computeIntensity()`
-- **Heat HUD:** Removed — heat is communicated purely through visual/audio spectacle (border color, bloom, starfield drift, grid turbulence, music intensity), not an explicit meter.
+- **Heat HUD:** Removed — heat is communicated purely through visual/audio spectacle (border color, bloom, grid turbulence, music intensity), not an explicit meter.
 - **Recovery window:** Activated on non-final respawn (after death slowmo). 3500ms duration.
   - Player invulnerable for full recovery duration (overrides normal 2s invuln)
   - Fire rate boosted 1.8x via `Player.fireRateOverride`
@@ -343,7 +342,7 @@ Heat system and post-death recovery window added to `game.ts`:
   - "RECOVERY" HUD banner with progress bar, color shifts to warn color when expiring
   - Audio: `playRecoveryStart()` — ascending power chord + shimmer. `playRecoveryExpire()` — descending two-tone warning.
   - Non-stackable: only one recovery per respawn
-- **Key files modified:** `config.ts` (heat/recovery constants), `game.ts` (heat state, recovery state, visual hooks), `player.ts` (fireRateOverride), `hud.ts` (heat meter, recovery banner), `audio.ts` (recovery SFX), `starfield.ts` (drift system).
+- **Key files modified:** `config.ts` (heat/recovery constants), `game.ts` (heat state, recovery state, visual hooks), `player.ts` (fireRateOverride), `hud.ts` (heat meter, recovery banner), `audio.ts` (recovery SFX).
 
 ### Phase 4 (Scores, Polish & Tuning) — Not Started
 localStorage leaderboard, screenshot-friendly game over screen, debug overlay, difficulty curve tuning, performance profiling, cross-browser testing. See `TASKS.md` for full checklist.
