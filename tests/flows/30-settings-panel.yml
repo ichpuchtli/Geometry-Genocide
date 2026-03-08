@@ -1,0 +1,73 @@
+name: "Settings Panel Layout"
+tags: [smoke, settings, dom]
+steps:
+  - action: launch
+    url: "/"
+    waitFor: "canvas#game"
+
+  - action: wait
+    ms: 2000
+
+  - action: evalCheck
+    description: "Desktop settings container exists in DOM"
+    script: |
+      var ds = document.getElementById('desktop-settings');
+      return ds !== null;
+
+  - action: evalCheck
+    description: "Settings panel has been populated with content"
+    script: |
+      var ds = document.getElementById('desktop-settings');
+      return ds && ds.querySelector('.settings-panel') !== null;
+
+  - action: evalCheck
+    description: "Settings panel is positioned on right side (CSS check)"
+    script: |
+      var ds = document.getElementById('desktop-settings');
+      if (!ds) return false;
+      var style = getComputedStyle(ds);
+      return style.position === 'fixed' && style.right === '0px';
+
+  - action: evalCheck
+    description: "Settings panel has 17+ sliders"
+    script: |
+      var ds = document.getElementById('desktop-settings');
+      if (!ds) return false;
+      var sliders = ds.querySelectorAll('input[type="range"]');
+      return sliders.length >= 17;
+
+  - action: evalCheck
+    description: "Settings panel has description elements"
+    script: |
+      var ds = document.getElementById('desktop-settings');
+      if (!ds) return false;
+      var descs = ds.querySelectorAll('.sp-desc');
+      // 17 sliders + 1 phase dropdown + 1 checkbox = 19 descriptions
+      return descs.length >= 17;
+
+  - action: evalCheck
+    description: "Kill During Spawn checkbox exists"
+    script: |
+      var ds = document.getElementById('desktop-settings');
+      if (!ds) return false;
+      var cb = ds.querySelector('.sp-checkbox-row input[type="checkbox"]');
+      return cb !== null;
+
+  - action: evalCheck
+    description: "Phase dropdown has 5 options"
+    script: |
+      var ds = document.getElementById('desktop-settings');
+      if (!ds) return false;
+      var sel = ds.querySelector('select');
+      return sel && sel.options.length === 5;
+
+  - action: evalCheck
+    description: "Reset Defaults button exists"
+    script: |
+      var ds = document.getElementById('desktop-settings');
+      if (!ds) return false;
+      var btn = ds.querySelector('.sp-reset');
+      return btn && btn.textContent.includes('Reset');
+
+  - action: screenshot
+    name: "30-settings-panel"

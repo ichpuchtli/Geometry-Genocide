@@ -325,22 +325,10 @@ async function main() {
 
   console.log(`\n  MAESTRO  Running ${flows.length} flow(s)${tagFilter ? ` [tag: ${tagFilter}]` : ''}\n`);
 
-  // Find chromium binary — prefer pre-installed Playwright browsers
-  let executablePath: string | undefined;
-  const pwCacheDir = '/root/.cache/ms-playwright';
-  try {
-    const { readdirSync: rd } = await import('fs');
-    const dirs = rd(pwCacheDir).filter(d => d.startsWith('chromium-')).sort();
-    if (dirs.length > 0) {
-      const candidate = `${pwCacheDir}/${dirs[dirs.length - 1]}/chrome-linux/chrome`;
-      const { existsSync: ex } = await import('fs');
-      if (ex(candidate)) executablePath = candidate;
-    }
-  } catch { /* fall through to default */ }
+  const headed = !!process.env.HEADED;
 
   const browser = await chromium.launch({
-    headless: true,
-    executablePath,
+    headless: !headed,
     args: [
       '--no-sandbox',
       '--enable-webgl',

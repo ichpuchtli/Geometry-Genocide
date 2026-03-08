@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(bash tests/playwright.sh*)",
+      "Bash(cd /Users/sam/src/geometry-genocide && bash tests/playwright.sh*)",
+      "Bash(cd /Users/sam/src/geometry-genocide/web && npm run build*)",
+      "Bash(cd /Users/sam/src/geometry-genocide/web && npm run dev*)",
+      "Bash(cd /Users/sam/src/geometry-genocide/web && npm install*)",
+      "Bash(cd /Users/sam/src/geometry-genocide/web && npx tsc*)",
+      "Bash(npx playwright*)",
+      "Bash(cd /tmp/pw-test*)",
+      "Read(/Users/sam/src/geometry-genocide/tests/screenshots/*)"
+    ]
+  }
+}
