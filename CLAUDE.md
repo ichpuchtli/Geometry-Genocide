@@ -244,6 +244,7 @@ Config entries in `config.ts` can be left — unused config is harmless.
 
 **Currently active in spawn pools:** rhombus, pinwheel, square, blackhole, sierpinski (5 types).
 **Child-only types** (spawned by parents, not in pools): circle (BlackHole overload), shard (Sierpinski death), square2 (Square split).
+**Kill family mapping** (`getEnemyFamily()` in game.ts): Maps enemy instances to family strings for kill signatures/SFX/effects. Circle→`'circle'` (falls to default handler), Shard→`'sierpinski'`. Only actual `BlackHole` instances use the `'blackhole'` kill path (which accesses `absorbedCount`).
 **BlackHole spawns anywhere** in the arena (not at edges like other enemies).
 
 ---

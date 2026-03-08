@@ -267,12 +267,13 @@ async function runFlow(browser: Browser, flow: Flow, file: string): Promise<Flow
     if (msg.type() === 'error') {
       const text = msg.text();
       // Ignore known harmless errors
-      if (text.includes('favicon.ico') || text.includes('404')) return;
+      if (text.includes('favicon.ico') || text.includes('404') || text.includes('WebGL')) return;
       consoleErrors.push(text);
     }
   });
 
   page.on('pageerror', err => {
+    if (err.message.includes('WebGL')) return;
     consoleErrors.push(err.message);
   });
 

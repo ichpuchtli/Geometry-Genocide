@@ -697,7 +697,7 @@ export class Game {
       // Per-family explosion + grid + shake
       switch (family) {
         case 'blackhole': {
-          const absorbed = (kill.enemy as BlackHole).absorbedCount;
+          const absorbed = kill.enemy instanceof BlackHole ? kill.enemy.absorbedCount : 0;
           this.audio.playBlackHoleDeath(absorbed);
           this.explosions.spawn(
             kill.position.x, kill.position.y, kill.color,
@@ -891,7 +891,7 @@ export class Game {
     if (enemy instanceof Pinwheel) return 'pinwheel';
     if (enemy instanceof Rhombus) return 'rhombus';
     if (enemy instanceof Shard) return 'sierpinski';
-    if (enemy instanceof CircleEnemy) return 'blackhole';
+    if (enemy instanceof CircleEnemy) return 'circle';
     return 'rhombus'; // default
   }
 
