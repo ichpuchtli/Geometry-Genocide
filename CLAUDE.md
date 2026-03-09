@@ -12,7 +12,7 @@
 
 ## What This Is
 
-Geometry Genocide is a browser-based twin-stick arcade shooter inspired by Geometry Wars. Originally a Python 2/Pygame desktop game by Sam Macpherson (2013), it was rebuilt from scratch as a TypeScript + raw WebGL game deployed to GitHub Pages.
+Geometry Genocide is a browser-based twin-stick arcade shooter inspired by Geometry Wars and [Grid Wars](https://worldofstuart.excellentcontent.com/grid/wars.htm). Originally a Python 2/Pygame desktop game by Sam Macpherson (2013), it was rebuilt from scratch as a TypeScript + raw WebGL game deployed to GitHub Pages.
 
 **Play it:** https://ichpuchtli.github.io/Geometry-Genocide/
 
@@ -55,6 +55,7 @@ Player has 5 lives. Weapon auto-upgrades at score milestones (single → faster 
 web/src/
 ├── index.ts                    # Entry point, creates Engine + Game
 ├── game.ts                     # Main game loop, state machine, orchestrator (~1030 lines)
+├── design-lab.ts               # Design Lab — visual sandbox for comparing BlackHole render variants
 ├── config.ts                   # ALL tunable constants (speeds, colors, HP, spawn rates, etc.)
 ├── glsl.d.ts                   # TypeScript declarations for GLSL imports
 │
@@ -266,6 +267,7 @@ Config entries in `config.ts` can be left — unused config is harmless.
 **Boss types** (spawned by encounter system, not in pools): mandelbrot (signature miniboss, spawns at 240s/intense phase).
 **Kill family mapping** (`getEnemyFamily()` in game.ts): Maps enemy instances to family strings for kill signatures/SFX/effects. Circle→`'circle'` (falls to default handler), Shard→`'sierpinski'`, Mandelbrot→`'mandelbrot'`, MiniMandel→`'minimandel'`. Only actual `BlackHole` instances use the `'blackhole'` kill path (which accesses `absorbedCount`).
 **BlackHole spawns anywhere** in the arena (not at edges like other enemies).
+**BlackHole visual modes:** `visualMode` property on `BlackHole` class (`'current'` | `'violent_breather'` | `'convulsive'` | `'absorption_spike'`). Default `'current'` renders original cyan appearance. Other modes use orange-white palette from `BLACKHOLE_ORANGE` config. Only used in design lab currently; gameplay uses default `'current'`.
 **Mandelbrot miniboss** spawns away from the player via the encounter system in `game.ts` (not through WaveManager pools).
 
 ---
@@ -384,6 +386,17 @@ Run-stats accumulator, end-of-run summary card, deterministic medals, and game o
 - **Generated SFX loading:** `audio.ts` now loads MP3 files from `sounds/generated/` via `GENERATED_SFX` record in config.ts alongside the existing WAV loading pipeline.
 - **Key files modified:** `config.ts` (GENERATED_SFX, MEDALS, MedalDef), `audio.ts` (loadGeneratedSFX, playGameOver, playMedalReveal), `game.ts` (RunStats interface, computeMedals, run stats tracking, game over wiring), `hud.ts` (rewritten drawGameOver with animated summary card).
 
+### BlackHole Design Lab — Visual Sandbox
+Visual sandbox scene for iterating on BlackHole appearance. Accessible from menu by pressing `D`.
+- **4 visual variants in 2x2 layout:** Current (original cyan), Violent Breather (cardiac heartbeat pulse), Convulsive (multi-frequency chaos + random jolts), Absorption Spike (calm → violent on absorption)
+- **Orange-white palette:** `BLACKHOLE_ORANGE` in config.ts — dark void core, orange-white corona rim, hot orange body, warm white rays, accretion disc particles
+- **`BlackHole.visualMode`:** `'current' | 'violent_breather' | 'convulsive' | 'absorption_spike'` — dispatches to different render methods. Default `'current'` preserves all existing gameplay behavior.
+- **Accretion disc:** Array of orbiting diamond particles at varying speeds/radii, count increases with absorption (start 4, add 2 per absorb). Elliptical orbit for 3D tilt illusion.
+- **Grid sync:** Each variant has `needsGridPulse` + `gridPulseStrength` fields — design lab reads these to fire grid impulses synchronized with visual pulse timing.
+- **Enemy spawning:** Click to spawn enemies (cycle types with 1-5 keys). Enemies track toward nearest BH, get absorbed on contact. No overload explosion in lab (BH resets at max absorb).
+- **Game state:** `'design_lab'` added to `GameState` union. `DesignLab` class manages all state. `D` key enters from menu, `D`/`Escape` exits back to menu.
+- **Key files:** `design-lab.ts`, `blackhole.ts` (visualMode + 3 new render methods), `game.ts` (state wiring), `hud.ts` (drawDesignLabLabels + drawDesignLabOverlay), `config.ts` (BLACKHOLE_ORANGE palette)
+
 ### Phase 4 (Scores, Polish & Tuning) — Not Started
 localStorage leaderboard, debug overlay, difficulty curve tuning, performance profiling, cross-browser testing. See `TASKS.md` for full checklist.
 
@@ -405,6 +418,13 @@ localStorage leaderboard, debug overlay, difficulty curve tuning, performance pr
 - **`PRD.md`** — Full product requirements document. Game design, visual design, audio design, controls, technical architecture, deployment, delivery phases.
 - **`ENEMY_DESIGNS.md`** — Detailed designs for all 10 new enemy types. Shape descriptions, spawn/death animations, shader effects, novel mechanics. The definitive reference for enemy behavior intent.
 - **`TASKS.md`** — Phase-by-phase task checklist with session handoff notes between phases.
+- **`docs/gridwars54-analysis/README.md`** — Index for the local Grid Wars 5.4 research pack. Summarizes the recovered asset counts, soundtrack recoverability, and highest-value alignment gaps against Geometry Genocide.
+- **`docs/gridwars54-analysis/geometry-genocide-gridwars-alignment.md`** — Human-facing rewrite/port guide. Calls out direct matches, near matches, missing original families, and recommended restoration order.
+- **`docs/gridwars54-analysis/gridwars54-asset-manifest.json`** — Generated machine-readable manifest for the original Grid Wars 5.4 PNG/WAV bundle, including sprite semantics, atlas metadata, powerup mappings, sound role bindings, unused files, and missing references.
+- **`docs/gridwars54-analysis/gridwars54-music-manifest.json`** — Generated machine-readable manifest for the original Grid Wars 5.4 tracker modules (`.it`), including order lists, sample/instrument headers, tracker comments, and decompressed pattern events.
+- **`docs/gridwars54-analysis/gridwars54-alignment.json`** — Machine-readable mapping between original Grid Wars concepts and the current Geometry Genocide roster/audio model for future tooling or scripted port planning.
+- **`scripts/extract-gridwars54-analysis.mjs`** — Rerunnable extractor for the Grid Wars 5.4 research pack. Use `node scripts/extract-gridwars54-analysis.mjs` after modifying or replacing files under `docs/GridWars54/`.
+- **`docs/GridWars54/music/wav/Theme0.wav`**, **`Theme1.wav`**, **`Theme2.wav`** — WAV renders of the recovered Grid Wars tracker modules, generated locally with `openmpt123` from `libopenmpt`. These are derivative reference exports for listening, comparison, or source-faithful soundtrack experiments.
 
 ---
 

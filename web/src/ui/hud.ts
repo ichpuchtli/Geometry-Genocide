@@ -466,6 +466,53 @@ export class HUD {
     }
   }
 
+  /** Draw labels above each BlackHole variant in design lab */
+  drawDesignLabLabels(labels: { text: string; subtext: string; screenX: number; screenY: number }[]): void {
+    this.ctx.textAlign = 'center';
+    this.ctx.textBaseline = 'middle';
+    for (const label of labels) {
+      this.drawGlowText(label.text, label.screenX, label.screenY, 'bold 16px monospace', '#ffffff', '#ffffff', 12);
+      this.drawGlowText(label.subtext, label.screenX, label.screenY + 20, '12px monospace', '#aaaaaa', '#888888', 4);
+    }
+  }
+
+  /** Draw bottom overlay bar for design lab */
+  drawDesignLabOverlay(selectedType: string, typeColor: string): void {
+    const w = this.canvas.clientWidth;
+    const h = this.canvas.clientHeight;
+
+    // Semi-transparent dark background strip
+    this.ctx.save();
+    this.ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+    this.ctx.fillRect(0, h - 40, w, 40);
+
+    this.ctx.textAlign = 'center';
+    this.ctx.textBaseline = 'middle';
+
+    const y = h - 20;
+    // Instructions
+    this.ctx.font = '13px monospace';
+    this.ctx.fillStyle = '#888888';
+    this.ctx.fillText('Click to spawn ', w / 2 - 120, y);
+
+    // Selected type highlighted
+    this.ctx.fillStyle = typeColor;
+    this.ctx.font = 'bold 13px monospace';
+    this.ctx.fillText(`[${selectedType.toUpperCase()}]`, w / 2 - 10, y);
+
+    // Key hints
+    this.ctx.fillStyle = '#888888';
+    this.ctx.font = '13px monospace';
+    this.ctx.fillText('  |  1-5 switch  |  D exit', w / 2 + 120, y);
+
+    // Top-left title
+    this.ctx.textAlign = 'left';
+    this.drawGlowText('DESIGN LAB', 20, 24, 'bold 18px monospace', '#ff8833', '#ff6600', 10);
+    this.drawGlowText('BlackHole Visual Sandbox', 20, 46, '12px monospace', '#aa6622', '#884400', 4);
+
+    this.ctx.restore();
+  }
+
   drawLoading(progress: number): void {
     this.clear();
     const w = this.canvas.clientWidth;

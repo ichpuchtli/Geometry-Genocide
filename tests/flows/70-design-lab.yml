@@ -1,0 +1,91 @@
+name: "Design Lab"
+tags: [visual, designlab]
+steps:
+  - action: launch
+    url: "/"
+    waitFor: "canvas#game"
+
+  - action: wait
+    ms: 500
+
+  # Verify menu is showing
+  - action: evalCheck
+    description: "Menu screen is displayed"
+    script: |
+      var c = document.getElementById('hud');
+      var ctx = c.getContext('2d');
+      return c && c.width > 0;
+
+  # Press D to enter the design lab
+  - action: keyPress
+    key: "d"
+    duration: 100
+
+  - action: wait
+    ms: 1000
+
+  # Screenshot: 4 BlackHole variants in 2x2 layout with labels
+  - action: screenshot
+    name: "70-design-lab-variants"
+
+  # Press 3 to switch to square spawn type
+  - action: keyPress
+    key: "3"
+    duration: 100
+
+  - action: wait
+    ms: 200
+
+  # Click to spawn a square enemy near the top-left BlackHole
+  - action: click
+    selector: "canvas#game"
+    x: 0.35
+    y: 0.35
+
+  - action: wait
+    ms: 500
+
+  # Spawn a few more enemies at different positions
+  - action: click
+    selector: "canvas#game"
+    x: 0.65
+    y: 0.35
+
+  - action: wait
+    ms: 300
+
+  - action: click
+    selector: "canvas#game"
+    x: 0.35
+    y: 0.65
+
+  - action: wait
+    ms: 300
+
+  - action: click
+    selector: "canvas#game"
+    x: 0.65
+    y: 0.65
+
+  # Wait for enemies to get attracted toward BlackHoles
+  - action: wait
+    ms: 2000
+
+  # Screenshot: enemies being attracted / absorbed
+  - action: screenshot
+    name: "70-design-lab-enemies"
+
+  # Press D to exit the design lab
+  - action: keyPress
+    key: "d"
+    duration: 100
+
+  - action: wait
+    ms: 500
+
+  # Screenshot: back on menu
+  - action: screenshot
+    name: "70-design-lab-menu-return"
+
+  - action: assertNoErrors
+    description: "No console errors during design lab"

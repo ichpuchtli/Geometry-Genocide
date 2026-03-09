@@ -137,6 +137,16 @@ export const MANDELBROT_BUD_REGROW_TIME = 3.0; // seconds
 
 // --- BlackHole ---
 export const BLACKHOLE_HP = 8;
+
+// --- BlackHole Orange-White Palette (design lab variants) ---
+export const BLACKHOLE_ORANGE = {
+  core:   [0.05, 0.02, 0.0] as [number, number, number],   // Dark void center
+  corona: [1.0, 0.7, 0.2] as [number, number, number],     // Orange-white corona rim
+  body:   [1.0, 0.5, 0.1] as [number, number, number],     // Hot orange body
+  glow:   [1.0, 0.35, 0.05] as [number, number, number],   // Deep orange outer glow
+  ray:    [1.0, 0.85, 0.5] as [number, number, number],    // Warm white rays
+  disc:   [1.0, 0.6, 0.15] as [number, number, number],    // Orange disc particles
+};
 export const BLACKHOLE_PLAYER_PULL_STRENGTH = 0.4; // px/ms² force on player
 export const BLACKHOLE_LENSING_BASE = 1.5;
 export const BLACKHOLE_LENSING_PER_ABSORB = 0.35;

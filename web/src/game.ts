@@ -133,8 +133,9 @@ import { Mandelbrot } from './entities/enemies/mandelbrot';
 import { MiniMandel } from './entities/enemies/minimandel';
 import { gameSettings } from './settings';
 import { showDesktopSettings, hideDesktopSettings } from './ui/settings-panel';
+import { DesignLab } from './design-lab';
 
-type GameState = 'menu' | 'playing' | 'death_slowmo' | 'gameover';
+type GameState = 'menu' | 'playing' | 'death_slowmo' | 'gameover' | 'design_lab';
 
 interface KillEffect {
   x: number;
@@ -277,6 +278,9 @@ export class Game {
   private gameOverMedals: MedalDef[] = [];
   private medalRevealPlayed = false;
 
+  // Design Lab
+  private designLab: DesignLab | null = null;
+
   // Miniboss encounter state
   private minibossActive = false;
   private minibossDefeated = false;
@@ -358,6 +362,16 @@ export class Game {
       if (e.code === 'KeyF') {
         this.input.autoFire = !this.input.autoFire;
       }
+      // Design Lab: D to enter from menu, D/Escape to exit
+      if (e.code === 'KeyD' && this.state === 'menu') {
+        this.enterDesignLab();
+      } else if ((e.code === 'KeyD' || e.code === 'Escape') && this.state === 'design_lab') {
+        this.exitDesignLab();
+      }
+      // Design Lab: 1-5 to switch spawn type
+      if (this.state === 'design_lab' && e.code.startsWith('Digit')) {
+        this.designLab?.onKeyDown(e.code);
+      }
     });
 
     window.addEventListener('resize', () => this.resize());
@@ -398,6 +412,11 @@ export class Game {
       this.audio.init().catch(() => {});
     } else {
       this.audio.resume().catch(() => {});
+    }
+
+    if (this.state === 'design_lab') {
+      this.designLab?.onClick();
+      return;
     }
 
     if (this.state === 'menu') {
@@ -665,6 +684,11 @@ export class Game {
 
     // Update touch mode on HUD
     this.hud.setTouchMode(this.input.mode === 'touch');
+
+    if (this.state === 'design_lab') {
+      this.designLab!.update(dt);
+      return;
+    }
 
     if (this.state === 'gameover') {
       this.grid.update(dt);
@@ -1775,6 +1799,12 @@ export class Game {
     this.bloom.shakeIntensity = this.camera.shakeNormalized;
     this.bloom.time = this.totalTime;
 
+    // Design Lab: delegate render entirely
+    if (this.state === 'design_lab') {
+      this.designLab!.render();
+      return;
+    }
+
     // --- Render to bloom scene FBO ---
     this.bloom.bindSceneFBO();
 
@@ -1966,6 +1996,33 @@ export class Game {
     // Top-left
     this.renderer.drawLine(-hw, hh, -hw + cornerLen, hh, cr, cg, cb, ca);
     this.renderer.drawLine(-hw, hh, -hw, hh - cornerLen, cr, cg, cb, ca);
+  }
+
+  private enterDesignLab(): void {
+    this.state = 'design_lab';
+    this.gameCanvas.style.cursor = 'crosshair';
+    if (!this.mobile) hideDesktopSettings();
+    if (!this.designLab) {
+      this.designLab = new DesignLab(
+        this.renderer, this.bloom, this.grid, this.trails,
+        this.camera, this.input, this.audio, this.hud, this.starfield,
+      );
+    }
+    this.designLab.enter();
+    // Init audio on first interaction if needed
+    if (!this.audio.initialized) {
+      this.audio.init().catch(() => {});
+    }
+  }
+
+  private exitDesignLab(): void {
+    this.designLab?.exit();
+    this.state = 'menu';
+    this.gameCanvas.style.cursor = 'default';
+    if (!this.mobile) showDesktopSettings();
+    // Rebuild grid for menu idle animation
+    this.grid.rebuild(gameSettings.arenaWidth, gameSettings.arenaHeight, gameSettings.gridSpacing);
+    this.hud.drawMenu();
   }
 
   /** Called when tab is hidden */
