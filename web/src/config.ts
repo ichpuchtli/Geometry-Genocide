@@ -188,7 +188,7 @@ export const DIFFICULTY_PHASES = {
   chaos:     { start: 400, end: Infinity },
 };
 
-export const SPAWN_DELAY_BETWEEN = 10; // ms between each enemy in a cluster
+export const SPAWN_DELAY_BETWEEN = 35; // ms between each enemy in a cluster (~1s for 30 enemies)
 export const SPAWN_DURATION_DEFAULT = 1.5;   // seconds (was 0.3)
 export const SPAWN_DURATION_CHILD = 0.5;     // for Shard, MiniMandel, Circle, Square2
 export const SPAWN_DURATION_AMBUSH = 2.0;    // ambush spawns get extra warning time

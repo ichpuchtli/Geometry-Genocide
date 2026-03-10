@@ -95,7 +95,7 @@ export interface FormationResult {
   meta: FormationMeta;
 }
 
-/** Swarm: 15-30 enemies from a single edge quadrant, tightly packed */
+/** Swarm: 15-30 enemies from a single edge quadrant, shoulder-to-shoulder grid */
 export function generateSwarm(pool: EnemyType[], count: number): FormationResult {
   const fid = nextFormationId++;
   const hw = gameSettings.arenaWidth / 2;
@@ -103,16 +103,28 @@ export function generateSwarm(pool: EnemyType[], count: number): FormationResult
   const type = pickRandom(pool);
   const side = Math.floor(Math.random() * 4);
   const spawns: FormationSpawn[] = [];
+  // Pack in a tight grid — shoulder-to-shoulder spacing
+  const spacing = 58; // ~2 * collision radius (28) + 2px buffer
+  const cols = Math.ceil(Math.sqrt(count * 1.5)); // wider than tall
+  const rows = Math.ceil(count / cols);
+  const gridW = (cols - 1) * spacing;
+  const gridH = (rows - 1) * spacing;
+  // Random offset along the edge for variety
+  const edgeOffset = (Math.random() - 0.5) * 200;
   for (let i = 0; i < count; i++) {
+    const col = i % cols;
+    const row = Math.floor(i / cols);
+    const localX = (col - (cols - 1) / 2) * spacing + edgeOffset;
+    const localY = (row - (rows - 1) / 2) * spacing;
     let x: number, y: number;
-    const spread = 200; // how tightly packed along the edge
-    const center = (Math.random() - 0.5) * spread;
     switch (side) {
-      case 0: x = center; y = hh - 10; break;   // top
-      case 1: x = center; y = -hh + 10; break;  // bottom
-      case 2: x = -hw + 10; y = center; break;  // left
-      default: x = hw - 10; y = center; break;   // right
+      case 0: x = localX; y = hh - 10 - row * spacing; break;          // top — stack inward
+      case 1: x = localX; y = -hh + 10 + row * spacing; break;         // bottom
+      case 2: x = -hw + 10 + row * spacing; y = localX; break;         // left
+      default: x = hw - 10 - row * spacing; y = localX; break;          // right
     }
+    x = Math.max(-hw + 20, Math.min(hw - 20, x));
+    y = Math.max(-hh + 20, Math.min(hh - 20, y));
     spawns.push({ type, position: new Vec2(x, y), delay: i * 40, formationId: fid });
   }
   return { spawns, meta: { formation: 'swarm', formationId: fid, count, side } };
@@ -169,7 +181,7 @@ export function generatePincer(pool: EnemyType[], count: number, playerPos: Vec2
   const half = Math.floor(count / 2);
   for (let i = 0; i < count; i++) {
     const group = i < half ? -1 : 1;
-    const jitter = (Math.random() - 0.5) * 100;
+    const jitter = (Math.random() - 0.5) * 50;
     let x: number, y: number;
     if (useVertical) {
       x = playerPos.x + jitter;
@@ -195,7 +207,7 @@ export function generateAmbush(pool: EnemyType[], count: number, playerPos: Vec2
   const spawns: FormationSpawn[] = [];
   for (let i = 0; i < count; i++) {
     const angle = Math.random() * Math.PI * 2;
-    const dist = randRange(250, 400);
+    const dist = randRange(280, 340);
     const x = Math.max(-hw + 20, Math.min(hw - 20, playerPos.x + Math.cos(angle) * dist));
     const y = Math.max(-hh + 20, Math.min(hh - 20, playerPos.y + Math.sin(angle) * dist));
     spawns.push({ type: pickRandom(pool), position: new Vec2(x, y), delay: i * 50, isAmbush: true, formationId: fid });
@@ -223,8 +235,8 @@ export function generateCascade(pool: EnemyType[], count: number): FormationResu
   const spawns: FormationSpawn[] = [];
   let totalDelay = 0;
   for (let i = 0; i < count; i++) {
-    const jitterX = (Math.random() - 0.5) * 30;
-    const jitterY = (Math.random() - 0.5) * 30;
+    const jitterX = (Math.random() - 0.5) * 15;
+    const jitterY = (Math.random() - 0.5) * 15;
     spawns.push({ type, position: new Vec2(x + jitterX, y + jitterY), delay: totalDelay, formationId: fid });
     totalDelay += Math.max(20, 80 - i * 4); // accelerating: 80ms → 20ms gap
   }
