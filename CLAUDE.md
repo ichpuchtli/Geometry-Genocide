@@ -177,6 +177,7 @@ Full development history: **`docs/DEVELOPMENT_HISTORY.md`**
 - Circle gravity immunity: **Complete** (Circles immune to BlackHole pull + absorption)
 - Enemy separation steering: **Complete** (Grid Wars-style pairwise push, replaces spawn-only separation)
 - Formation group spawn sound: **Complete** (6 procedural "gatling brrrr" variants per formation type, individual SFX suppressed for 6+ enemy formations, first 2 leak through at 15% volume)
+- Clustered formation spawns: **Complete** (all formation types spawn enemies at a single point; separation steering organically spreads them into blobs/lines/rings)
 - Sierpinski fractal breakup: **Complete** (3-tier cascade: 1 boss → 3 medium → 9 small. Config: `SIERPINSKI_TIER_HP/RADIUS/SPEED/SCORE/DEPTH` arrays. Tier 0 is miniboss weight in separation. No more Shard spawns from Sierpinski.)
 - Square explosion optimization: **Complete** (particles 70→40, ghost trails threshold 30→60, ring segments 32→16, Square2 lightweight spawn anim, children spawn same-spot and separate via flocking)
 - Phase 4 (Scores, Polish & Tuning): **Not started** — leaderboard, debug overlay, perf profiling

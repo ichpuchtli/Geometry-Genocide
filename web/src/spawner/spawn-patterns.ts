@@ -63,10 +63,6 @@ export function pickRandom<T>(arr: T[]): T {
   return arr[Math.floor(Math.random() * arr.length)];
 }
 
-function randRange(min: number, max: number): number {
-  return min + Math.random() * (max - min);
-}
-
 // ---- Spawn formation types ----
 
 export type SpawnFormation = 'random_edge' | 'swarm' | 'surround' | 'wall' | 'pincer' | 'ambush' | 'cascade';
@@ -95,121 +91,106 @@ export interface FormationResult {
   meta: FormationMeta;
 }
 
-/** Swarm: 15-30 enemies from a single edge quadrant, shoulder-to-shoulder grid */
+/** Swarm: 15-30 enemies from a single edge point — separation steering spreads them */
 export function generateSwarm(pool: EnemyType[], count: number): FormationResult {
   const fid = nextFormationId++;
   const hw = gameSettings.arenaWidth / 2;
   const hh = gameSettings.arenaHeight / 2;
   const type = pickRandom(pool);
   const side = Math.floor(Math.random() * 4);
+  // Single spawn point on the chosen edge
+  const edgeOffset = (Math.random() - 0.5) * 0.6;
+  let x: number, y: number;
+  switch (side) {
+    case 0: x = edgeOffset * gameSettings.arenaWidth; y = hh - 10; break;
+    case 1: x = edgeOffset * gameSettings.arenaWidth; y = -hh + 10; break;
+    case 2: x = -hw + 10; y = edgeOffset * gameSettings.arenaHeight; break;
+    default: x = hw - 10; y = edgeOffset * gameSettings.arenaHeight; break;
+  }
   const spawns: FormationSpawn[] = [];
-  // Pack in a tight grid — shoulder-to-shoulder spacing
-  const spacing = 58; // ~2 * collision radius (28) + 2px buffer
-  const cols = Math.ceil(Math.sqrt(count * 1.5)); // wider than tall
-  const rows = Math.ceil(count / cols);
-  const gridW = (cols - 1) * spacing;
-  const gridH = (rows - 1) * spacing;
-  // Random offset along the edge for variety
-  const edgeOffset = (Math.random() - 0.5) * 200;
   for (let i = 0; i < count; i++) {
-    const col = i % cols;
-    const row = Math.floor(i / cols);
-    const localX = (col - (cols - 1) / 2) * spacing + edgeOffset;
-    const localY = (row - (rows - 1) / 2) * spacing;
-    let x: number, y: number;
-    switch (side) {
-      case 0: x = localX; y = hh - 10 - row * spacing; break;          // top — stack inward
-      case 1: x = localX; y = -hh + 10 + row * spacing; break;         // bottom
-      case 2: x = -hw + 10 + row * spacing; y = localX; break;         // left
-      default: x = hw - 10 - row * spacing; y = localX; break;          // right
-    }
-    x = Math.max(-hw + 20, Math.min(hw - 20, x));
-    y = Math.max(-hh + 20, Math.min(hh - 20, y));
     spawns.push({ type, position: new Vec2(x, y), delay: i * 40, formationId: fid });
   }
   return { spawns, meta: { formation: 'swarm', formationId: fid, count, side } };
 }
 
-/** Surround: enemies in a ring around the player */
+/** Surround: enemies spawn in a tight cluster around the player — separation blooms into a ring */
 export function generateSurround(pool: EnemyType[], count: number, playerPos: Vec2, radius = 300): FormationResult {
   const fid = nextFormationId++;
   const hw = gameSettings.arenaWidth / 2;
   const hh = gameSettings.arenaHeight / 2;
   const spawns: FormationSpawn[] = [];
+  // Spawn on a tight ring (just outside collision overlap) so separation expands them
+  const tightRadius = 40;
   for (let i = 0; i < count; i++) {
     const angle = (i / count) * Math.PI * 2;
-    const x = Math.max(-hw + 20, Math.min(hw - 20, playerPos.x + Math.cos(angle) * radius));
-    const y = Math.max(-hh + 20, Math.min(hh - 20, playerPos.y + Math.sin(angle) * radius));
+    const x = Math.max(-hw + 20, Math.min(hw - 20, playerPos.x + Math.cos(angle) * tightRadius));
+    const y = Math.max(-hh + 20, Math.min(hh - 20, playerPos.y + Math.sin(angle) * tightRadius));
     spawns.push({ type: pickRandom(pool), position: new Vec2(x, y), delay: i * 20, formationId: fid });
   }
   return { spawns, meta: { formation: 'surround', formationId: fid, count, center: playerPos.clone() } };
 }
 
-/** Wall: line of enemies spanning one full world edge */
+/** Wall: enemies spawn at a single edge point — separation stretches them into a line */
 export function generateWall(pool: EnemyType[], count: number): FormationResult {
   const fid = nextFormationId++;
-  const aw = gameSettings.arenaWidth;
-  const ah = gameSettings.arenaHeight;
-  const hw = aw / 2;
-  const hh = ah / 2;
+  const hw = gameSettings.arenaWidth / 2;
+  const hh = gameSettings.arenaHeight / 2;
   const type = pickRandom(pool);
   const side = Math.floor(Math.random() * 4);
+  const edgeOffset = (Math.random() - 0.5) * 0.4;
+  let x: number, y: number;
+  switch (side) {
+    case 0: x = edgeOffset * gameSettings.arenaWidth; y = hh - 10; break;
+    case 1: x = edgeOffset * gameSettings.arenaWidth; y = -hh + 10; break;
+    case 2: x = -hw + 10; y = edgeOffset * gameSettings.arenaHeight; break;
+    default: x = hw - 10; y = edgeOffset * gameSettings.arenaHeight; break;
+  }
   const spawns: FormationSpawn[] = [];
   for (let i = 0; i < count; i++) {
-    const t = (i / (count - 1)) - 0.5; // -0.5 to 0.5
-    let x: number, y: number;
-    switch (side) {
-      case 0: x = t * aw; y = hh - 10; break;
-      case 1: x = t * aw; y = -hh + 10; break;
-      case 2: x = -hw + 10; y = t * ah; break;
-      default: x = hw - 10; y = t * ah; break;
-    }
     spawns.push({ type, position: new Vec2(x, y), delay: 0, formationId: fid });
   }
   return { spawns, meta: { formation: 'wall', formationId: fid, count, side } };
 }
 
-/** Pincer: two groups from opposite sides */
+/** Pincer: two groups from opposite sides — each group spawns at a single point */
 export function generatePincer(pool: EnemyType[], count: number, playerPos: Vec2): FormationResult {
   const fid = nextFormationId++;
   const hw = gameSettings.arenaWidth / 2;
   const hh = gameSettings.arenaHeight / 2;
   const type = pickRandom(pool);
   const spawns: FormationSpawn[] = [];
-  // Determine which axis player is more centered on, attack from that axis
   const useVertical = Math.abs(playerPos.x) < Math.abs(playerPos.y);
   const half = Math.floor(count / 2);
+  // Two spawn points on opposite sides, aligned with player
+  const px = Math.max(-hw + 20, Math.min(hw - 20, playerPos.x));
+  const py = Math.max(-hh + 20, Math.min(hh - 20, playerPos.y));
   for (let i = 0; i < count; i++) {
     const group = i < half ? -1 : 1;
-    const jitter = (Math.random() - 0.5) * 50;
     let x: number, y: number;
     if (useVertical) {
-      x = playerPos.x + jitter;
-      y = group * (hh - 10);
+      x = px; y = group * (hh - 10);
     } else {
-      x = group * (hw - 10);
-      y = playerPos.y + jitter;
+      x = group * (hw - 10); y = py;
     }
-    x = Math.max(-hw + 20, Math.min(hw - 20, x));
-    y = Math.max(-hh + 20, Math.min(hh - 20, y));
     spawns.push({ type, position: new Vec2(x, y), delay: i * 30, formationId: fid });
   }
-  // Pincer uses two opposite sides
-  const side = useVertical ? 0 : 2; // report primary side
+  const side = useVertical ? 0 : 2;
   return { spawns, meta: { formation: 'pincer', formationId: fid, count, side } };
 }
 
-/** Ambush: enemies spawn 300-500px from player (NOT at edges) */
+/** Ambush: enemies spawn at a single point ~300px from player — separation blooms them out */
 export function generateAmbush(pool: EnemyType[], count: number, playerPos: Vec2): FormationResult {
   const fid = nextFormationId++;
   const hw = gameSettings.arenaWidth / 2;
   const hh = gameSettings.arenaHeight / 2;
+  // Single spawn point in a random direction from player
+  const angle = Math.random() * Math.PI * 2;
+  const dist = 310;
+  const x = Math.max(-hw + 20, Math.min(hw - 20, playerPos.x + Math.cos(angle) * dist));
+  const y = Math.max(-hh + 20, Math.min(hh - 20, playerPos.y + Math.sin(angle) * dist));
   const spawns: FormationSpawn[] = [];
   for (let i = 0; i < count; i++) {
-    const angle = Math.random() * Math.PI * 2;
-    const dist = randRange(280, 340);
-    const x = Math.max(-hw + 20, Math.min(hw - 20, playerPos.x + Math.cos(angle) * dist));
-    const y = Math.max(-hh + 20, Math.min(hh - 20, playerPos.y + Math.sin(angle) * dist));
     spawns.push({ type: pickRandom(pool), position: new Vec2(x, y), delay: i * 50, isAmbush: true, formationId: fid });
   }
   return { spawns, meta: { formation: 'ambush', formationId: fid, count, center: playerPos.clone() } };
@@ -218,27 +199,23 @@ export function generateAmbush(pool: EnemyType[], count: number, playerPos: Vec2
 /** Cascade: rapid-fire from a single edge point with accelerating rate */
 export function generateCascade(pool: EnemyType[], count: number): FormationResult {
   const fid = nextFormationId++;
-  const aw = gameSettings.arenaWidth;
-  const ah = gameSettings.arenaHeight;
-  const hw = aw / 2;
-  const hh = ah / 2;
+  const hw = gameSettings.arenaWidth / 2;
+  const hh = gameSettings.arenaHeight / 2;
   const type = pickRandom(pool);
   const side = Math.floor(Math.random() * 4);
-  const edgePos = (Math.random() - 0.5) * 0.6; // position along edge (-0.3 to 0.3)
+  const edgePos = (Math.random() - 0.5) * 0.6;
   let x: number, y: number;
   switch (side) {
-    case 0: x = edgePos * aw; y = hh - 10; break;
-    case 1: x = edgePos * aw; y = -hh + 10; break;
-    case 2: x = -hw + 10; y = edgePos * ah; break;
-    default: x = hw - 10; y = edgePos * ah; break;
+    case 0: x = edgePos * gameSettings.arenaWidth; y = hh - 10; break;
+    case 1: x = edgePos * gameSettings.arenaWidth; y = -hh + 10; break;
+    case 2: x = -hw + 10; y = edgePos * gameSettings.arenaHeight; break;
+    default: x = hw - 10; y = edgePos * gameSettings.arenaHeight; break;
   }
   const spawns: FormationSpawn[] = [];
   let totalDelay = 0;
   for (let i = 0; i < count; i++) {
-    const jitterX = (Math.random() - 0.5) * 15;
-    const jitterY = (Math.random() - 0.5) * 15;
-    spawns.push({ type, position: new Vec2(x + jitterX, y + jitterY), delay: totalDelay, formationId: fid });
-    totalDelay += Math.max(20, 80 - i * 4); // accelerating: 80ms → 20ms gap
+    spawns.push({ type, position: new Vec2(x, y), delay: totalDelay, formationId: fid });
+    totalDelay += Math.max(20, 80 - i * 4);
   }
   return { spawns, meta: { formation: 'cascade', formationId: fid, count, side } };
 }
