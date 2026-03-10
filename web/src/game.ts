@@ -88,6 +88,9 @@ import {
   SIERPINSKI_BOSS_SPAWN_SUPPRESS_MULT,
   MEDALS,
   MedalDef,
+  FORMATION_SOUND_MIN_COUNT,
+  FORMATION_LEAKTHROUGH_COUNT,
+  FORMATION_LEAKTHROUGH_VOLUME,
 } from './config';
 import { FormationMeta } from './spawner/spawn-patterns';
 
@@ -265,6 +268,9 @@ export class Game {
 
   // Combat feedback: spawn telegraphs
   private telegraphs: Telegraph[] = [];
+
+  // Formation group spawn sound: tracks how many enemies have spawned per formation
+  private formationSpawnCounts = new Map<number, number>();
 
   // Heat system (0-1, presentation-first run intensity)
   private heat = 0;
@@ -465,6 +471,7 @@ export class Game {
     this.phaseBannerName = '';
     this.phaseBorderPulseTimer = 0;
     this.telegraphs = [];
+    this.formationSpawnCounts.clear();
     this.heat = 0;
     this.timeSinceLastKill = 0;
     this.recoveryTimer = 0;
@@ -832,15 +839,27 @@ export class Game {
       this.enemies.push(enemy);
       // Grid ripple on spawn
       this.grid.applyImpulse(enemy.position.x, enemy.position.y, 80, 120);
-      // Play spawn SFX for specific enemy types
-      this.playEnemySpawnSFX(req.type);
+      // Play spawn SFX — suppress individual sounds for large formations
+      if (req.formationId != null) {
+        const cnt = (this.formationSpawnCounts.get(req.formationId) ?? 0) + 1;
+        this.formationSpawnCounts.set(req.formationId, cnt);
+        if (cnt <= FORMATION_LEAKTHROUGH_COUNT) {
+          this.playSFXAtVolume(req.type, FORMATION_LEAKTHROUGH_VOLUME);
+        }
+        // rest suppressed — group sound plays from telegraph
+      } else {
+        this.playEnemySpawnSFX(req.type);
+      }
       if (elite) this.audio.playEliteArrive();
       this.haptics.medium();
     }
 
-    // Create telegraphs from formation events
+    // Create telegraphs from formation events + play group spawn sounds
     for (const fm of this.waveManager.formationEvents) {
       this.createTelegraph(fm);
+      if (fm.count >= FORMATION_SOUND_MIN_COUNT) {
+        this.audio.playFormationSpawn(fm.formation, fm.count);
+      }
     }
 
     // Collision
@@ -1795,6 +1814,17 @@ export class Game {
       case 'pinwheel': this.audio.playSFX('pinwheel'); break;
       case 'blackhole': this.audio.playSFX('deathstar'); break;
       case 'sierpinski': this.audio.playSFX('octagon'); break;
+    }
+  }
+
+  /** Play spawn SFX at reduced volume (for formation leakthrough) */
+  private playSFXAtVolume(type: string, volume: number): void {
+    switch (type) {
+      case 'rhombus': this.audio.playSFXAtVolume('rhombus', volume); break;
+      case 'square': this.audio.playSFXAtVolume('square', volume); break;
+      case 'pinwheel': this.audio.playSFXAtVolume('pinwheel', volume); break;
+      case 'blackhole': this.audio.playSFXAtVolume('deathstar', volume); break;
+      case 'sierpinski': this.audio.playSFXAtVolume('octagon', volume); break;
     }
   }
 

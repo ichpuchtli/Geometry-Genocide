@@ -347,6 +347,11 @@ export const MINIBOSS_DEFEATED_BANNER_DURATION = 3000; // ms
 export const MINIBOSS_SPAWN_SUPPRESS_MULT = 4.0; // spawn rate multiplier during fight (higher = slower)
 export const MINIBOSS_HEAT_ON_DEATH = 1.0;    // heat set to max on kill
 
+// --- Formation Group Spawn Sound ---
+export const FORMATION_SOUND_MIN_COUNT = 6;
+export const FORMATION_LEAKTHROUGH_COUNT = 2;
+export const FORMATION_LEAKTHROUGH_VOLUME = 0.15;
+
 // --- Audio ---
 export const SFX_NAMES = [
   'start', 'die', 'die1', 'crash', 'square', 'rhombus',

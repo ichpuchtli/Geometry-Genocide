@@ -130,6 +130,295 @@ export class AudioManager {
     source.start(0);
   }
 
+  /** Play SFX at a reduced volume (for formation leakthrough) */
+  playSFXAtVolume(name: SFXName, volume: number): void {
+    if (!this._initialized || !this.ctx || !this.sfxGain) return;
+    const buf = this.buffers.get(name);
+    if (!buf) return;
+
+    const source = this.ctx.createBufferSource();
+    source.buffer = buf;
+    const gain = this.ctx.createGain();
+    gain.gain.value = volume;
+    source.connect(gain);
+    gain.connect(this.sfxGain);
+    source.start(0);
+  }
+
+  /** Play a procedural group spawn sound for a formation */
+  playFormationSpawn(formation: string, count: number): void {
+    if (!this._initialized || !this.ctx || !this.sfxGain) return;
+    switch (formation) {
+      case 'swarm': this.playFormationSwarm(count); break;
+      case 'surround': this.playFormationSurround(count); break;
+      case 'wall': this.playFormationWall(count); break;
+      case 'pincer': this.playFormationPincer(count); break;
+      case 'ambush': this.playFormationAmbush(count); break;
+      case 'cascade': this.playFormationCascade(count); break;
+    }
+  }
+
+  /** Swarm: Steady machine gun rattle, pitch rises */
+  private playFormationSwarm(count: number): void {
+    const ctx = this.ctx!;
+    const now = ctx.currentTime;
+    const duration = Math.min(2.0, count * 0.04);
+    // White noise source
+    const noiseBuf = ctx.createBuffer(1, ctx.sampleRate * duration | 0, ctx.sampleRate);
+    const data = noiseBuf.getChannelData(0);
+    for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
+    const noise = ctx.createBufferSource();
+    noise.buffer = noiseBuf;
+    // Bandpass filter: 600Hz → 900Hz
+    const bp = ctx.createBiquadFilter();
+    bp.type = 'bandpass';
+    bp.frequency.setValueAtTime(600, now);
+    bp.frequency.linearRampToValueAtTime(900, now + duration);
+    bp.Q.value = 2;
+    // Square-wave LFO for amplitude modulation (25Hz = machine gun rattle)
+    const lfo = ctx.createOscillator();
+    lfo.type = 'square';
+    lfo.frequency.value = 25;
+    const lfoGain = ctx.createGain();
+    lfoGain.gain.value = 0.5;
+    const lfoOffset = ctx.createGain();
+    lfoOffset.gain.value = 0.5;
+    // AM: use lfo to modulate a gain node
+    const amGain = ctx.createGain();
+    amGain.gain.value = 0.5;
+    lfo.connect(lfoGain);
+    lfoGain.connect(amGain.gain);
+    // Envelope
+    const env = ctx.createGain();
+    env.gain.setValueAtTime(0.0, now);
+    env.gain.linearRampToValueAtTime(0.25, now + 0.03);
+    env.gain.setValueAtTime(0.25, now + duration * 0.8);
+    env.gain.exponentialRampToValueAtTime(0.001, now + duration);
+    noise.connect(bp);
+    bp.connect(amGain);
+    amGain.connect(env);
+    env.connect(this.sfxGain!);
+    lfo.start(now);
+    lfo.stop(now + duration);
+    noise.start(now);
+  }
+
+  /** Surround: Sweeping whirr */
+  private playFormationSurround(count: number): void {
+    const ctx = this.ctx!;
+    const now = ctx.currentTime;
+    const duration = Math.min(1.0, count * 0.02);
+    const noiseBuf = ctx.createBuffer(1, ctx.sampleRate * duration | 0, ctx.sampleRate);
+    const data = noiseBuf.getChannelData(0);
+    for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
+    const noise = ctx.createBufferSource();
+    noise.buffer = noiseBuf;
+    // Bandpass sweep: 800 → 1000 → 600
+    const bp = ctx.createBiquadFilter();
+    bp.type = 'bandpass';
+    bp.frequency.setValueAtTime(800, now);
+    bp.frequency.linearRampToValueAtTime(1000, now + duration * 0.4);
+    bp.frequency.linearRampToValueAtTime(600, now + duration);
+    bp.Q.value = 3;
+    // LFO: 20 → 28Hz
+    const lfo = ctx.createOscillator();
+    lfo.type = 'square';
+    lfo.frequency.setValueAtTime(20, now);
+    lfo.frequency.linearRampToValueAtTime(28, now + duration);
+    const lfoGain = ctx.createGain();
+    lfoGain.gain.value = 0.5;
+    const amGain = ctx.createGain();
+    amGain.gain.value = 0.5;
+    lfo.connect(lfoGain);
+    lfoGain.connect(amGain.gain);
+    const env = ctx.createGain();
+    env.gain.setValueAtTime(0.0, now);
+    env.gain.linearRampToValueAtTime(0.22, now + 0.02);
+    env.gain.setValueAtTime(0.22, now + duration * 0.7);
+    env.gain.exponentialRampToValueAtTime(0.001, now + duration);
+    noise.connect(bp);
+    bp.connect(amGain);
+    amGain.connect(env);
+    env.connect(this.sfxGain!);
+    lfo.start(now);
+    lfo.stop(now + duration);
+    noise.start(now);
+  }
+
+  /** Wall: Heavy stamps + sub-bass layer */
+  private playFormationWall(_count: number): void {
+    const ctx = this.ctx!;
+    const now = ctx.currentTime;
+    const duration = 0.4;
+    // Noise layer
+    const noiseBuf = ctx.createBuffer(1, ctx.sampleRate * duration | 0, ctx.sampleRate);
+    const data = noiseBuf.getChannelData(0);
+    for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
+    const noise = ctx.createBufferSource();
+    noise.buffer = noiseBuf;
+    const bp = ctx.createBiquadFilter();
+    bp.type = 'bandpass';
+    bp.frequency.value = 300;
+    bp.Q.value = 1.5;
+    const lfo = ctx.createOscillator();
+    lfo.type = 'square';
+    lfo.frequency.value = 15;
+    const lfoGain = ctx.createGain();
+    lfoGain.gain.value = 0.5;
+    const amGain = ctx.createGain();
+    amGain.gain.value = 0.5;
+    lfo.connect(lfoGain);
+    lfoGain.connect(amGain.gain);
+    const env = ctx.createGain();
+    env.gain.setValueAtTime(0.0, now);
+    env.gain.linearRampToValueAtTime(0.3, now + 0.02);
+    env.gain.setValueAtTime(0.3, now + duration * 0.6);
+    env.gain.exponentialRampToValueAtTime(0.001, now + duration);
+    noise.connect(bp);
+    bp.connect(amGain);
+    amGain.connect(env);
+    env.connect(this.sfxGain!);
+    lfo.start(now);
+    lfo.stop(now + duration);
+    noise.start(now);
+    // Sub-bass layer
+    const sub = ctx.createOscillator();
+    sub.type = 'sine';
+    sub.frequency.setValueAtTime(60, now);
+    sub.frequency.exponentialRampToValueAtTime(30, now + duration);
+    const sg = ctx.createGain();
+    sg.gain.setValueAtTime(0.35, now);
+    sg.gain.exponentialRampToValueAtTime(0.001, now + duration);
+    sub.connect(sg);
+    sg.connect(this.sfxGain!);
+    sub.start(now);
+    sub.stop(now + duration + 0.05);
+  }
+
+  /** Pincer: Double tap — two bursts with gap */
+  private playFormationPincer(count: number): void {
+    const ctx = this.ctx!;
+    const now = ctx.currentTime;
+    const burstLen = Math.min(0.3, count * 0.015);
+    const gap = 0.12;
+    // Two bursts at different BP centers
+    const centers = [500, 700];
+    for (let b = 0; b < 2; b++) {
+      const t = now + b * (burstLen + gap);
+      const noiseBuf = ctx.createBuffer(1, ctx.sampleRate * burstLen | 0, ctx.sampleRate);
+      const data = noiseBuf.getChannelData(0);
+      for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
+      const noise = ctx.createBufferSource();
+      noise.buffer = noiseBuf;
+      const bp = ctx.createBiquadFilter();
+      bp.type = 'bandpass';
+      bp.frequency.value = centers[b];
+      bp.Q.value = 2;
+      const lfo = ctx.createOscillator();
+      lfo.type = 'square';
+      lfo.frequency.value = 30;
+      const lfoGain = ctx.createGain();
+      lfoGain.gain.value = 0.5;
+      const amGain = ctx.createGain();
+      amGain.gain.value = 0.5;
+      lfo.connect(lfoGain);
+      lfoGain.connect(amGain.gain);
+      const env = ctx.createGain();
+      env.gain.setValueAtTime(0.0, t);
+      env.gain.linearRampToValueAtTime(0.25, t + 0.015);
+      env.gain.setValueAtTime(0.25, t + burstLen * 0.7);
+      env.gain.exponentialRampToValueAtTime(0.001, t + burstLen);
+      noise.connect(bp);
+      bp.connect(amGain);
+      amGain.connect(env);
+      env.connect(this.sfxGain!);
+      lfo.start(t);
+      lfo.stop(t + burstLen);
+      noise.start(t);
+    }
+  }
+
+  /** Ambush: Sharp crackle, decaying */
+  private playFormationAmbush(count: number): void {
+    const ctx = this.ctx!;
+    const now = ctx.currentTime;
+    const duration = Math.min(1.0, count * 0.05);
+    const noiseBuf = ctx.createBuffer(1, ctx.sampleRate * duration | 0, ctx.sampleRate);
+    const data = noiseBuf.getChannelData(0);
+    for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
+    const noise = ctx.createBufferSource();
+    noise.buffer = noiseBuf;
+    // BP: 1200 → 600 (descending crackle)
+    const bp = ctx.createBiquadFilter();
+    bp.type = 'bandpass';
+    bp.frequency.setValueAtTime(1200, now);
+    bp.frequency.exponentialRampToValueAtTime(600, now + duration);
+    bp.Q.value = 4;
+    // LFO: 35 → 20Hz (decelerating)
+    const lfo = ctx.createOscillator();
+    lfo.type = 'square';
+    lfo.frequency.setValueAtTime(35, now);
+    lfo.frequency.linearRampToValueAtTime(20, now + duration);
+    const lfoGain = ctx.createGain();
+    lfoGain.gain.value = 0.5;
+    const amGain = ctx.createGain();
+    amGain.gain.value = 0.5;
+    lfo.connect(lfoGain);
+    lfoGain.connect(amGain.gain);
+    const env = ctx.createGain();
+    env.gain.setValueAtTime(0.0, now);
+    env.gain.linearRampToValueAtTime(0.28, now + 0.01);
+    env.gain.exponentialRampToValueAtTime(0.001, now + duration);
+    noise.connect(bp);
+    bp.connect(amGain);
+    amGain.connect(env);
+    env.connect(this.sfxGain!);
+    lfo.start(now);
+    lfo.stop(now + duration);
+    noise.start(now);
+  }
+
+  /** Cascade: Accelerating stutter */
+  private playFormationCascade(count: number): void {
+    const ctx = this.ctx!;
+    const now = ctx.currentTime;
+    const duration = Math.min(2.5, count * 0.05);
+    const noiseBuf = ctx.createBuffer(1, ctx.sampleRate * duration | 0, ctx.sampleRate);
+    const data = noiseBuf.getChannelData(0);
+    for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
+    const noise = ctx.createBufferSource();
+    noise.buffer = noiseBuf;
+    // BP: 500 → 1200 (ascending)
+    const bp = ctx.createBiquadFilter();
+    bp.type = 'bandpass';
+    bp.frequency.setValueAtTime(500, now);
+    bp.frequency.exponentialRampToValueAtTime(1200, now + duration);
+    bp.Q.value = 2.5;
+    // LFO: 15 → 40Hz (accelerating)
+    const lfo = ctx.createOscillator();
+    lfo.type = 'square';
+    lfo.frequency.setValueAtTime(15, now);
+    lfo.frequency.exponentialRampToValueAtTime(40, now + duration);
+    const lfoGain = ctx.createGain();
+    lfoGain.gain.value = 0.5;
+    const amGain = ctx.createGain();
+    amGain.gain.value = 0.5;
+    lfo.connect(lfoGain);
+    lfoGain.connect(amGain.gain);
+    const env = ctx.createGain();
+    env.gain.setValueAtTime(0.0, now);
+    env.gain.linearRampToValueAtTime(0.2, now + 0.03);
+    env.gain.linearRampToValueAtTime(0.25, now + duration * 0.7);
+    env.gain.exponentialRampToValueAtTime(0.001, now + duration);
+    noise.connect(bp);
+    bp.connect(amGain);
+    amGain.connect(env);
+    env.connect(this.sfxGain!);
+    lfo.start(now);
+    lfo.stop(now + duration);
+    noise.start(now);
+  }
+
   toggleMute(): boolean {
     this._muted = !this._muted;
     if (this.masterGain) {
@@ -481,6 +770,137 @@ export class AudioManager {
       tail.start(now + 0.02 * i);
       tail.stop(now + 2.0);
     }
+  }
+
+  /** Gravitational collapse — building low rumble + rising tension (~500ms) */
+  playGravityCollapse(): void {
+    if (!this._initialized || !this.ctx || !this.sfxGain) return;
+    const ctx = this.ctx;
+    const now = ctx.currentTime;
+
+    // Deep sub-rumble: sawtooth 30Hz, lowpass filtered, building volume
+    const rumble = ctx.createOscillator();
+    rumble.type = 'sawtooth';
+    rumble.frequency.setValueAtTime(30, now);
+    rumble.frequency.linearRampToValueAtTime(70, now + 0.5);
+    const rumbleLP = ctx.createBiquadFilter();
+    rumbleLP.type = 'lowpass';
+    rumbleLP.frequency.setValueAtTime(60, now);
+    rumbleLP.frequency.linearRampToValueAtTime(200, now + 0.45);
+    const rg = ctx.createGain();
+    rg.gain.setValueAtTime(0.05, now);
+    rg.gain.linearRampToValueAtTime(0.5, now + 0.4);
+    rg.gain.exponentialRampToValueAtTime(0.001, now + 0.55);
+    rumble.connect(rumbleLP);
+    rumbleLP.connect(rg);
+    rg.connect(this.sfxGain);
+    rumble.start(now);
+    rumble.stop(now + 0.6);
+
+    // Rising tension sine: 150Hz → 800Hz, quiet, creates unease
+    const tension = ctx.createOscillator();
+    tension.type = 'sine';
+    tension.frequency.setValueAtTime(150, now);
+    tension.frequency.exponentialRampToValueAtTime(800, now + 0.45);
+    const tg = ctx.createGain();
+    tg.gain.setValueAtTime(0.02, now);
+    tg.gain.linearRampToValueAtTime(0.2, now + 0.35);
+    tg.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
+    tension.connect(tg);
+    tg.connect(this.sfxGain);
+    tension.start(now);
+    tension.stop(now + 0.55);
+
+    // Sucking noise: bandpass noise sweeping down (sounds like air rushing inward)
+    const noiseLen = 0.5;
+    const noiseBuf = ctx.createBuffer(1, ctx.sampleRate * noiseLen | 0, ctx.sampleRate);
+    const nd = noiseBuf.getChannelData(0);
+    for (let i = 0; i < nd.length; i++) nd[i] = Math.random() * 2 - 1;
+    const noise = ctx.createBufferSource();
+    noise.buffer = noiseBuf;
+    const nBP = ctx.createBiquadFilter();
+    nBP.type = 'bandpass';
+    nBP.frequency.setValueAtTime(2000, now);
+    nBP.frequency.exponentialRampToValueAtTime(100, now + 0.45);
+    nBP.Q.value = 3;
+    const ng = ctx.createGain();
+    ng.gain.setValueAtTime(0.05, now);
+    ng.gain.linearRampToValueAtTime(0.25, now + 0.3);
+    ng.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
+    noise.connect(nBP);
+    nBP.connect(ng);
+    ng.connect(this.sfxGain);
+    noise.start(now);
+  }
+
+  /** Massive gravitational rebound — sub-bass impact + bright scatter (~1.5s) */
+  playGravityRebound(): void {
+    if (!this._initialized || !this.ctx || !this.sfxGain) return;
+    const ctx = this.ctx;
+    const now = ctx.currentTime;
+
+    // 1. Sub-bass impact: hard-hitting sine 120Hz → 20Hz
+    const impact = ctx.createOscillator();
+    impact.type = 'sine';
+    impact.frequency.setValueAtTime(120, now);
+    impact.frequency.exponentialRampToValueAtTime(20, now + 0.6);
+    const ig = ctx.createGain();
+    ig.gain.setValueAtTime(0.8, now);
+    ig.gain.exponentialRampToValueAtTime(0.001, now + 1.0);
+    impact.connect(ig);
+    ig.connect(this.sfxGain);
+    impact.start(now);
+    impact.stop(now + 1.2);
+
+    // 2. Noise crunch: white noise burst through sweeping bandpass
+    const noiseLen = 0.8;
+    const noiseBuf = ctx.createBuffer(1, ctx.sampleRate * noiseLen | 0, ctx.sampleRate);
+    const nd = noiseBuf.getChannelData(0);
+    for (let i = 0; i < nd.length; i++) nd[i] = Math.random() * 2 - 1;
+    const noise = ctx.createBufferSource();
+    noise.buffer = noiseBuf;
+    const nBP = ctx.createBiquadFilter();
+    nBP.type = 'bandpass';
+    nBP.frequency.setValueAtTime(800, now);
+    nBP.frequency.exponentialRampToValueAtTime(100, now + noiseLen);
+    nBP.Q.value = 1.5;
+    const ng = ctx.createGain();
+    ng.gain.setValueAtTime(0.5, now);
+    ng.gain.exponentialRampToValueAtTime(0.001, now + noiseLen);
+    noise.connect(nBP);
+    nBP.connect(ng);
+    ng.connect(this.sfxGain);
+    noise.start(now);
+
+    // 3. Bright scatter: descending triangle tones (debris flying outward)
+    const scatterFreqs = [2400, 1800, 1200];
+    for (let i = 0; i < 3; i++) {
+      const osc = ctx.createOscillator();
+      osc.type = 'triangle';
+      const t = now + i * 0.03;
+      osc.frequency.setValueAtTime(scatterFreqs[i], t);
+      osc.frequency.exponentialRampToValueAtTime(200 + i * 50, t + 0.5);
+      const sg = ctx.createGain();
+      sg.gain.setValueAtTime(0.12, t);
+      sg.gain.exponentialRampToValueAtTime(0.001, t + 0.6);
+      osc.connect(sg);
+      sg.connect(this.sfxGain);
+      osc.start(t);
+      osc.stop(t + 0.7);
+    }
+
+    // 4. Reverb tail: low rumble decay
+    const tail = ctx.createOscillator();
+    tail.type = 'sine';
+    tail.frequency.setValueAtTime(60, now + 0.3);
+    tail.frequency.exponentialRampToValueAtTime(25, now + 1.5);
+    const tg = ctx.createGain();
+    tg.gain.setValueAtTime(0.2, now + 0.3);
+    tg.gain.exponentialRampToValueAtTime(0.001, now + 1.5);
+    tail.connect(tg);
+    tg.connect(this.sfxGain);
+    tail.start(now + 0.3);
+    tail.stop(now + 1.6);
   }
 
   /** Low rumbling warning for incoming miniboss */

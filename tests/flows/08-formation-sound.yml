@@ -1,0 +1,79 @@
+name: "Formation Group Spawn Sound"
+tags: [audio, formation]
+steps:
+  - action: launch
+    url: "/"
+    waitFor: "canvas#game"
+
+  - action: wait
+    ms: 300
+
+  # Start game
+  - action: click
+    selector: "canvas#game"
+    x: 0.5
+    y: 0.5
+
+  - action: wait
+    ms: 200
+
+  # Hold fire and move around — play for 20s to reach formations
+  - action: mouseMove
+    x: 900
+    y: 360
+
+  - action: mouseDown
+
+  - action: keys
+    keys: ["w", "d"]
+    duration: 3000
+
+  - action: keys
+    keys: ["s", "a"]
+    duration: 3000
+
+  - action: screenshot
+    name: "08-formation-6s"
+
+  - action: mouseMove
+    x: 400
+    y: 200
+
+  - action: keys
+    keys: ["w", "a"]
+    duration: 3000
+
+  - action: keys
+    keys: ["d", "s"]
+    duration: 3000
+
+  - action: screenshot
+    name: "08-formation-12s"
+
+  - action: mouseMove
+    x: 700
+    y: 400
+
+  - action: keys
+    keys: ["w"]
+    duration: 3000
+
+  - action: keys
+    keys: ["s", "d"]
+    duration: 3000
+
+  - action: mouseUp
+
+  - action: screenshot
+    name: "08-formation-18s"
+
+  # Verify game is still running (state is 'playing' or 'death_slowmo')
+  - action: evalCheck
+    description: "Game state is valid after formations"
+    script: |
+      const g = window.__game;
+      if (!g) return true;
+      return g.state === 'playing' || g.state === 'death_slowmo' || g.state === 'gameover';
+
+  - action: assertNoErrors
+    description: "No errors during formation gameplay"

@@ -25,6 +25,7 @@ export type SpawnRequest = {
   delay?: number;      // ms delay before actually spawning
   isAmbush?: boolean;  // longer spawn animation
   isElite?: boolean;   // elite variant with boosted stats
+  formationId?: number; // links spawn to its formation group sound
 };
 
 interface SpawnEvent {
@@ -222,6 +223,7 @@ export class WaveManager {
       position: f.position,
       delay: f.delay,
       isAmbush: f.isAmbush,
+      formationId: f.formationId,
     }));
   }
 
@@ -248,7 +250,7 @@ export class WaveManager {
       const result = generateSwarm(TUTORIAL_POOL, 8);
       this.formationEvents.push(result.meta);
       for (const s of result.spawns) {
-        this.spawnQueue.push({ type: s.type, position: s.position, delay: s.delay });
+        this.spawnQueue.push({ type: s.type, position: s.position, delay: s.delay, formationId: s.formationId });
       }
     }
 
@@ -287,8 +289,8 @@ export class WaveManager {
     if (eliteChance > 0) {
       for (const req of this.spawnQueue) {
         if (!req.isElite && Math.random() < eliteChance) {
-          // Only elite-ize pool enemies, not child types
-          if (req.type !== 'circle' && req.type !== 'shard') {
+          // Only elite-ize pool enemies, not child/boss types
+          if (req.type !== 'circle' && req.type !== 'shard' && req.type !== 'sierpinski' && req.type !== 'mandelbrot') {
             req.isElite = true;
           }
         }

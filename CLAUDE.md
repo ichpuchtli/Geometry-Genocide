@@ -176,6 +176,7 @@ Full development history: **`docs/DEVELOPMENT_HISTORY.md`**
 - BlackHole Design Lab: **Complete** (4 new visual variants: Radiant Collapse, Swirl, Unstable Mass, Event Horizon)
 - Circle gravity immunity: **Complete** (Circles immune to BlackHole pull + absorption)
 - Enemy separation steering: **Complete** (Grid Wars-style pairwise push, replaces spawn-only separation)
+- Formation group spawn sound: **Complete** (6 procedural "gatling brrrr" variants per formation type, individual SFX suppressed for 6+ enemy formations, first 2 leak through at 15% volume)
 - Phase 4 (Scores, Polish & Tuning): **Not started** — leaderboard, debug overlay, perf profiling
 
 ---

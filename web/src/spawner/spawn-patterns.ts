@@ -7,11 +7,11 @@ export type EnemyType =
   | 'pinwheel'
   | 'square'
   | 'blackhole'
-  | 'sierpinski'
   // --- Child types (spawned by parents, not in pools) ---
   | 'circle'   // spawned only by BlackHole overload explosion
-  | 'shard'
+  | 'shard'    // spawned by Sierpinski on death
   // --- Boss types (spawned by encounter system, not in pools) ---
+  | 'sierpinski'  // one-off boss at ~120s
   | 'mandelbrot'
   | 'minimandel'
   ;
@@ -36,7 +36,6 @@ export const MIDGAME_POOL: EnemyType[] = [
   'rhombus', 'rhombus', 'rhombus', 'rhombus',
   'pinwheel', 'pinwheel', 'pinwheel',
   'square', 'square', 'square',
-  'sierpinski',
   'blackhole',
 ];
 
@@ -44,7 +43,6 @@ export const INTENSE_POOL: EnemyType[] = [
   'rhombus', 'rhombus', 'rhombus', 'rhombus',
   'pinwheel', 'pinwheel', 'pinwheel',
   'square', 'square', 'square',
-  'sierpinski', 'sierpinski',
   'blackhole', 'blackhole',
 ];
 
@@ -52,7 +50,6 @@ export const CHAOS_POOL: EnemyType[] = [
   'rhombus', 'rhombus', 'rhombus',
   'pinwheel', 'pinwheel',
   'square', 'square', 'square',
-  'sierpinski', 'sierpinski',
   'blackhole', 'blackhole',
 ];
 
@@ -79,14 +76,19 @@ export interface FormationSpawn {
   position: Vec2;
   delay: number;       // ms delay before spawn (for cascade/stagger)
   isAmbush?: boolean;  // if true, use longer spawn animation
+  formationId?: number; // links spawn to its formation group
 }
 
 /** Formation-level metadata returned alongside spawns */
 export interface FormationMeta {
   formation: SpawnFormation;
+  formationId: number;  // unique ID for linking spawns to their group sound
+  count: number;        // number of enemies in this formation
   side?: number;    // 0=top, 1=bottom, 2=left, 3=right (for edge formations)
   center?: Vec2;    // center of formation (for surround/ambush)
 }
+
+let nextFormationId = 0;
 
 export interface FormationResult {
   spawns: FormationSpawn[];
@@ -95,6 +97,7 @@ export interface FormationResult {
 
 /** Swarm: 15-30 enemies from a single edge quadrant, tightly packed */
 export function generateSwarm(pool: EnemyType[], count: number): FormationResult {
+  const fid = nextFormationId++;
   const hw = gameSettings.arenaWidth / 2;
   const hh = gameSettings.arenaHeight / 2;
   const type = pickRandom(pool);
@@ -110,13 +113,14 @@ export function generateSwarm(pool: EnemyType[], count: number): FormationResult
       case 2: x = -hw + 10; y = center; break;  // left
       default: x = hw - 10; y = center; break;   // right
     }
-    spawns.push({ type, position: new Vec2(x, y), delay: i * 40 });
+    spawns.push({ type, position: new Vec2(x, y), delay: i * 40, formationId: fid });
   }
-  return { spawns, meta: { formation: 'swarm', side } };
+  return { spawns, meta: { formation: 'swarm', formationId: fid, count, side } };
 }
 
 /** Surround: enemies in a ring around the player */
 export function generateSurround(pool: EnemyType[], count: number, playerPos: Vec2, radius = 300): FormationResult {
+  const fid = nextFormationId++;
   const hw = gameSettings.arenaWidth / 2;
   const hh = gameSettings.arenaHeight / 2;
   const spawns: FormationSpawn[] = [];
@@ -124,13 +128,14 @@ export function generateSurround(pool: EnemyType[], count: number, playerPos: Ve
     const angle = (i / count) * Math.PI * 2;
     const x = Math.max(-hw + 20, Math.min(hw - 20, playerPos.x + Math.cos(angle) * radius));
     const y = Math.max(-hh + 20, Math.min(hh - 20, playerPos.y + Math.sin(angle) * radius));
-    spawns.push({ type: pickRandom(pool), position: new Vec2(x, y), delay: i * 20 });
+    spawns.push({ type: pickRandom(pool), position: new Vec2(x, y), delay: i * 20, formationId: fid });
   }
-  return { spawns, meta: { formation: 'surround', center: playerPos.clone() } };
+  return { spawns, meta: { formation: 'surround', formationId: fid, count, center: playerPos.clone() } };
 }
 
 /** Wall: line of enemies spanning one full world edge */
 export function generateWall(pool: EnemyType[], count: number): FormationResult {
+  const fid = nextFormationId++;
   const aw = gameSettings.arenaWidth;
   const ah = gameSettings.arenaHeight;
   const hw = aw / 2;
@@ -147,13 +152,14 @@ export function generateWall(pool: EnemyType[], count: number): FormationResult 
       case 2: x = -hw + 10; y = t * ah; break;
       default: x = hw - 10; y = t * ah; break;
     }
-    spawns.push({ type, position: new Vec2(x, y), delay: 0 });
+    spawns.push({ type, position: new Vec2(x, y), delay: 0, formationId: fid });
   }
-  return { spawns, meta: { formation: 'wall', side } };
+  return { spawns, meta: { formation: 'wall', formationId: fid, count, side } };
 }
 
 /** Pincer: two groups from opposite sides */
 export function generatePincer(pool: EnemyType[], count: number, playerPos: Vec2): FormationResult {
+  const fid = nextFormationId++;
   const hw = gameSettings.arenaWidth / 2;
   const hh = gameSettings.arenaHeight / 2;
   const type = pickRandom(pool);
@@ -174,15 +180,16 @@ export function generatePincer(pool: EnemyType[], count: number, playerPos: Vec2
     }
     x = Math.max(-hw + 20, Math.min(hw - 20, x));
     y = Math.max(-hh + 20, Math.min(hh - 20, y));
-    spawns.push({ type, position: new Vec2(x, y), delay: i * 30 });
+    spawns.push({ type, position: new Vec2(x, y), delay: i * 30, formationId: fid });
   }
   // Pincer uses two opposite sides
   const side = useVertical ? 0 : 2; // report primary side
-  return { spawns, meta: { formation: 'pincer', side } };
+  return { spawns, meta: { formation: 'pincer', formationId: fid, count, side } };
 }
 
 /** Ambush: enemies spawn 300-500px from player (NOT at edges) */
 export function generateAmbush(pool: EnemyType[], count: number, playerPos: Vec2): FormationResult {
+  const fid = nextFormationId++;
   const hw = gameSettings.arenaWidth / 2;
   const hh = gameSettings.arenaHeight / 2;
   const spawns: FormationSpawn[] = [];
@@ -191,13 +198,14 @@ export function generateAmbush(pool: EnemyType[], count: number, playerPos: Vec2
     const dist = randRange(250, 400);
     const x = Math.max(-hw + 20, Math.min(hw - 20, playerPos.x + Math.cos(angle) * dist));
     const y = Math.max(-hh + 20, Math.min(hh - 20, playerPos.y + Math.sin(angle) * dist));
-    spawns.push({ type: pickRandom(pool), position: new Vec2(x, y), delay: i * 50, isAmbush: true });
+    spawns.push({ type: pickRandom(pool), position: new Vec2(x, y), delay: i * 50, isAmbush: true, formationId: fid });
   }
-  return { spawns, meta: { formation: 'ambush', center: playerPos.clone() } };
+  return { spawns, meta: { formation: 'ambush', formationId: fid, count, center: playerPos.clone() } };
 }
 
 /** Cascade: rapid-fire from a single edge point with accelerating rate */
 export function generateCascade(pool: EnemyType[], count: number): FormationResult {
+  const fid = nextFormationId++;
   const aw = gameSettings.arenaWidth;
   const ah = gameSettings.arenaHeight;
   const hw = aw / 2;
@@ -217,8 +225,8 @@ export function generateCascade(pool: EnemyType[], count: number): FormationResu
   for (let i = 0; i < count; i++) {
     const jitterX = (Math.random() - 0.5) * 30;
     const jitterY = (Math.random() - 0.5) * 30;
-    spawns.push({ type, position: new Vec2(x + jitterX, y + jitterY), delay: totalDelay });
+    spawns.push({ type, position: new Vec2(x + jitterX, y + jitterY), delay: totalDelay, formationId: fid });
     totalDelay += Math.max(20, 80 - i * 4); // accelerating: 80ms → 20ms gap
   }
-  return { spawns, meta: { formation: 'cascade', side } };
+  return { spawns, meta: { formation: 'cascade', formationId: fid, count, side } };
 }
