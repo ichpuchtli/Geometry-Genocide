@@ -37,8 +37,8 @@ export class Square extends Enemy {
   onDeath(): EnemyDeathResult {
     return {
       spawnEnemies: [
-        { type: 'square2', position: this.position.add(new Vec2(10, 5)) },
-        { type: 'square2', position: this.position.add(new Vec2(-10, -5)) },
+        { type: 'square2', position: this.position.clone() },
+        { type: 'square2', position: this.position.clone() },
       ],
     };
   }

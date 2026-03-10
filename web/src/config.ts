@@ -193,7 +193,7 @@ export const SPAWN_DURATION_DEFAULT = 1.5;   // seconds (was 0.3)
 export const SPAWN_DURATION_CHILD = 0.5;     // for Shard, MiniMandel, Circle, Square2
 export const SPAWN_DURATION_AMBUSH = 2.0;    // ambush spawns get extra warning time
 export const MIN_SPAWN_DISTANCE = 200;       // px — enemies closer than this get pushed to edge
-export const ENEMY_SEPARATION_BUFFER = 4;    // px extra clearance beyond combined collision radii (per-frame push)
+export const ENEMY_SEPARATION_BUFFER = 0;    // px extra clearance beyond combined collision radii (per-frame push)
 
 // --- Mouse aim (desktop) ---
 
