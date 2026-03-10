@@ -5,7 +5,7 @@ import { ENEMY_COLLISION_RADIUS, SPAWN_DURATION_DEFAULT } from '../../config';
 import { gameSettings } from '../../settings';
 
 export type EnemyDeathResult = {
-  spawnEnemies?: { type: string; position: Vec2 }[];
+  spawnEnemies?: { type: string; position: Vec2; tier?: number }[];
   /** If true, children spawn with a staggered theatrical delay */
   staggeredSpawn?: boolean;
 };
@@ -33,6 +33,8 @@ export abstract class Enemy extends Entity {
   baseType = '';
   isElite = false;
   isMiniboss = false;
+  /** Whether this enemy is immune to BlackHole gravitational pull and absorption */
+  gravityImmune = false;
 
   constructor() {
     super();

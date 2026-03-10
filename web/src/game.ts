@@ -164,7 +164,7 @@ interface Telegraph {
   duration: number;
 }
 
-function createEnemy(type: string, pos?: Vec2, isElite = false): Enemy {
+function createEnemy(type: string, pos?: Vec2, isElite = false, tier?: number): Enemy {
   let e: Enemy;
   switch (type) {
     case 'rhombus': e = new Rhombus(); break;
@@ -174,7 +174,7 @@ function createEnemy(type: string, pos?: Vec2, isElite = false): Enemy {
     case 'circle': e = new CircleEnemy(pos); e.speed *= gameSettings.enemySpeedMultiplier; return e;
     case 'blackhole': e = new BlackHole(); break;
     case 'shard': e = new Shard(pos); e.speed *= gameSettings.enemySpeedMultiplier; return e;
-    case 'sierpinski': e = new Sierpinski(); break;
+    case 'sierpinski': e = new Sierpinski(tier ?? 0, pos); break;
     case 'mandelbrot': e = new Mandelbrot(); break;
     case 'minimandel': { const mm = new MiniMandel(pos); mm.speed *= gameSettings.enemySpeedMultiplier; return mm; }
     default: e = new Rhombus(); break;
@@ -975,42 +975,56 @@ export class Game {
           break;
         }
         case 'sierpinski': {
-          // Boss death — big explosion
-          this.explosions.spawn(
-            kill.position.x, kill.position.y, kill.color,
-            this.mobile ? 80 : 160, EXPLOSION_DURATION_LARGE,
-          );
-          // Secondary gold flash
-          this.explosions.spawn(
-            kill.position.x, kill.position.y, [1, 0.9, 0.3],
-            this.mobile ? 40 : 80, EXPLOSION_DURATION_DEFAULT,
-          );
-          // Third layer — amber spread
-          this.explosions.spawn(
-            kill.position.x, kill.position.y, [1, 0.7, 0.1],
-            this.mobile ? 30 : 60, EXPLOSION_DURATION_LARGE * 0.8, 0.3,
-          );
-          this.grid.applyImpulse(kill.position.x, kill.position.y, 800, 350);
-          this.camera.shake(SCREEN_SHAKE_DEATH);
-          maxHitstop = Math.max(maxHitstop, HITSTOP_SIERPINSKI * 2);
-          this.haptics.heavy();
-          // Kill all active Shards when boss dies
-          for (const e of this.enemies) {
-            if (e.active && e instanceof Shard) {
-              e.active = false;
-              this.explosions.spawn(e.position.x, e.position.y, e.color,
-                this.mobile ? 15 : 30, EXPLOSION_DURATION_DEFAULT * 0.5);
-              if (e.trailId >= 0) this.trails.unregister(e.trailId);
-            }
+          const sTier = (kill.enemy instanceof Sierpinski) ? kill.enemy.tier : 2;
+          if (sTier === 0) {
+            // Tier 0 boss death — massive explosion
+            this.explosions.spawn(
+              kill.position.x, kill.position.y, kill.color,
+              this.mobile ? 80 : 160, EXPLOSION_DURATION_LARGE,
+            );
+            this.explosions.spawn(
+              kill.position.x, kill.position.y, [1, 0.9, 0.3],
+              this.mobile ? 40 : 80, EXPLOSION_DURATION_DEFAULT,
+            );
+            this.explosions.spawn(
+              kill.position.x, kill.position.y, [1, 0.7, 0.1],
+              this.mobile ? 30 : 60, EXPLOSION_DURATION_LARGE * 0.8, 0.3,
+            );
+            this.grid.applyImpulse(kill.position.x, kill.position.y, 800, 350);
+            this.camera.shake(SCREEN_SHAKE_DEATH);
+            maxHitstop = Math.max(maxHitstop, HITSTOP_SIERPINSKI * 2);
+            this.haptics.heavy();
+            // End boss encounter
+            this.onSierpinskiBossDefeated();
+          } else if (sTier === 1) {
+            // Tier 1 medium death — medium explosion
+            this.explosions.spawn(
+              kill.position.x, kill.position.y, kill.color,
+              this.mobile ? 40 : 80, EXPLOSION_DURATION_DEFAULT,
+            );
+            this.explosions.spawn(
+              kill.position.x, kill.position.y, [1, 0.9, 0.3],
+              this.mobile ? 20 : 40, EXPLOSION_DURATION_DEFAULT * 0.7,
+            );
+            this.grid.applyImpulse(kill.position.x, kill.position.y, 500, 220);
+            this.camera.shake(SCREEN_SHAKE_LARGE);
+            maxHitstop = Math.max(maxHitstop, HITSTOP_SIERPINSKI);
+            this.haptics.medium();
+          } else {
+            // Tier 2 small death — small explosion
+            this.explosions.spawn(
+              kill.position.x, kill.position.y, kill.color,
+              this.mobile ? 25 : 50, EXPLOSION_DURATION_DEFAULT * 0.8,
+            );
+            this.grid.applyImpulse(kill.position.x, kill.position.y, 350, 150);
+            this.haptics.light();
           }
-          // End boss encounter
-          this.onSierpinskiBossDefeated();
           break;
         }
         case 'square':
           this.explosions.spawn(
             kill.position.x, kill.position.y, kill.color,
-            this.mobile ? 35 : 70, EXPLOSION_DURATION_DEFAULT * 1.1, 0.8,
+            this.mobile ? 20 : 40, EXPLOSION_DURATION_DEFAULT * 0.9, 0.8,
           );
           this.grid.applyImpulse(kill.position.x, kill.position.y, 450, 200);
           maxHitstop = Math.max(maxHitstop, HITSTOP_SQUARE);
@@ -1063,7 +1077,7 @@ export class Game {
           }
         } else {
           for (const child of deathResult.spawnEnemies) {
-            const ce = createEnemy(child.type, child.position);
+            const ce = createEnemy(child.type, child.position, false, child.tier);
             ce.trailId = this.trails.register(ce.color, this.trailLenEnemy);
             this.enemies.push(ce);
           }
@@ -1181,7 +1195,6 @@ export class Game {
     if (enemy instanceof Square || enemy instanceof Square2) return 'square';
     if (enemy instanceof Pinwheel) return 'pinwheel';
     if (enemy instanceof Rhombus) return 'rhombus';
-    if (enemy instanceof Shard) return 'sierpinski';
     if (enemy instanceof CircleEnemy) return 'circle';
     return 'rhombus'; // default
   }

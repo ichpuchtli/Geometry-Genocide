@@ -1,40 +1,48 @@
 import { Enemy, EnemyDeathResult } from './enemy';
 import { Vec2 } from '../../core/vector';
 import { Renderer } from '../../renderer/sprite-batch';
-import { COLORS, ENEMY_SPEED, ENEMY_SCORES, SIERPINSKI_HP } from '../../config';
+import { COLORS, SIERPINSKI_TIER_HP, SIERPINSKI_TIER_RADIUS, SIERPINSKI_TIER_SPEED, SIERPINSKI_TIER_SCORE, SIERPINSKI_TIER_DEPTH } from '../../config';
 
-/** Sierpinski fractal triangle — each hit strips a recursion depth, spawns Shards on death */
+/**
+ * Sierpinski fractal triangle — 3-tier boss with fractal breakup.
+ * Tier 0 (boss): depth 3, 80px, 12 HP → splits into 3 × tier 1
+ * Tier 1 (medium): depth 2, 45px, 4 HP → splits into 3 × tier 2
+ * Tier 2 (small): depth 1, 25px, 1 HP → dies (no children)
+ */
 export class Sierpinski extends Enemy {
-  private depth = 3;
+  readonly tier: number;
+  private depth: number;
   private hitFlash = 0;
-  private depthShapes: number[][][] = []; // precomputed vertices per depth
 
-  static readonly COLLISION_RADII = [25, 30, 38, 45]; // depth 0,1,2,3
-
-  constructor() {
+  constructor(tier = 0, pos?: Vec2) {
     super();
+    this.tier = tier;
+    this.depth = SIERPINSKI_TIER_DEPTH[tier];
     this.color = COLORS.sierpinski.color;
     this.color2 = COLORS.sierpinski.color2;
-    this.speed = ENEMY_SPEED.sierpinski;
-    this.scoreValue = ENEMY_SCORES.sierpinski;
-    this.hp = SIERPINSKI_HP;
-    this.maxHp = SIERPINSKI_HP;
-    this.collisionRadius = Sierpinski.COLLISION_RADII[3];
+    this.speed = SIERPINSKI_TIER_SPEED[tier];
+    this.scoreValue = SIERPINSKI_TIER_SCORE[tier];
+    this.hp = SIERPINSKI_TIER_HP[tier];
+    this.maxHp = SIERPINSKI_TIER_HP[tier];
+    this.collisionRadius = SIERPINSKI_TIER_RADIUS[tier];
 
-    // Precompute shape for each depth
-    for (let d = 0; d <= 3; d++) {
-      this.depthShapes[d] = generateSierpinskiOutline(d, Sierpinski.COLLISION_RADII[d]);
+    // Tier 0 is a miniboss (resists separation push)
+    if (tier === 0) {
+      this.isMiniboss = true;
     }
-    this.shapePoints = this.depthShapes[3];
+
+    // Precompute outer triangle as shape points for collision
+    const size = this.collisionRadius;
+    const h = size * Math.sqrt(3) / 2;
+    this.shapePoints = [[0, h * 0.67], [-size / 2, -h * 0.33], [size / 2, -h * 0.33]];
+
+    if (pos) {
+      this.position.copyFrom(pos);
+    }
   }
 
   hit(): boolean {
     this.hitFlash = 0.15;
-    this.depth--;
-    if (this.depth >= 0) {
-      this.shapePoints = this.depthShapes[this.depth];
-      this.collisionRadius = Sierpinski.COLLISION_RADII[this.depth];
-    }
     return super.hit();
   }
 
@@ -99,19 +107,36 @@ export class Sierpinski extends Enemy {
   }
 
   onDeath(): EnemyDeathResult {
-    // Spawn 4 Shards scattered from position
-    const spawns: { type: string; position: Vec2 }[] = [];
-    for (let i = 0; i < 4; i++) {
-      const angle = (i / 4) * Math.PI * 2 + Math.random() * 0.5;
-      const dist = 20 + Math.random() * 20;
+    // Tier 2 (smallest) — no children
+    if (this.tier >= 2) return {};
+
+    // Spawn 3 children at the sub-triangle centers, rotated by parent's rotation
+    const size = this.collisionRadius;
+    const h = size * Math.sqrt(3) / 2;
+    const cos = Math.cos(this.rotation);
+    const sin = Math.sin(this.rotation);
+
+    // Sub-triangle center offsets (relative to parent center, pre-rotation)
+    const offsets: [number, number][] = [
+      [0, h / 3],              // top sub-triangle
+      [-size / 4, -h / 6],     // bottom-left sub-triangle
+      [size / 4, -h / 6],      // bottom-right sub-triangle
+    ];
+
+    const childTier = this.tier + 1;
+    const spawns: { type: string; position: Vec2; tier: number }[] = [];
+
+    for (const [ox, oy] of offsets) {
+      // Rotate offset by parent rotation
+      const rx = ox * cos - oy * sin;
+      const ry = ox * sin + oy * cos;
       spawns.push({
-        type: 'shard',
-        position: new Vec2(
-          this.position.x + Math.cos(angle) * dist,
-          this.position.y + Math.sin(angle) * dist,
-        ),
+        type: 'sierpinski',
+        position: new Vec2(this.position.x + rx, this.position.y + ry),
+        tier: childTier,
       });
     }
+
     return { spawnEnemies: spawns };
   }
 }
@@ -143,12 +168,4 @@ function subdivide(
     ...subdivide(ab, b, bc, depth - 1),
     ...subdivide(ca, bc, c, depth - 1),
   ];
-}
-
-/** Generate outline points for the Sierpinski at given depth */
-function generateSierpinskiOutline(depth: number, size: number): number[][] {
-  const triangles = generateSierpinskiTriangles(depth, size);
-  // Use outer triangle vertices as shape outline
-  const h = size * Math.sqrt(3) / 2;
-  return [[0, h * 0.67], [-size / 2, -h * 0.33], [size / 2, -h * 0.33]];
 }

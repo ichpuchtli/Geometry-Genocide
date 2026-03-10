@@ -319,15 +319,17 @@ export const RECOVERY_FIRE_RATE_MULT = 1.8;      // fire rate multiplier during 
 export const RECOVERY_SHIELD_COLOR: [number, number, number] = [0.3, 0.85, 1.0];
 export const RECOVERY_SHIELD_RADIUS = 32;        // px radius of shield ring
 
-// --- Sierpinski Boss ---
-export const SIERPINSKI_BOSS_HP = 8;              // buffed from 2 for boss version
-export const SIERPINSKI_BOSS_SCORE = 5000;
+// --- Sierpinski Boss (3-tier fractal breakup: 1 → 3 → 9) ---
+export const SIERPINSKI_TIER_HP = [12, 4, 1];           // tier 0 (boss), 1 (medium), 2 (small)
+export const SIERPINSKI_TIER_RADIUS = [80, 45, 25];     // collision radius per tier
+export const SIERPINSKI_TIER_SPEED = [0.08, 0.12, 0.18]; // px/ms per tier (smaller = faster)
+export const SIERPINSKI_TIER_SCORE = [5000, 1500, 400];  // score per tier
+export const SIERPINSKI_TIER_DEPTH = [3, 2, 1];          // fractal render depth per tier
 export const SIERPINSKI_BOSS_SPAWN_TIME = 120;    // seconds — triggers at midGame start
 export const SIERPINSKI_BOSS_WARNING_DURATION = 2500; // ms warning before spawn
 export const SIERPINSKI_BOSS_RESPAWN_DELAY = 5000; // ms — re-trigger after player death
 export const SIERPINSKI_BOSS_DEFEATED_BANNER_DURATION = 2500; // ms
 export const SIERPINSKI_BOSS_SPAWN_SUPPRESS_MULT = 2.5; // spawn rate multiplier during fight
-export const SIERPINSKI_BOSS_SHARD_COUNT = 8;     // shards on death (buffed from 4)
 
 // --- Miniboss (Mandelbrot) ---
 export const MINIBOSS_HP = 20;

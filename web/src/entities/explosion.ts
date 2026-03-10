@@ -60,11 +60,11 @@ export class Explosion {
     if (lifeRatio < 0.2) {
       const flashAlpha = (1 - lifeRatio / 0.2) * 0.8;
       const flashR = 10 + lifeRatio * 60;
-      renderer.drawFilledCircle(cx, cy, flashR, [1, 1, 1], 16, flashAlpha);
+      renderer.drawFilledCircle(cx, cy, flashR, [1, 1, 1], 10, flashAlpha);
     }
 
     // Shockwave rings (expanding, fading)
-    const ringCount = this.particles.length > 50 ? 3 : 1;
+    const ringCount = this.particles.length > 80 ? 3 : this.particles.length > 40 ? 2 : 1;
     for (let ri = 0; ri < ringCount; ri++) {
       const ringDelay = ri * 0.08;
       const ringLife = Math.max(0, lifeRatio - ringDelay);
@@ -72,7 +72,7 @@ export class Explosion {
         const ringProgress = ringLife / 0.6;
         const ringRadius = 20 + ringProgress * (60 + ri * 30);
         const ringAlpha = (1 - ringProgress) * 0.5;
-        renderer.drawCircle(cx, cy, ringRadius, [r * 0.8 + 0.2, g * 0.8 + 0.2, b * 0.8 + 0.2], 32, ringAlpha);
+        renderer.drawCircle(cx, cy, ringRadius, [r * 0.8 + 0.2, g * 0.8 + 0.2, b * 0.8 + 0.2], 16, ringAlpha);
       }
     }
 
@@ -90,8 +90,8 @@ export class Explosion {
       const pb = b + (1 - b) * whiteness;
       renderer.drawLine(x1, y1, x2, y2, pr, pg, pb, alpha);
 
-      // Secondary ghost trail (dimmer, offset) for big explosions
-      if (this.particles.length > 30) {
+      // Secondary ghost trail (dimmer, offset) for big explosions only
+      if (this.particles.length > 60) {
         const ghostStretch = stretch * 1.3;
         const x3 = cx + p.dir.x * t * ghostStretch;
         const y3 = cy + p.dir.y * t * ghostStretch;

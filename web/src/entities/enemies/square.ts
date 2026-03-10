@@ -66,6 +66,22 @@ export class Square2 extends Enemy {
     this.move(dt);
   }
 
+  /** Lightweight spawn: just scale-pop the shape in, no rings/spokes/flash */
+  override renderSpawn(renderer: Renderer): void {
+    const progress = 1 - this.spawnTimer / this.spawnDuration;
+    const cx = this.position.x;
+    const cy = this.position.y;
+    // Quick scale-pop: starts big and snaps to 1.0
+    const scale = 1 + (1 - progress) * 0.8;
+    const alpha = progress;
+    const points = this.getWorldPoints();
+    const scaledPoints = points.map(([x, y]) => [
+      cx + (x - cx) * scale,
+      cy + (y - cy) * scale,
+    ]);
+    renderer.drawLineLoop(scaledPoints, this.color, alpha);
+  }
+
   /** Flickering magenta sparks */
   renderGlow(renderer: Renderer, time: number): void {
     if (!this.active) return;

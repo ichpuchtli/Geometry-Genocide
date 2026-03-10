@@ -1,0 +1,92 @@
+name: "Sierpinski Fractal Breakup"
+tags: [boss, sierpinski]
+steps:
+  - action: launch
+    url: "/"
+    waitFor: "canvas#game"
+
+  # Set starting phase to midGame so Sierpinski boss triggers at 120s elapsed
+  - action: evalCheck
+    script: |
+      const settings = JSON.parse(localStorage.getItem('gg_settings') || '{}');
+      settings.startingPhase = 'midGame';
+      localStorage.setItem('gg_settings', JSON.stringify(settings));
+      return true;
+    description: "Set starting phase to midGame"
+
+  # Reload to pick up settings
+  - action: launch
+    url: "/"
+    waitFor: "canvas#game"
+
+  # Start the game
+  - action: click
+    selector: "canvas#game"
+
+  - action: wait
+    ms: 500
+
+  # Shoot and move to survive while waiting for boss warning (triggers around 120s game time)
+  - action: mouseMove
+    x: 900
+    y: 300
+
+  - action: mouseDown
+
+  # Move around shooting for a while — boss warning appears then boss spawns
+  - action: keys
+    keys: ["w", "d"]
+    duration: 3000
+
+  - action: screenshot
+    name: "51-sierpinski-early"
+
+  - action: keys
+    keys: ["s", "a"]
+    duration: 3000
+
+  - action: screenshot
+    name: "51-sierpinski-boss-spawning"
+
+  # Keep fighting — the boss should be visible as a large triangle
+  - action: mouseMove
+    x: 400
+    y: 400
+
+  - action: keys
+    keys: ["w"]
+    duration: 3000
+
+  - action: screenshot
+    name: "51-sierpinski-boss-fight"
+
+  - action: mouseMove
+    x: 700
+    y: 200
+
+  - action: keys
+    keys: ["d", "s"]
+    duration: 3000
+
+  - action: screenshot
+    name: "51-sierpinski-mid-fight"
+
+  # Keep shooting — if boss dies, we should see 3 medium Sierpinskis
+  - action: keys
+    keys: ["a", "w"]
+    duration: 4000
+
+  - action: screenshot
+    name: "51-sierpinski-breakup"
+
+  # Continue to see tier-2 breakup
+  - action: keys
+    keys: ["d"]
+    duration: 4000
+
+  - action: screenshot
+    name: "51-sierpinski-small-tiers"
+
+  - action: mouseUp
+
+  - action: assertNoErrors
