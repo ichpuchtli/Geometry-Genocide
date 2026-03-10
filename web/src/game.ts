@@ -1507,6 +1507,9 @@ export class Game {
     const enemies = this.enemies;
     const len = enemies.length;
 
+    // Build set of enemies currently being pulled by a BlackHole (skip separation for them)
+    const inGravityWell = this.getEnemiesInGravityWell();
+
     for (let i = 0; i < len; i++) {
       const a = enemies[i];
       if (!a.active || a.isSpawning) continue;
@@ -1514,6 +1517,9 @@ export class Game {
       for (let j = i + 1; j < len; j++) {
         const b = enemies[j];
         if (!b.active || b.isSpawning) continue;
+
+        // Don't fight gravity — if either enemy is being pulled into a BlackHole, skip
+        if (inGravityWell.has(a) || inGravityWell.has(b)) continue;
 
         const dx = a.position.x - b.position.x;
         const dy = a.position.y - b.position.y;
@@ -1552,6 +1558,24 @@ export class Game {
         b.position.y = Math.max(-hh, Math.min(hh, b.position.y - ny * pushB));
       }
     }
+  }
+
+  /** Return the set of non-BlackHole enemies currently within a BlackHole's attract radius */
+  private getEnemiesInGravityWell(): Set<Enemy> {
+    const result = new Set<Enemy>();
+    const attractR2 = BlackHole.ATTRACT_RADIUS * BlackHole.ATTRACT_RADIUS;
+    for (const e of this.enemies) {
+      if (!e.active || e.isSpawning || !(e instanceof BlackHole)) continue;
+      for (const other of this.enemies) {
+        if (!other.active || other.isSpawning || other === e || other instanceof BlackHole || other.gravityImmune) continue;
+        const dx = e.position.x - other.position.x;
+        const dy = e.position.y - other.position.y;
+        if (dx * dx + dy * dy < attractR2) {
+          result.add(other);
+        }
+      }
+    }
+    return result;
   }
 
   /** Create a spawn telegraph from a formation event */

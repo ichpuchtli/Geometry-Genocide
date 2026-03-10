@@ -110,7 +110,7 @@ web/src/
 
 `update(dt)`: player movement → BlackHole gravity → bullets → enemy AI → **enemy separation** → trail recording → wave manager spawning → collision/kills → child spawns → explosions/grid/camera → music intensity.
 
-**Enemy separation** (`separateEnemies()`): Per-frame O(n²/2) pairwise position correction. If two enemies overlap (distance < sum of collision radii + `ENEMY_SEPARATION_BUFFER`), push both apart proportionally. BlackHoles are immovable (weight 0), minibosses resist push (weight 0.25), all others split 50/50. Creates Grid Wars-style tight crowds without stacking.
+**Enemy separation** (`separateEnemies()`): Per-frame O(n²/2) pairwise position correction. If two enemies overlap (distance < sum of collision radii + `ENEMY_SEPARATION_BUFFER`), push both apart proportionally. BlackHoles are immovable (weight 0), minibosses resist push (weight 0.25), all others split 50/50. Enemies inside a BlackHole gravity well are exempt from separation (gravity wins). Creates Grid Wars-style tight crowds without stacking.
 
 `render()`: grid → starfield → entities (normal blend) → trails + explosions (additive) → bloom → HUD.
 
