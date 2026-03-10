@@ -1,0 +1,89 @@
+name: "Enemy Separation Steering"
+tags: [gameplay, separation]
+steps:
+  - action: launch
+    url: "/"
+    waitFor: "canvas#game"
+
+  - action: wait
+    ms: 300
+
+  # Start game
+  - action: click
+    selector: "canvas#game"
+    x: 0.5
+    y: 0.5
+
+  - action: wait
+    ms: 200
+
+  # Hold fire and move around to let enemies spawn and swarm
+  - action: mouseMove
+    x: 700
+    y: 360
+
+  - action: mouseDown
+
+  # Move in a circle pattern to attract enemies
+  - action: keys
+    keys: ["w", "d"]
+    duration: 3000
+
+  - action: screenshot
+    name: "07-separation-3s"
+
+  - action: keys
+    keys: ["s", "a"]
+    duration: 3000
+
+  - action: screenshot
+    name: "07-separation-6s"
+
+  # Let more enemies spawn and bunch up
+  - action: keys
+    keys: ["w"]
+    duration: 4000
+
+  - action: screenshot
+    name: "07-separation-10s"
+
+  # Stay still briefly to let swarm converge — separation should keep them spread
+  - action: mouseMove
+    x: 500
+    y: 300
+
+  - action: keys
+    keys: ["s", "d"]
+    duration: 4000
+
+  - action: screenshot
+    name: "07-separation-14s"
+
+  - action: keys
+    keys: ["a", "w"]
+    duration: 4000
+
+  - action: mouseUp
+
+  - action: screenshot
+    name: "07-separation-18s"
+
+  # Verify no overlapping enemies via game state inspection
+  - action: evalCheck
+    description: "No enemies fully stacked (all active pairs have distance > 0)"
+    script: |
+      const g = window.__game;
+      if (!g) return true;
+      const enemies = g.enemies.filter(e => e.active && !e.isSpawning);
+      for (let i = 0; i < enemies.length; i++) {
+        for (let j = i + 1; j < enemies.length; j++) {
+          const dx = enemies[i].position.x - enemies[j].position.x;
+          const dy = enemies[i].position.y - enemies[j].position.y;
+          const dist = Math.sqrt(dx*dx + dy*dy);
+          if (dist < 1) return false;
+        }
+      }
+      return true;
+
+  - action: assertNoErrors
+    description: "No errors during enemy separation test"

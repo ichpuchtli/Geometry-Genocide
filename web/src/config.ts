@@ -116,7 +116,6 @@ export const ENEMY_SCORES = {
 };
 
 // --- Enemy HP ---
-export const SIERPINSKI_HP = 2;
 export const MOBIUS_HP = 1;
 export const KOCH_HP = 2;
 export const PENROSE_HP = 2;
@@ -138,14 +137,27 @@ export const MANDELBROT_BUD_REGROW_TIME = 3.0; // seconds
 // --- BlackHole ---
 export const BLACKHOLE_HP = 8;
 
-// --- BlackHole Orange-White Palette (design lab variants) ---
-export const BLACKHOLE_ORANGE = {
-  core:   [0.05, 0.02, 0.0] as [number, number, number],   // Dark void center
-  corona: [1.0, 0.7, 0.2] as [number, number, number],     // Orange-white corona rim
-  body:   [1.0, 0.5, 0.1] as [number, number, number],     // Hot orange body
-  glow:   [1.0, 0.35, 0.05] as [number, number, number],   // Deep orange outer glow
-  ray:    [1.0, 0.85, 0.5] as [number, number, number],    // Warm white rays
-  disc:   [1.0, 0.6, 0.15] as [number, number, number],    // Orange disc particles
+// --- BlackHole Visual Palette (design lab variants) ---
+export const BLACKHOLE_PALETTE = {
+  // Shared
+  singularity: [1.0, 1.0, 0.95] as [number, number, number],
+  voidBlack:   [0.02, 0.01, 0.03] as [number, number, number],
+  // Radiant Collapse
+  rayInner:    [1.0, 0.95, 0.85] as [number, number, number],
+  rayOuter:    [1.0, 0.6, 0.15] as [number, number, number],
+  // Swirl
+  swirlArm:    [1.0, 0.7, 0.2] as [number, number, number],
+  swirlCore:   [1.0, 0.9, 0.7] as [number, number, number],
+  swirlTrail:  [0.6, 0.3, 0.05] as [number, number, number],
+  // Unstable Mass
+  arcEnergy:   [1.0, 0.85, 0.4] as [number, number, number],
+  unstableEdge:[1.0, 0.5, 0.1] as [number, number, number],
+  crackle:     [1.0, 1.0, 0.7] as [number, number, number],
+  // Event Horizon
+  horizonRing: [1.0, 0.85, 0.5] as [number, number, number],
+  coronaOuter: [1.0, 0.5, 0.15] as [number, number, number],
+  infallStreak:[0.8, 0.5, 0.15] as [number, number, number],
+  orbitDot:    [1.0, 0.95, 0.8] as [number, number, number],
 };
 export const BLACKHOLE_PLAYER_PULL_STRENGTH = 0.4; // px/ms² force on player
 export const BLACKHOLE_LENSING_BASE = 1.5;
@@ -181,6 +193,7 @@ export const SPAWN_DURATION_DEFAULT = 1.5;   // seconds (was 0.3)
 export const SPAWN_DURATION_CHILD = 0.5;     // for Shard, MiniMandel, Circle, Square2
 export const SPAWN_DURATION_AMBUSH = 2.0;    // ambush spawns get extra warning time
 export const MIN_SPAWN_DISTANCE = 200;       // px — enemies closer than this get pushed to edge
+export const ENEMY_SEPARATION_BUFFER = 4;    // px extra clearance beyond combined collision radii (per-frame push)
 
 // --- Mouse aim (desktop) ---
 
@@ -305,6 +318,16 @@ export const RECOVERY_DURATION = 3500;           // ms
 export const RECOVERY_FIRE_RATE_MULT = 1.8;      // fire rate multiplier during recovery
 export const RECOVERY_SHIELD_COLOR: [number, number, number] = [0.3, 0.85, 1.0];
 export const RECOVERY_SHIELD_RADIUS = 32;        // px radius of shield ring
+
+// --- Sierpinski Boss ---
+export const SIERPINSKI_BOSS_HP = 8;              // buffed from 2 for boss version
+export const SIERPINSKI_BOSS_SCORE = 5000;
+export const SIERPINSKI_BOSS_SPAWN_TIME = 120;    // seconds — triggers at midGame start
+export const SIERPINSKI_BOSS_WARNING_DURATION = 2500; // ms warning before spawn
+export const SIERPINSKI_BOSS_RESPAWN_DELAY = 5000; // ms — re-trigger after player death
+export const SIERPINSKI_BOSS_DEFEATED_BANNER_DURATION = 2500; // ms
+export const SIERPINSKI_BOSS_SPAWN_SUPPRESS_MULT = 2.5; // spawn rate multiplier during fight
+export const SIERPINSKI_BOSS_SHARD_COUNT = 8;     // shards on death (buffed from 4)
 
 // --- Miniboss (Mandelbrot) ---
 export const MINIBOSS_HP = 20;

@@ -42,6 +42,7 @@ import {
   DEATH_SLOWMO_TIME_SCALE,
   DEATH_SLOWMO_SHOCKWAVE_SPEED,
   MIN_SPAWN_DISTANCE,
+  ENEMY_SEPARATION_BUFFER,
   SPAWN_DURATION_AMBUSH,
   HITSTOP_SQUARE,
   HITSTOP_SIERPINSKI,
@@ -80,6 +81,11 @@ import {
   MINIBOSS_DEFEATED_BANNER_DURATION,
   MINIBOSS_SPAWN_SUPPRESS_MULT,
   MINIBOSS_HEAT_ON_DEATH,
+  SIERPINSKI_BOSS_SPAWN_TIME,
+  SIERPINSKI_BOSS_WARNING_DURATION,
+  SIERPINSKI_BOSS_RESPAWN_DELAY,
+  SIERPINSKI_BOSS_DEFEATED_BANNER_DURATION,
+  SIERPINSKI_BOSS_SPAWN_SUPPRESS_MULT,
   MEDALS,
   MedalDef,
 } from './config';
@@ -281,6 +287,14 @@ export class Game {
   // Design Lab
   private designLab: DesignLab | null = null;
 
+  // Sierpinski boss encounter state
+  private sierpinskiBossActive = false;
+  private sierpinskiBossDefeated = false;
+  private sierpinskiBossWarningTimer = 0;
+  private sierpinskiBossRef: Sierpinski | null = null;
+  private sierpinskiBossDefeatedBannerTimer = 0;
+  private sierpinskiBossRespawnTimer = 0;
+
   // Miniboss encounter state
   private minibossActive = false;
   private minibossDefeated = false;
@@ -463,6 +477,12 @@ export class Game {
     };
     this.gameOverMedals = [];
     this.medalRevealPlayed = false;
+    this.sierpinskiBossActive = false;
+    this.sierpinskiBossDefeated = false;
+    this.sierpinskiBossWarningTimer = 0;
+    this.sierpinskiBossRef = null;
+    this.sierpinskiBossDefeatedBannerTimer = 0;
+    this.sierpinskiBossRespawnTimer = 0;
     this.minibossActive = false;
     this.minibossDefeated = false;
     this.minibossWarningTimer = 0;
@@ -524,7 +544,7 @@ export class Game {
     for (const e of this.enemies) {
       if (!e.active) continue;
       if (e instanceof BlackHole) {
-        const mass = -(gameSettings.bhGridMassBase + e.absorbedCount * gameSettings.bhGridMassPerAbsorb);
+        const mass = -(gameSettings.bhGridMassBase + e.absorbedCount * gameSettings.bhGridMassPerAbsorb) * e.breathMassMultiplier;
         this.grid.applyGravityWell(e.position.x, e.position.y, mass, BlackHole.ATTRACT_RADIUS * gameSettings.bhGridRadiusMultiplier);
       }
     }
@@ -545,7 +565,7 @@ export class Game {
       const absorbR2 = (bh.collisionRadius + 10) * (bh.collisionRadius + 10);
 
       for (const e of this.enemies) {
-        if (!e.active || e.isSpawning || e === bh || e instanceof BlackHole) continue;
+        if (!e.active || e.isSpawning || e === bh || e instanceof BlackHole || e.gravityImmune) continue;
 
         const dx = bh.position.x - e.position.x;
         const dy = bh.position.y - e.position.y;
@@ -762,17 +782,22 @@ export class Game {
     // BlackHole attraction — pull nearby non-blackhole enemies toward black holes
     this.applyBlackHoleAttraction(dt);
 
-    // Enemies
+    // Enemies — Pass 1: AI + movement
     for (const e of this.enemies) {
       if (!e.active) continue;
-      // Decrement spawn timer
       if (e.isSpawning) {
         e.spawnTimer = Math.max(0, e.spawnTimer - dt / 1000);
-        if (e.trailId >= 0) this.trails.update(e.trailId, e.position.x, e.position.y);
         continue; // skip movement/AI during spawn
       }
       (e as { update(dt: number, playerPos?: Vec2): void }).update(dt, this.player.position);
-      // Update enemy trails
+    }
+
+    // Enemies — Pass 2: Separation (push overlapping enemies apart)
+    this.separateEnemies();
+
+    // Enemies — Pass 3: Record final positions for trails
+    for (const e of this.enemies) {
+      if (!e.active) continue;
       if (e.trailId >= 0) {
         this.trails.update(e.trailId, e.position.x, e.position.y);
       }
@@ -930,20 +955,39 @@ export class Game {
           this.haptics.heavy();
           break;
         }
-        case 'sierpinski':
+        case 'sierpinski': {
+          // Boss death — big explosion
           this.explosions.spawn(
             kill.position.x, kill.position.y, kill.color,
-            this.mobile ? 40 : 80, EXPLOSION_DURATION_DEFAULT * 1.2,
+            this.mobile ? 80 : 160, EXPLOSION_DURATION_LARGE,
           );
           // Secondary gold flash
           this.explosions.spawn(
             kill.position.x, kill.position.y, [1, 0.9, 0.3],
-            this.mobile ? 20 : 40, EXPLOSION_DURATION_DEFAULT * 0.6,
+            this.mobile ? 40 : 80, EXPLOSION_DURATION_DEFAULT,
           );
-          this.grid.applyImpulse(kill.position.x, kill.position.y, 500, 220);
-          maxHitstop = Math.max(maxHitstop, HITSTOP_SIERPINSKI);
-          this.haptics.medium();
+          // Third layer — amber spread
+          this.explosions.spawn(
+            kill.position.x, kill.position.y, [1, 0.7, 0.1],
+            this.mobile ? 30 : 60, EXPLOSION_DURATION_LARGE * 0.8, 0.3,
+          );
+          this.grid.applyImpulse(kill.position.x, kill.position.y, 800, 350);
+          this.camera.shake(SCREEN_SHAKE_DEATH);
+          maxHitstop = Math.max(maxHitstop, HITSTOP_SIERPINSKI * 2);
+          this.haptics.heavy();
+          // Kill all active Shards when boss dies
+          for (const e of this.enemies) {
+            if (e.active && e instanceof Shard) {
+              e.active = false;
+              this.explosions.spawn(e.position.x, e.position.y, e.color,
+                this.mobile ? 15 : 30, EXPLOSION_DURATION_DEFAULT * 0.5);
+              if (e.trailId >= 0) this.trails.unregister(e.trailId);
+            }
+          }
+          // End boss encounter
+          this.onSierpinskiBossDefeated();
           break;
+        }
         case 'square':
           this.explosions.spawn(
             kill.position.x, kill.position.y, kill.color,
@@ -1096,7 +1140,8 @@ export class Game {
     // --- Recovery window update ---
     this.updateRecovery(dt);
 
-    // --- Miniboss encounter update ---
+    // --- Boss encounter updates ---
+    this.updateSierpinskiBoss(dt);
     this.updateMiniboss(dt);
 
     // Track weapon stage for run stats
@@ -1242,6 +1287,89 @@ export class Game {
     }
   }
 
+  /** Sierpinski boss encounter state machine */
+  private updateSierpinskiBoss(dt: number): void {
+    // Defeated banner timer
+    if (this.sierpinskiBossDefeatedBannerTimer > 0) {
+      this.sierpinskiBossDefeatedBannerTimer -= dt;
+    }
+
+    // Re-spawn timer (player died during boss fight)
+    if (this.sierpinskiBossRespawnTimer > 0) {
+      this.sierpinskiBossRespawnTimer -= dt;
+      if (this.sierpinskiBossRespawnTimer <= 0) {
+        this.startSierpinskiBossWarning();
+      }
+    }
+
+    // Check if it's time to trigger the boss
+    if (!this.sierpinskiBossDefeated && !this.sierpinskiBossActive
+        && this.sierpinskiBossWarningTimer <= 0
+        && this.sierpinskiBossRespawnTimer <= 0
+        && this.waveManager.elapsedTime >= SIERPINSKI_BOSS_SPAWN_TIME) {
+      this.startSierpinskiBossWarning();
+    }
+
+    // Warning countdown
+    if (this.sierpinskiBossWarningTimer > 0) {
+      this.sierpinskiBossWarningTimer -= dt;
+      if (this.sierpinskiBossWarningTimer <= 0) {
+        this.spawnSierpinskiBoss();
+      }
+      return;
+    }
+
+    // Boss died outside of normal kill flow (e.g., player death shockwave)
+    if (this.sierpinskiBossActive && this.sierpinskiBossRef && !this.sierpinskiBossRef.active) {
+      if (!this.sierpinskiBossDefeated) {
+        this.sierpinskiBossActive = false;
+        this.sierpinskiBossRef = null;
+        this.waveManager.spawnRateMultiplier = this.savedSpawnRateMultiplier;
+        this.sierpinskiBossRespawnTimer = SIERPINSKI_BOSS_RESPAWN_DELAY;
+      }
+    }
+  }
+
+  private startSierpinskiBossWarning(): void {
+    this.sierpinskiBossWarningTimer = SIERPINSKI_BOSS_WARNING_DURATION;
+    this.audio.playMinibossWarning();
+    this.phaseBorderPulseTimer = SIERPINSKI_BOSS_WARNING_DURATION;
+  }
+
+  private spawnSierpinskiBoss(): void {
+    this.sierpinskiBossActive = true;
+    const hw = gameSettings.arenaWidth / 2;
+    const hh = gameSettings.arenaHeight / 2;
+    const px = this.player.position.x;
+    const py = this.player.position.y;
+    // Spawn on the far side from the player
+    const spawnX = px > 0 ? -hw * 0.4 : hw * 0.4;
+    const spawnY = py > 0 ? -hh * 0.4 : hh * 0.4;
+
+    const boss = createEnemy('sierpinski', new Vec2(spawnX, spawnY)) as Sierpinski;
+    boss.trailId = this.trails.register(boss.color, this.trailLenEnemy);
+    this.enemies.push(boss);
+    this.sierpinskiBossRef = boss;
+
+    // Suppress normal spawning during fight
+    this.savedSpawnRateMultiplier = this.waveManager.spawnRateMultiplier;
+    this.waveManager.spawnRateMultiplier = SIERPINSKI_BOSS_SPAWN_SUPPRESS_MULT;
+
+    this.audio.playMinibossArrive();
+    this.grid.applyImpulse(spawnX, spawnY, 600, 300);
+    this.camera.shake(SCREEN_SHAKE_LARGE);
+    this.haptics.heavy();
+  }
+
+  private onSierpinskiBossDefeated(): void {
+    this.sierpinskiBossActive = false;
+    this.sierpinskiBossDefeated = true;
+    this.sierpinskiBossDefeatedBannerTimer = SIERPINSKI_BOSS_DEFEATED_BANNER_DURATION;
+    this.sierpinskiBossRef = null;
+    // Restore spawn rate
+    this.waveManager.spawnRateMultiplier = this.savedSpawnRateMultiplier;
+  }
+
   /** Miniboss encounter state machine */
   private updateMiniboss(dt: number): void {
     // Defeated banner timer
@@ -1351,6 +1479,60 @@ export class Game {
     this.minibossRef = null;
     // Restore spawn rate
     this.waveManager.spawnRateMultiplier = this.savedSpawnRateMultiplier;
+  }
+
+  /** Per-frame pairwise separation: push overlapping enemies apart (Grid Wars style) */
+  private separateEnemies(): void {
+    const hw = gameSettings.arenaWidth / 2 - 10;
+    const hh = gameSettings.arenaHeight / 2 - 10;
+    const enemies = this.enemies;
+    const len = enemies.length;
+
+    for (let i = 0; i < len; i++) {
+      const a = enemies[i];
+      if (!a.active || a.isSpawning) continue;
+
+      for (let j = i + 1; j < len; j++) {
+        const b = enemies[j];
+        if (!b.active || b.isSpawning) continue;
+
+        const dx = a.position.x - b.position.x;
+        const dy = a.position.y - b.position.y;
+        const distSq = dx * dx + dy * dy;
+        const minDist = a.collisionRadius + b.collisionRadius + ENEMY_SEPARATION_BUFFER;
+
+        if (distSq >= minDist * minDist) continue;
+
+        const dist = Math.sqrt(distSq);
+        let nx: number, ny: number;
+        if (dist < 0.01) {
+          // Exactly overlapping — pick random direction
+          const angle = Math.random() * Math.PI * 2;
+          nx = Math.cos(angle);
+          ny = Math.sin(angle);
+        } else {
+          nx = dx / dist;
+          ny = dy / dist;
+        }
+
+        const overlap = minDist - dist;
+
+        // Weight: BlackHoles immovable (0), minibosses resist (0.25), others equal (1)
+        const wA = (a instanceof BlackHole) ? 0 : a.isMiniboss ? 0.25 : 1;
+        const wB = (b instanceof BlackHole) ? 0 : b.isMiniboss ? 0.25 : 1;
+        const totalW = wA + wB;
+        if (totalW < 0.001) continue; // both immovable
+
+        const pushA = overlap * (wA / totalW);
+        const pushB = overlap * (wB / totalW);
+
+        // Push A along +normal, B along -normal
+        a.position.x = Math.max(-hw, Math.min(hw, a.position.x + nx * pushA));
+        a.position.y = Math.max(-hh, Math.min(hh, a.position.y + ny * pushA));
+        b.position.x = Math.max(-hw, Math.min(hw, b.position.x - nx * pushB));
+        b.position.y = Math.max(-hh, Math.min(hh, b.position.y - ny * pushB));
+      }
+    }
   }
 
   /** Create a spawn telegraph from a formation event */
@@ -1900,6 +2082,23 @@ export class Game {
       if (this.phaseBannerTimer > 0) {
         const progress = 1 - this.phaseBannerTimer / PHASE_BANNER_DURATION;
         this.hud.drawPhaseBanner(this.phaseBannerName, progress);
+      }
+
+      // Sierpinski boss warning banner
+      if (this.sierpinskiBossWarningTimer > 0) {
+        const progress = 1 - this.sierpinskiBossWarningTimer / SIERPINSKI_BOSS_WARNING_DURATION;
+        this.hud.drawMinibossWarning(progress);
+      }
+
+      // Sierpinski boss HP bar
+      if (this.sierpinskiBossActive && this.sierpinskiBossRef && this.sierpinskiBossRef.active) {
+        this.hud.drawMinibossHP('SIERPINSKI', this.sierpinskiBossRef.hp, this.sierpinskiBossRef.maxHp, 1);
+      }
+
+      // Sierpinski boss defeated banner
+      if (this.sierpinskiBossDefeatedBannerTimer > 0) {
+        const progress = 1 - this.sierpinskiBossDefeatedBannerTimer / SIERPINSKI_BOSS_DEFEATED_BANNER_DURATION;
+        this.hud.drawMinibossDefeatedBanner(progress);
       }
 
       // Miniboss warning banner
