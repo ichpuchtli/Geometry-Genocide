@@ -5,6 +5,7 @@ import { COLORS, ENEMY_SPEED, ENEMY_SCORES, SPAWN_DURATION_CHILD } from '../../c
 
 export class CircleEnemy extends Enemy {
   radius = 10;
+  override gravityImmune = true;
 
   constructor(pos?: Vec2, radius: number = 10) {
     super();

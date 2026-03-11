@@ -19,14 +19,16 @@ varying float v_wellDepth;
 
 void main() {
     vec2 pos = a_position;
+    vec2 totalContract = vec2(0.0);
     float depth = 0.0;
 
     // Apply perspective contraction toward gravity wells
+    // All wells compute from the ORIGINAL position to prevent cascading drift
     // Skip entirely for anchored (perimeter) vertices to prevent edge detachment
     float movable = 1.0 - a_anchored;
     for (int i = 0; i < 8; i++) {
         if (i >= u_wellCount) break;
-        vec2 toWell = u_wellPositions[i] - pos;
+        vec2 toWell = u_wellPositions[i] - a_position;
         float dist = length(toWell);
         float radius = u_wellRadii[i];
         if (dist < radius && dist > 1.0) {
@@ -38,10 +40,11 @@ void main() {
             float contractAmount = d * u_perspectiveDepth * 0.15 * radius;
             // Clamp to 80% of distance to prevent self-intersection artifacts
             contractAmount = min(contractAmount, dist * 0.8);
-            pos += normalize(toWell) * contractAmount * movable;
+            totalContract += normalize(toWell) * contractAmount;
             depth += d;
         }
     }
+    pos += totalContract * movable;
     depth = clamp(depth, 0.0, 1.0);
 
     vec2 screen = (pos - u_camera) / (u_resolution * 0.5);

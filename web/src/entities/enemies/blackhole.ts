@@ -1,58 +1,80 @@
 import { Enemy, EnemyDeathResult } from './enemy';
 import { Vec2 } from '../../core/vector';
 import { Renderer } from '../../renderer/sprite-batch';
-import { COLORS, ENEMY_SPEED, ENEMY_SCORES, BLACKHOLE_HP, BLACKHOLE_ORANGE } from '../../config';
+import { COLORS, ENEMY_SPEED, ENEMY_SCORES, BLACKHOLE_HP, BLACKHOLE_PALETTE } from '../../config';
 import { gameSettings } from '../../settings';
 
-export type BlackHoleVisualMode = 'current' | 'violent_breather' | 'convulsive' | 'absorption_spike';
+export type BlackHoleVisualMode = 'dense' | 'haze' | 'corona' | 'molten';
 
-interface AccretionParticle {
-  angle: number;
-  radius: number;  // multiplier of baseR
-  speed: number;   // radians per ms
+// --- Shared state interfaces ---
+
+interface SwirlParticle {
+  arm: number;       // which spiral arm
+  t: number;         // 0-1 position along spiral (1=outer, 0=center)
+  speed: number;     // infall rate per ms
   brightness: number;
+  size: number;      // streak length multiplier
 }
 
-/** Gravity/Black Hole enemy — bright electric blue-white plasma sphere */
+interface HorizonParticle {
+  angle: number;
+  speed: number;
+  orbitR: number;    // multiplier of ring radius
+  brightness: number;
+  trailLen: number;  // trail angle span behind particle
+}
+
+interface InfallStreak {
+  angle: number;
+  r: number;         // current distance from center (shrinking)
+  speed: number;
+  length: number;
+  alpha: number;
+  curveDir: number;  // -1 or 1: which way the streak curves as it falls in
+}
+
+const TWO_PI = Math.PI * 2;
+const P = BLACKHOLE_PALETTE;
+
+/** Gravity/Black Hole enemy — 4 accretion disc visual weight variants */
 export class BlackHole extends Enemy {
-  /** How many enemies this black hole has absorbed */
   absorbedCount = 0;
-  /** Set true when absorbedCount reaches MAX_ABSORB — game.ts checks for auto-explode */
   overloaded = false;
 
   override hp = BLACKHOLE_HP;
   override maxHp = BLACKHOLE_HP;
 
-  /** Visual rendering mode — 'current' = original cyan, others = orange-white variants */
-  visualMode: BlackHoleVisualMode = 'current';
+  visualMode: BlackHoleVisualMode = 'dense';
 
   private wobbleTime = 0;
   private hitFlash = 0;
 
-  // Per-diamond orbit data (current mode)
-  private orbitAngles: number[] = [];
-  private orbitRadii: number[] = [];
-  private orbitSpeeds: number[] = [];
+  // Shared swirl state
+  private swirlParticles: SwirlParticle[] = [];
+  private swirlRotation = 0;
 
-  // Accretion disc particles (orange-white variants)
-  private accretionParticles: AccretionParticle[] = [];
+  // Shared horizon state
+  private horizonParticles: HorizonParticle[] = [];
+  private infallStreaks: InfallStreak[] = [];
+  private infallSpawnTimer = 0;
+  private coronaFlicker = 0;
 
-  // Absorption spike timer (absorption_spike mode)
-  absorptionSpikeTimer = 0;
-  // Running base radius growth for absorption_spike (visual mass growth)
-  private spikeBaseGrowth = 0;
+  // Breathing pulse
+  private breathPhase = 0;
 
-  // Convulsive jolt state
-  private convulsiveJoltX = 0;
-  private convulsiveJoltY = 0;
-  private convulsiveJoltDecay = 0;
-  private convulsiveNextJolt = 200 + Math.random() * 300;
-  private convulsiveJoltTimer = 0;
+  needsGridPulse = false;
+  gridPulseStrength = 0;
 
-  /** Max enemies before it becomes unstable and auto-explodes */
   static readonly MAX_ABSORB = 12;
   static get ATTRACT_RADIUS(): number { return gameSettings.bhAttractRadius; }
   static get GRAVITY_STRENGTH(): number { return gameSettings.bhEnemyPull; }
+
+  /** Current breath-cycle mass multiplier for grid fabric modulation.
+   *  Noticeable even at base mass, dramatic at full mass. */
+  get breathMassMultiplier(): number {
+    const instability = this.absorbedCount / BlackHole.MAX_ABSORB;
+    return 1.0 + Math.sin(this.breathPhase) * (0.2 + instability * 0.25);
+  }
 
   constructor() {
     super();
@@ -61,43 +83,51 @@ export class BlackHole extends Enemy {
     this.speed = ENEMY_SPEED.blackhole;
     this.scoreValue = ENEMY_SCORES.blackhole;
     this.collisionRadius = 30;
-
-    // No geometric shape — rendered procedurally
     this.shapePoints = [];
 
-    // Start with 4 orbiting diamonds / accretion particles
-    for (let i = 0; i < 4; i++) {
-      this.pushOrbitShape();
-      this.pushAccretionParticle();
-    }
+    // Initialize shared state
+    for (let i = 0; i < 28; i++) this.pushSwirlParticle(i % 4);
+    for (let i = 0; i < 12; i++) this.pushHorizonParticle();
   }
 
-  private pushOrbitShape(): void {
-    this.orbitAngles.push(Math.random() * Math.PI * 2);
-    this.orbitRadii.push(0.8 + Math.random() * 0.5);
-    this.orbitSpeeds.push((0.002 + Math.random() * 0.003) * (Math.random() < 0.5 ? 1 : -1));
-  }
-
-  private pushAccretionParticle(): void {
-    this.accretionParticles.push({
-      angle: Math.random() * Math.PI * 2,
-      radius: 0.7 + Math.random() * 0.8,
-      speed: (0.001 + Math.random() * 0.004) * (Math.random() < 0.5 ? 1 : -1),
+  private pushSwirlParticle(arm: number): void {
+    this.swirlParticles.push({
+      arm,
+      t: Math.random(),
+      speed: 0.00015 + Math.random() * 0.00035,
       brightness: 0.4 + Math.random() * 0.6,
+      size: 0.7 + Math.random() * 0.6,
+    });
+  }
+
+  private pushHorizonParticle(): void {
+    const dir = Math.random() < 0.5 ? 1 : -1;
+    this.horizonParticles.push({
+      angle: Math.random() * TWO_PI,
+      speed: (0.0012 + Math.random() * 0.0025) * dir,
+      orbitR: 0.93 + Math.random() * 0.14,
+      brightness: 0.4 + Math.random() * 0.6,
+      trailLen: 0.08 + Math.random() * 0.15,
+    });
+  }
+
+  private spawnInfallStreak(): void {
+    const baseR = this.collisionRadius;
+    this.infallStreaks.push({
+      angle: Math.random() * TWO_PI,
+      r: baseR * (1.4 + Math.random() * 1.2),
+      speed: 0.025 + Math.random() * 0.04,
+      length: 6 + Math.random() * 14,
+      alpha: 0.25 + Math.random() * 0.5,
+      curveDir: Math.random() < 0.5 ? 1 : -1,
     });
   }
 
   absorbEnemy(): void {
     this.absorbedCount++;
     this.collisionRadius = 30 + this.absorbedCount * 2.5;
-    this.pushOrbitShape();
-    // Add 2 accretion particles per absorption
-    this.pushAccretionParticle();
-    this.pushAccretionParticle();
-    if (this.visualMode === 'absorption_spike') {
-      this.absorptionSpikeTimer = 400;
-      this.spikeBaseGrowth += 1.5;
-    }
+    for (let i = 0; i < 4; i++) this.pushSwirlParticle(i % 4);
+    for (let i = 0; i < 2; i++) this.pushHorizonParticle();
     if (this.absorbedCount >= BlackHole.MAX_ABSORB) {
       this.overloaded = true;
     }
@@ -106,62 +136,61 @@ export class BlackHole extends Enemy {
   override onBulletHit(_bulletAngle: number): 'damage' | 'absorb' | 'reflect' {
     this.hitFlash = 1;
     if (this.absorbedCount > 0) {
-      // Shrink: remove one absorbed unit, no HP damage
       this.absorbedCount--;
       this.collisionRadius = 30 + this.absorbedCount * 2.5;
-      // Pop one orbit shape (keep minimum 4)
-      if (this.orbitAngles.length > 4) {
-        this.orbitAngles.pop();
-        this.orbitRadii.pop();
-        this.orbitSpeeds.pop();
+      if (this.swirlParticles.length > 28) {
+        for (let i = 0; i < 4; i++) this.swirlParticles.pop();
       }
-      if (this.accretionParticles.length > 4) {
-        this.accretionParticles.pop();
-        this.accretionParticles.pop();
+      if (this.horizonParticles.length > 12) {
+        this.horizonParticles.pop(); this.horizonParticles.pop();
       }
       return 'absorb';
     }
-    // Empty of absorbed enemies — take HP damage
     return 'damage';
   }
 
   update(dt: number, _playerPos?: Vec2): void {
     if (!this.active) return;
-    // No movement — stationary gravity well
-    this.rotation += dt * (0.004 + this.absorbedCount * 0.001);
+    const instability = this.absorbedCount / BlackHole.MAX_ABSORB;
+
+    this.rotation += dt * (0.003 + this.absorbedCount * 0.0008);
     this.wobbleTime += dt;
-    // Decay hit flash
+    this.breathPhase += dt * (0.002 + instability * 0.003);
+
     if (this.hitFlash > 0) {
       this.hitFlash = Math.max(0, this.hitFlash - dt * 0.004);
     }
-    // Update orbit angles
-    for (let i = 0; i < this.orbitAngles.length; i++) {
-      this.orbitAngles[i] += dt * this.orbitSpeeds[i];
-    }
-    // Update accretion particle angles
-    for (const p of this.accretionParticles) {
-      p.angle += dt * p.speed;
-    }
-    // Absorption spike decay
-    if (this.absorptionSpikeTimer > 0) {
-      this.absorptionSpikeTimer = Math.max(0, this.absorptionSpikeTimer - dt);
-    }
-    // Convulsive jolt timer
-    if (this.visualMode === 'convulsive') {
-      this.convulsiveJoltTimer += dt;
-      if (this.convulsiveJoltTimer >= this.convulsiveNextJolt) {
-        this.convulsiveJoltTimer = 0;
-        this.convulsiveNextJolt = 200 + Math.random() * 300;
-        const angle = Math.random() * Math.PI * 2;
-        const strength = 3 + Math.random() * 5;
-        this.convulsiveJoltX = Math.cos(angle) * strength;
-        this.convulsiveJoltY = Math.sin(angle) * strength;
-        this.convulsiveJoltDecay = 1;
-      }
-      if (this.convulsiveJoltDecay > 0) {
-        this.convulsiveJoltDecay = Math.max(0, this.convulsiveJoltDecay - dt * 0.01);
+
+    // Swirl rotation — accelerates with mass
+    this.swirlRotation += dt * (0.0008 + this.absorbedCount * 0.0005);
+    for (const sp of this.swirlParticles) {
+      sp.t -= dt * sp.speed * (1 + (1 - sp.t) * 2.5);
+      if (sp.t <= 0) {
+        sp.t = 1;
+        sp.brightness = 0.4 + Math.random() * 0.6;
       }
     }
+
+    // Horizon particles orbit
+    for (const hp of this.horizonParticles) {
+      hp.angle += dt * hp.speed * (1 + instability * 0.5);
+    }
+
+    // Corona flicker
+    this.coronaFlicker += dt * 0.003;
+
+    // Infall streak lifecycle
+    this.infallSpawnTimer -= dt;
+    if (this.infallSpawnTimer <= 0) {
+      this.spawnInfallStreak();
+      this.infallSpawnTimer = 60 + Math.random() * (180 - instability * 120);
+    }
+    const ringR = this.collisionRadius * 0.75;
+    for (const s of this.infallStreaks) {
+      s.r -= dt * s.speed * (1 + Math.max(0, 1 - s.r / (this.collisionRadius * 1.5)) * 3);
+      s.angle += dt * 0.0005 * s.curveDir * (1 + instability);
+    }
+    this.infallStreaks = this.infallStreaks.filter(s => s.r > ringR * 0.85);
   }
 
   override renderSpawn(renderer: Renderer): void {
@@ -171,408 +200,400 @@ export class BlackHole extends Enemy {
   render(renderer: Renderer): void {
     if (!this.active) return;
     if (this.isSpawning) { this.renderSpawn(renderer); return; }
-
     switch (this.visualMode) {
-      case 'current':
-        this.renderCurrent(renderer);
-        break;
-      case 'violent_breather':
-        this.renderViolentBreather(renderer);
-        break;
-      case 'convulsive':
-        this.renderConvulsive(renderer);
-        break;
-      case 'absorption_spike':
-        this.renderAbsorptionSpike(renderer);
-        break;
+      case 'dense': this.renderDense(renderer); break;
+      case 'haze': this.renderHaze(renderer); break;
+      case 'corona': this.renderCorona(renderer); break;
+      case 'molten': this.renderMolten(renderer); break;
     }
   }
 
-  /** Whether this BH needs a grid impulse this frame (for design lab sync) */
-  needsGridPulse = false;
-  gridPulseStrength = 0;
-
   // ============================================================
-  // Original cyan rendering
+  // Variant 1 — "Dense Core"
+  // Multiple layered filled halos + thick filled ring band.
+  // Maximum geometry for heaviest bloom contribution.
   // ============================================================
-  private renderCurrent(renderer: Renderer): void {
+  private renderDense(renderer: Renderer): void {
     const instability = this.absorbedCount / BlackHole.MAX_ABSORB;
-    const t = this.wobbleTime;
     const baseR = this.collisionRadius;
     const px = this.position.x;
     const py = this.position.y;
+    const breath = Math.sin(this.breathPhase) * 0.06 * (1 + instability);
+    const ringR = baseR * (0.75 + breath);
 
-    // Layer 1: Outer glow rings
-    for (let i = 0; i < 3; i++) {
-      const glowR = (baseR + 20 + i * 15) * (1 + Math.sin(t * 0.002 + i) * 0.05);
-      const glowAlpha = 0.08 - i * 0.02;
-      renderer.drawCircle(px, py, glowR, [0.1, 0.5, 1.0], 28, glowAlpha);
-    }
+    // Layered glow halos (outermost → innermost)
+    const [sr, sg, sb] = P.swirlArm;
+    renderer.drawFilledCircle(px, py, baseR * (1.6 + breath * 0.5), [sr * 0.3, sg * 0.3, sb * 0.3], 28, 0.025 + instability * 0.02);
+    renderer.drawFilledCircle(px, py, baseR * (1.3 + breath * 0.3), [sr * 0.5, sg * 0.5, sb * 0.5], 28, 0.05 + instability * 0.03);
+    renderer.drawFilledCircle(px, py, baseR * (1.05 + breath * 0.2), P.swirlArm, 28, 0.08 + instability * 0.04);
 
-    // Layer 2: Wobbly filled sphere
-    const segs = 32;
-    const cr = 0.4 + instability * 0.3;
-    const cg = 0.7 + instability * 0.15;
-    const cb = 1.0;
-    const wobbleScale = 1 + instability * 2;
-    const verts: { x: number; y: number }[] = [];
-    for (let i = 0; i < segs; i++) {
-      const a = (i / segs) * Math.PI * 2;
-      const noise = (Math.sin(a * 3 + t * 0.004) * 4
-                    + Math.sin(a * 5 - t * 0.006) * 2
-                    + Math.sin(a * 7 + t * 0.009) * 1.5) * wobbleScale;
-      const r = baseR + noise;
-      verts.push({ x: px + Math.cos(a) * r, y: py + Math.sin(a) * r });
-    }
-    for (let i = 0; i < segs; i++) {
-      const next = (i + 1) % segs;
-      renderer.drawTriangle(px, py, verts[i].x, verts[i].y, verts[next].x, verts[next].y, cr, cg, cb, 0.85);
-    }
+    // Dark void
+    renderer.drawFilledCircle(px, py, ringR * 0.88, P.voidBlack, 28, 1.0);
 
-    // Layer 3: White inner core
-    const coreR = baseR * 0.4;
-    const coreSegs = 20;
-    const coreVerts: { x: number; y: number }[] = [];
-    for (let i = 0; i < coreSegs; i++) {
-      const a = (i / coreSegs) * Math.PI * 2;
-      const noise = (Math.sin(a * 3 + t * 0.005) * 1.5 + Math.sin(a * 5 - t * 0.007) * 1) * wobbleScale;
-      const r = coreR + noise;
-      coreVerts.push({ x: px + Math.cos(a) * r, y: py + Math.sin(a) * r });
-    }
-    for (let i = 0; i < coreSegs; i++) {
-      const next = (i + 1) % coreSegs;
-      renderer.drawTriangle(px, py, coreVerts[i].x, coreVerts[i].y, coreVerts[next].x, coreVerts[next].y, 1.0, 1.0, 1.0, 0.9);
+    // Thick ring band (filled wedge quads)
+    const bandWidth = 5 + instability * 4;
+    this.renderThickRing(renderer, px, py, ringR - bandWidth * 0.3, ringR + bandWidth * 0.7, P.horizonRing, 48, 0.35 + instability * 0.15);
+
+    // Bright inner ring edge
+    renderer.drawCircle(px, py, ringR - bandWidth * 0.3, [1, 1, 1], 48, 0.3 + instability * 0.1);
+
+    // Orbit particles as larger filled dots
+    const [odr, odg, odb] = P.orbitDot;
+    for (const hp of this.horizonParticles) {
+      const r = ringR * hp.orbitR;
+      const hpx = px + Math.cos(hp.angle) * r;
+      const hpy = py + Math.sin(hp.angle) * r;
+      renderer.drawFilledCircle(hpx, hpy, 2.5 + instability * 1.5, [odr, odg, odb], 8, hp.brightness * 0.8);
+      // Short trail arc
+      const ta = hp.angle + hp.trailLen * Math.sign(hp.speed);
+      renderer.drawLine(
+        hpx, hpy,
+        px + Math.cos(ta) * r, py + Math.sin(ta) * r,
+        odr, odg, odb, hp.brightness * 0.4,
+      );
     }
 
-    // Layer 4: Cyan edge outline
-    for (let i = 0; i < segs; i++) {
-      const next = (i + 1) % segs;
-      renderer.drawLine(verts[i].x, verts[i].y, verts[next].x, verts[next].y, 0.1, 0.9, 1.0, 0.9);
-    }
+    // Swirl arms
+    this.renderSwirlArms(renderer, px, py, baseR, 4, 3.0, 0.7);
 
-    // Layer 5: Orbiting diamonds
-    const diamondSize = 3.5;
-    for (let i = 0; i < this.orbitAngles.length; i++) {
-      const oa = this.orbitAngles[i];
-      const orbitR = (baseR + 8) * this.orbitRadii[i];
-      const dx = px + Math.cos(oa) * orbitR;
-      const dy = py + Math.sin(oa) * orbitR;
-      const ds = diamondSize;
-      renderer.drawTriangle(dx, dy - ds * 1.5, dx - ds, dy, dx + ds, dy, 0.1, 0.9, 1.0, 0.85);
-      renderer.drawTriangle(dx, dy + ds * 1.5, dx - ds, dy, dx + ds, dy, 0.1, 0.9, 1.0, 0.85);
-    }
+    // Infall streaks
+    this.renderInfallStreaks(renderer, px, py, ringR);
 
-    // Layer 6: Hit flash
-    if (this.hitFlash > 0) {
-      const flashAlpha = Math.min(this.hitFlash * 3, 1);
-      renderer.drawFilledCircle(px, py, baseR * 1.2, [1, 1, 1], 24, flashAlpha * 0.6);
-    }
-
-    // Layer 7: Danger ring when instability > 0.6
+    // Danger pulse at high mass
     if (instability > 0.6) {
-      const dangerAlpha = (instability - 0.6) * 2.5;
-      const dangerPulse = 1 + Math.sin(t * 0.008) * 0.15;
-      const dangerR = (baseR + 25) * dangerPulse;
-      const flash = 0.5 + 0.5 * Math.sin(t * 0.012);
-      renderer.drawCircle(px, py, dangerR, [0.2 + flash * 0.8, 0.7 + flash * 0.3, 1.0], 28, dangerAlpha * 0.5);
-    }
-  }
-
-  // ============================================================
-  // Shared orange-white rendering helpers
-  // ============================================================
-
-  /** Render dark void core (near-black filled circle) */
-  private renderVoidCore(renderer: Renderer, px: number, py: number, radius: number, alpha: number): void {
-    const [cr, cg, cb] = BLACKHOLE_ORANGE.core;
-    renderer.drawFilledCircle(px, py, radius, [cr, cg, cb], 20, alpha);
-  }
-
-  /** Render bright corona ring around the core */
-  private renderCorona(renderer: Renderer, px: number, py: number, radius: number, alpha: number, segs = 32): void {
-    const [cr, cg, cb] = BLACKHOLE_ORANGE.corona;
-    renderer.drawCircle(px, py, radius, [cr, cg, cb], segs, alpha);
-    // Inner bright line
-    renderer.drawCircle(px, py, radius * 0.95, [1, 0.9, 0.6], segs, alpha * 0.4);
-  }
-
-  /** Render radiating rays from center */
-  private renderRays(renderer: Renderer, px: number, py: number, baseAngle: number, rayCount: number, rayLen: number, alpha: number): void {
-    const [rr, rg, rb] = BLACKHOLE_ORANGE.ray;
-    for (let i = 0; i < rayCount; i++) {
-      const angle = baseAngle + (i / rayCount) * Math.PI * 2;
-      const x1 = px + Math.cos(angle) * 6;
-      const y1 = py + Math.sin(angle) * 6;
-      const x2 = px + Math.cos(angle) * rayLen * 0.5;
-      const y2 = py + Math.sin(angle) * rayLen * 0.5;
-      const x3 = px + Math.cos(angle) * rayLen;
-      const y3 = py + Math.sin(angle) * rayLen;
-      // White at center, orange at tips
-      renderer.drawLine(x1, y1, x2, y2, 1, 1, 0.9, alpha * 0.7);
-      renderer.drawLine(x2, y2, x3, y3, rr, rg, rb, alpha * 0.4);
-    }
-  }
-
-  /** Render accretion disc particles */
-  private renderAccretionDisc(renderer: Renderer, px: number, py: number, baseR: number, brightnessScale: number): void {
-    const [dr, dg, db] = BLACKHOLE_ORANGE.disc;
-    for (const p of this.accretionParticles) {
-      const orbitR = baseR * p.radius;
-      const dx = px + Math.cos(p.angle) * orbitR;
-      const dy = py + Math.sin(p.angle) * orbitR * 0.6; // elliptical for 3D tilt
-      const alpha = p.brightness * brightnessScale;
-      // Small filled diamond shape
-      const s = 2.5;
-      renderer.drawTriangle(dx, dy - s * 1.2, dx - s, dy, dx + s, dy, dr, dg, db, alpha);
-      renderer.drawTriangle(dx, dy + s * 1.2, dx - s, dy, dx + s, dy, dr, dg, db, alpha);
-    }
-  }
-
-  /** Render orange-white wobbly body */
-  private renderOrangeBody(renderer: Renderer, px: number, py: number, baseR: number, wobbleScale: number, t: number): void {
-    const segs = 32;
-    const [br, bg, bb] = BLACKHOLE_ORANGE.body;
-    const instability = this.absorbedCount / BlackHole.MAX_ABSORB;
-    const verts: { x: number; y: number }[] = [];
-    for (let i = 0; i < segs; i++) {
-      const a = (i / segs) * Math.PI * 2;
-      const noise = (Math.sin(a * 3 + t * 0.004) * 4
-                    + Math.sin(a * 5 - t * 0.006) * 2
-                    + Math.sin(a * 7 + t * 0.009) * 1.5) * wobbleScale;
-      const r = baseR + noise;
-      verts.push({ x: px + Math.cos(a) * r, y: py + Math.sin(a) * r });
+      const pulse = 0.5 + 0.5 * Math.sin(this.wobbleTime * 0.008);
+      renderer.drawCircle(px, py, ringR + 15, [1, 0.35, 0.1], 28, (instability - 0.6) * pulse * 0.35);
     }
 
-    // Filled body
-    for (let i = 0; i < segs; i++) {
-      const next = (i + 1) % segs;
-      renderer.drawTriangle(px, py, verts[i].x, verts[i].y, verts[next].x, verts[next].y,
-        br * 0.6, bg * 0.4, bb * 0.3, 0.85);
-    }
-
-    // Orange edge outline
-    for (let i = 0; i < segs; i++) {
-      const next = (i + 1) % segs;
-      renderer.drawLine(verts[i].x, verts[i].y, verts[next].x, verts[next].y, br, bg, bb, 0.9);
-    }
-
-    // Orange-white outer glow rings
-    const [gr, gg, gb] = BLACKHOLE_ORANGE.glow;
-    for (let i = 0; i < 3; i++) {
-      const glowR = (baseR + 15 + i * 12) * (1 + Math.sin(t * 0.002 + i) * 0.05);
-      const glowAlpha = 0.1 - i * 0.025;
-      renderer.drawCircle(px, py, glowR, [gr, gg, gb], 28, glowAlpha);
-    }
-
-    // Danger ring at high instability
-    if (instability > 0.6) {
-      const dangerAlpha = (instability - 0.6) * 2.5;
-      const dangerPulse = 1 + Math.sin(t * 0.008) * 0.15;
-      const dangerR = (baseR + 25) * dangerPulse;
-      renderer.drawCircle(px, py, dangerR, [1, 0.4, 0.1], 28, dangerAlpha * 0.5);
-    }
-  }
-
-  // ============================================================
-  // Variant A — "Violent Breather"
-  // ============================================================
-  private renderViolentBreather(renderer: Renderer): void {
-    const instability = this.absorbedCount / BlackHole.MAX_ABSORB;
-    const t = this.wobbleTime;
-    const baseR = this.collisionRadius;
-    const px = this.position.x;
-    const py = this.position.y;
-
-    // Cardiac heartbeat pulse: sharp peaks with pow(abs(sin), 10)
-    const pulseSpeed = 0.0015 + instability * 0.0035; // 2s cycle empty → 0.4s cycle full
-    const rawPulse = Math.pow(Math.abs(Math.sin(t * pulseSpeed)), 10);
-    const pulse = rawPulse;
-
-    // Radius surges +30% on pulse peak, contracts to 85% between
-    const radiusMult = 0.85 + pulse * 0.45;
-    const effectiveR = baseR * radiusMult;
-    const wobbleScale = 1 + instability * 1.5;
-
-    // Outer glow + body
-    this.renderOrangeBody(renderer, px, py, effectiveR, wobbleScale, t);
-
-    // Dark void core
-    this.renderVoidCore(renderer, px, py, effectiveR * 0.4, 0.95);
-
-    // Corona rim
-    this.renderCorona(renderer, px, py, effectiveR * 0.45, 0.6 + pulse * 0.3);
-
-    // Rays: extend on pulse, retract between
-    const rayLen = 20 + pulse * 60 + instability * 30;
-    const rayAlpha = 0.2 + pulse * 0.6;
-    this.renderRays(renderer, px, py, this.rotation, 8, rayLen, rayAlpha);
-
-    // Accretion disc: brighten on pulse
-    this.renderAccretionDisc(renderer, px, py, effectiveR + 8, 0.3 + pulse * 0.7);
-
-    // Grid pulse on heartbeat peaks
-    this.needsGridPulse = pulse > 0.7;
-    this.gridPulseStrength = pulse * 80 * (1 + instability);
-
-    // Hit flash
-    if (this.hitFlash > 0) {
-      const flashAlpha = Math.min(this.hitFlash * 3, 1);
-      renderer.drawFilledCircle(px, py, effectiveR * 1.2, [1, 0.8, 0.3], 24, flashAlpha * 0.6);
-    }
-  }
-
-  // ============================================================
-  // Variant B — "Convulsive"
-  // ============================================================
-  private renderConvulsive(renderer: Renderer): void {
-    const instability = this.absorbedCount / BlackHole.MAX_ABSORB;
-    const t = this.wobbleTime;
-    const baseR = this.collisionRadius;
-
-    // Multi-frequency chaos: 3 irrational-ratio sines
-    const wave1 = Math.sin(t * 0.0037) * 0.15;
-    const wave2 = Math.sin(t * 0.0071) * 0.10;
-    const wave3 = Math.sin(t * 0.0113) * 0.08;
-    const radiusMult = 1 + (wave1 + wave2 + wave3) * (1 + instability);
-
-    // Jolt offset (decaying random displacement)
-    const joltX = this.convulsiveJoltX * this.convulsiveJoltDecay;
-    const joltY = this.convulsiveJoltY * this.convulsiveJoltDecay;
-
-    const effectiveR = baseR * radiusMult;
-    const px = this.position.x + joltX;
-    const py = this.position.y + joltY;
-    const wobbleScale = 1.5 + instability * 2.5;
-
-    // Body (extra wobbly)
-    this.renderOrangeBody(renderer, px, py, effectiveR, wobbleScale, t);
-
-    // Dark void core
-    this.renderVoidCore(renderer, px, py, effectiveR * 0.38, 0.95);
-
-    // Corona
-    this.renderCorona(renderer, px, py, effectiveR * 0.43, 0.7);
-
-    // Rays with per-ray angle jitter
-    const [rr, rg, rb] = BLACKHOLE_ORANGE.ray;
-    for (let i = 0; i < 8; i++) {
-      const baseAngle = this.rotation + (i / 8) * Math.PI * 2;
-      const jitter = Math.sin(t * 0.02 + i * 1.7) * 0.15;
-      const angle = baseAngle + jitter;
-      const rayLen = 30 + Math.abs(Math.sin(t * 0.005 + i * 2.3)) * 40 + instability * 20;
-      const x1 = px + Math.cos(angle) * 6;
-      const y1 = py + Math.sin(angle) * 6;
-      const x2 = px + Math.cos(angle) * rayLen * 0.5;
-      const y2 = py + Math.sin(angle) * rayLen * 0.5;
-      const x3 = px + Math.cos(angle) * rayLen;
-      const y3 = py + Math.sin(angle) * rayLen;
-      renderer.drawLine(x1, y1, x2, y2, 1, 1, 0.9, 0.55);
-      renderer.drawLine(x2, y2, x3, y3, rr, rg, rb, 0.3);
-    }
-
-    // Accretion disc
-    this.renderAccretionDisc(renderer, px, py, effectiveR + 8, 0.5 + instability * 0.3);
-
-    // Constant micro grid impulses
     this.needsGridPulse = true;
-    this.gridPulseStrength = 15 + instability * 25 + Math.abs(wave1) * 40;
-
-    // Hit flash
-    if (this.hitFlash > 0) {
-      const flashAlpha = Math.min(this.hitFlash * 3, 1);
-      renderer.drawFilledCircle(px, py, effectiveR * 1.2, [1, 0.8, 0.3], 24, flashAlpha * 0.6);
-    }
+    this.gridPulseStrength = 12 + instability * 30;
+    this.renderHitFlash(renderer, px, py, baseR);
   }
 
   // ============================================================
-  // Variant C — "Absorption Spike"
+  // Variant 2 — "Nebula Haze"
+  // Soft cloud of overlapping semi-transparent fills.
+  // No hard ring line. Organic, gaseous, thick.
   // ============================================================
-  private renderAbsorptionSpike(renderer: Renderer): void {
+  private renderHaze(renderer: Renderer): void {
     const instability = this.absorbedCount / BlackHole.MAX_ABSORB;
-    const t = this.wobbleTime;
-    const baseR = this.collisionRadius + this.spikeBaseGrowth;
+    const baseR = this.collisionRadius;
     const px = this.position.x;
     const py = this.position.y;
+    const breath = Math.sin(this.breathPhase) * 0.06 * (1 + instability);
+    const ringR = baseR * (0.75 + breath);
 
-    // Spike state: 0 = idle, >0 = surging
-    const spikeT = this.absorptionSpikeTimer / 400; // 1 at spike start, 0 when expired
-    // Springy overshoot: spike up fast, overshoot, settle
-    const springy = spikeT > 0
-      ? spikeT * 1.5 * Math.exp(-spikeT * 2) * (1 + Math.sin(spikeT * 30) * 0.3 * spikeT)
-      : 0;
+    // Outer soft halo
+    renderer.drawFilledCircle(px, py, baseR * (1.4 + breath), P.swirlTrail, 24, 0.03 + instability * 0.02);
 
-    // Idle: gentle sine wobble
-    const idleWobble = Math.sin(t * 0.002) * 0.03;
-    const radiusMult = 1 + idleWobble + springy * 0.5;
-    const effectiveR = baseR * radiusMult;
-    const wobbleScale = 0.8 + instability + spikeT * 2;
+    // Cloud blobs: many medium filled circles scattered at ring radius
+    const [ar, ag, ab] = P.swirlArm;
+    const [cr, cg, cb] = P.swirlCore;
+    const blobCount = 16 + Math.floor(instability * 8);
+    for (let i = 0; i < blobCount; i++) {
+      const baseAngle = (i / blobCount) * TWO_PI + this.swirlRotation * 0.3;
+      // Radial scatter around ring
+      const radialNoise = Math.sin(i * 7.3 + this.wobbleTime * 0.002) * baseR * 0.15;
+      const blobR = ringR + radialNoise;
+      const blobSize = 8 + Math.sin(i * 3.7 + this.wobbleTime * 0.003) * 4 + instability * 5;
+      const blobAlpha = 0.03 + Math.sin(i * 5.1 + this.wobbleTime * 0.004) * 0.01 + instability * 0.02;
 
-    // Body
-    this.renderOrangeBody(renderer, px, py, effectiveR, wobbleScale, t);
+      const bx = px + Math.cos(baseAngle) * blobR;
+      const by = py + Math.sin(baseAngle) * blobR;
 
-    // Dark void core
-    this.renderVoidCore(renderer, px, py, effectiveR * 0.4, 0.95);
-
-    // Corona (brighter during spike)
-    this.renderCorona(renderer, px, py, effectiveR * 0.45, 0.5 + spikeT * 0.4);
-
-    // Rays: faint idle, dramatic during spike
-    const rayLen = 20 + spikeT * 120 + instability * 20;
-    const rayAlpha = 0.15 + spikeT * 0.7;
-    this.renderRays(renderer, px, py, this.rotation, 8, rayLen, rayAlpha);
-
-    // Accretion disc: scatter outward during spike, then return
-    const discRadiusMult = 1 + spikeT * 0.6;
-    const discPx = px;
-    const discPy = py;
-    const [dr, dg, db] = BLACKHOLE_ORANGE.disc;
-    for (const p of this.accretionParticles) {
-      const orbitR = (effectiveR + 8) * p.radius * discRadiusMult;
-      const dx = discPx + Math.cos(p.angle) * orbitR;
-      const dy = discPy + Math.sin(p.angle) * orbitR * 0.6;
-      const alpha = p.brightness * (0.4 + spikeT * 0.6);
-      const s = 2.5;
-      renderer.drawTriangle(dx, dy - s * 1.2, dx - s, dy, dx + s, dy, dr, dg, db, alpha);
-      renderer.drawTriangle(dx, dy + s * 1.2, dx - s, dy, dx + s, dy, dr, dg, db, alpha);
+      // Alternate warm/hot colors
+      if (i % 3 === 0) {
+        renderer.drawFilledCircle(bx, by, blobSize, [cr, cg, cb], 12, blobAlpha);
+      } else {
+        renderer.drawFilledCircle(bx, by, blobSize, [ar, ag, ab], 12, blobAlpha);
+      }
     }
 
-    // White flash overlay during spike
-    if (spikeT > 0.5) {
-      const flashAlpha = (spikeT - 0.5) * 2 * 0.3;
-      renderer.drawFilledCircle(px, py, effectiveR * 1.3, [1, 0.9, 0.7], 24, flashAlpha);
+    // Dark void on top
+    renderer.drawFilledCircle(px, py, ringR * 0.85, P.voidBlack, 28, 1.0);
+
+    // Gentle swirl arms (faint)
+    this.renderSwirlArms(renderer, px, py, baseR, 4, 3.0, 0.35);
+
+    // Small ember particles scattered in the cloud
+    const [odr, odg, odb] = P.orbitDot;
+    for (const hp of this.horizonParticles) {
+      const r = ringR * (0.85 + hp.orbitR * 0.3);
+      const hpx = px + Math.cos(hp.angle) * r;
+      const hpy = py + Math.sin(hp.angle) * r;
+      renderer.drawFilledCircle(hpx, hpy, 1.5 + instability, [odr, odg, odb], 6, hp.brightness * 0.5);
     }
 
-    // Grid impulse on spike
-    this.needsGridPulse = spikeT > 0.3;
-    this.gridPulseStrength = spikeT * 120 * (1 + instability);
+    // Infall streaks (faint)
+    this.renderInfallStreaks(renderer, px, py, ringR);
 
-    // Hit flash
+    // Danger — diffuse red glow
+    if (instability > 0.6) {
+      const pulse = 0.5 + 0.5 * Math.sin(this.wobbleTime * 0.008);
+      renderer.drawFilledCircle(px, py, ringR * 1.2, [1, 0.3, 0.05], 20, (instability - 0.6) * pulse * 0.06);
+    }
+
+    this.needsGridPulse = true;
+    this.gridPulseStrength = 10 + instability * 25;
+    this.renderHitFlash(renderer, px, py, baseR);
+  }
+
+  // ============================================================
+  // Variant 3 — "Solar Corona"
+  // Many radial spike triangles radiating from ring. Sun-like
+  // fuzzy halo. Hot white inner, amber tips.
+  // ============================================================
+  private renderCorona(renderer: Renderer): void {
+    const instability = this.absorbedCount / BlackHole.MAX_ABSORB;
+    const baseR = this.collisionRadius;
+    const px = this.position.x;
+    const py = this.position.y;
+    const breath = Math.sin(this.breathPhase) * 0.06 * (1 + instability);
+    const ringR = baseR * (0.75 + breath);
+
+    // Ambient glow halo
+    renderer.drawFilledCircle(px, py, baseR * (1.4 + breath), P.swirlTrail, 24, 0.03 + instability * 0.015);
+
+    // Dark void
+    renderer.drawFilledCircle(px, py, ringR * 0.88, P.voidBlack, 28, 1.0);
+
+    // Thin bright reference ring
+    const [hr, hg, hb] = P.horizonRing;
+    renderer.drawCircle(px, py, ringR, [hr, hg, hb], 48, 0.4 + instability * 0.15);
+    renderer.drawCircle(px, py, ringR + 1.5, [hr * 0.7, hg * 0.7, hb * 0.7], 48, 0.2);
+
+    // Radial corona spikes (triangles pointing outward)
+    const spikeCount = 48 + Math.floor(instability * 24);
+    const [cor, cog, cob] = P.coronaOuter;
+    for (let i = 0; i < spikeCount; i++) {
+      const angle = (i / spikeCount) * TWO_PI + this.rotation * 0.1;
+
+      // Spike length varies with noise + breath
+      const noise = Math.sin(angle * 7 + this.wobbleTime * 0.004) * 0.5 + 0.5;
+      const baseLen = 10 + noise * 20 + instability * 15;
+      const spikeLen = baseLen * (1 + breath * 2);
+
+      // Base half-width on ring surface
+      const halfWidth = 0.03 + noise * 0.02;
+      const a1 = angle - halfWidth;
+      const a2 = angle + halfWidth;
+
+      // Triangle: two points on ring, one at tip
+      const bx1 = px + Math.cos(a1) * ringR;
+      const by1 = py + Math.sin(a1) * ringR;
+      const bx2 = px + Math.cos(a2) * ringR;
+      const by2 = py + Math.sin(a2) * ringR;
+      const tipR = ringR + spikeLen;
+      const tx = px + Math.cos(angle) * tipR;
+      const ty = py + Math.sin(angle) * tipR;
+
+      // Asymmetric brightness (M87-style)
+      const asymBright = 0.5 + 0.5 * Math.cos(angle - this.rotation * 0.2);
+      const alpha = (0.15 + noise * 0.15 + instability * 0.1) * asymBright;
+
+      // Short spikes white-hot, long spikes amber
+      if (spikeLen < 20) {
+        renderer.drawTriangle(bx1, by1, bx2, by2, tx, ty, 1, 1, 0.9, alpha);
+      } else {
+        renderer.drawTriangle(bx1, by1, bx2, by2, tx, ty, cor, cog, cob, alpha);
+      }
+    }
+
+    // Orbit particles
+    const [odr, odg, odb] = P.orbitDot;
+    for (const hp of this.horizonParticles) {
+      const r = ringR * hp.orbitR;
+      const hpx = px + Math.cos(hp.angle) * r;
+      const hpy = py + Math.sin(hp.angle) * r;
+      renderer.drawFilledCircle(hpx, hpy, 2 + instability, [odr, odg, odb], 6, hp.brightness * 0.7);
+    }
+
+    // Swirl arms feeding ring
+    this.renderSwirlArms(renderer, px, py, baseR, 4, 3.0, 0.5);
+
+    // Infall streaks
+    this.renderInfallStreaks(renderer, px, py, ringR);
+
+    // Danger
+    if (instability > 0.6) {
+      const pulse = 0.5 + 0.5 * Math.sin(this.wobbleTime * 0.009);
+      renderer.drawCircle(px, py, ringR + 35, [1, 0.35, 0.1], 28, (instability - 0.6) * pulse * 0.25);
+    }
+
+    this.needsGridPulse = true;
+    this.gridPulseStrength = 12 + instability * 30;
+    this.renderHitFlash(renderer, px, py, baseR);
+  }
+
+  // ============================================================
+  // Variant 4 — "Molten Band"
+  // Thick solid filled ring band. Bright inner edge, dimmer
+  // outer. Hot spots flare randomly. Most solid/heavy variant.
+  // ============================================================
+  private renderMolten(renderer: Renderer): void {
+    const instability = this.absorbedCount / BlackHole.MAX_ABSORB;
+    const baseR = this.collisionRadius;
+    const px = this.position.x;
+    const py = this.position.y;
+    const breath = Math.sin(this.breathPhase) * 0.06 * (1 + instability);
+    const ringR = baseR * (0.75 + breath);
+
+    // Outer glow halo
+    renderer.drawFilledCircle(px, py, baseR * (1.3 + breath), P.swirlTrail, 24, 0.04 + instability * 0.02);
+
+    // Dark void
+    renderer.drawFilledCircle(px, py, ringR * 0.82, P.voidBlack, 28, 1.0);
+
+    // Thick molten ring: 2 concentric bands for gradient effect
+    const bandWidth = 8 + instability * 6;
+    const innerR = ringR - bandWidth * 0.3;
+    const outerR = ringR + bandWidth * 0.7;
+    const midR = (innerR + outerR) / 2;
+
+    // Inner band (bright, white-hot)
+    this.renderThickRing(renderer, px, py, innerR, midR, P.swirlCore, 48, 0.45 + instability * 0.15);
+    // Outer band (dimmer, amber)
+    this.renderThickRing(renderer, px, py, midR, outerR, P.swirlArm, 48, 0.25 + instability * 0.1);
+
+    // Hot spots: random segments flare brighter
+    const segs = 48;
+    for (let i = 0; i < segs; i++) {
+      const hotNoise = Math.sin(i * 13.7 + this.wobbleTime * 0.005);
+      if (hotNoise > 0.6) {
+        const a1 = (i / segs) * TWO_PI;
+        const a2 = ((i + 1) / segs) * TWO_PI;
+        const cos1 = Math.cos(a1), sin1 = Math.sin(a1);
+        const cos2 = Math.cos(a2), sin2 = Math.sin(a2);
+        const flareR = outerR + (hotNoise - 0.6) * 10 * (1 + instability);
+
+        renderer.drawTriangle(
+          px + cos1 * midR, py + sin1 * midR,
+          px + cos2 * midR, py + sin2 * midR,
+          px + cos1 * flareR, py + sin1 * flareR,
+          1, 1, 0.8, (hotNoise - 0.6) * 0.5,
+        );
+        renderer.drawTriangle(
+          px + cos2 * midR, py + sin2 * midR,
+          px + cos2 * flareR, py + sin2 * flareR,
+          px + cos1 * flareR, py + sin1 * flareR,
+          1, 1, 0.8, (hotNoise - 0.6) * 0.5,
+        );
+      }
+    }
+
+    // Bright inner edge line
+    renderer.drawCircle(px, py, innerR, [1, 1, 1], 48, 0.35 + instability * 0.1);
+
+    // Orbit particles
+    const [odr, odg, odb] = P.orbitDot;
+    for (const hp of this.horizonParticles) {
+      const r = (innerR + outerR) / 2 * hp.orbitR;
+      const hpx = px + Math.cos(hp.angle) * r;
+      const hpy = py + Math.sin(hp.angle) * r;
+      renderer.drawFilledCircle(hpx, hpy, 2 + instability, [odr, odg, odb], 6, hp.brightness * 0.7);
+    }
+
+    // Swirl arms
+    this.renderSwirlArms(renderer, px, py, baseR, 4, 3.0, 0.55);
+
+    // Infall streaks
+    this.renderInfallStreaks(renderer, px, py, ringR);
+
+    // Danger
+    if (instability > 0.6) {
+      const pulse = 0.5 + 0.5 * Math.sin(this.wobbleTime * 0.008);
+      renderer.drawCircle(px, py, outerR + 10, [1, 0.35, 0.1], 28, (instability - 0.6) * pulse * 0.35);
+    }
+
+    this.needsGridPulse = true;
+    this.gridPulseStrength = 14 + instability * 32;
+    this.renderHitFlash(renderer, px, py, baseR);
+  }
+
+  // ============================================================
+  // Shared rendering helpers
+  // ============================================================
+
+  /** Draw a thick ring band between innerR and outerR using filled quads */
+  private renderThickRing(
+    renderer: Renderer, px: number, py: number,
+    innerR: number, outerR: number,
+    color: [number, number, number],
+    segments: number, alpha: number,
+  ): void {
+    const [cr, cg, cb] = color;
+    for (let i = 0; i < segments; i++) {
+      const a1 = (i / segments) * TWO_PI;
+      const a2 = ((i + 1) / segments) * TWO_PI;
+      const cos1 = Math.cos(a1), sin1 = Math.sin(a1);
+      const cos2 = Math.cos(a2), sin2 = Math.sin(a2);
+      const ix1 = px + cos1 * innerR, iy1 = py + sin1 * innerR;
+      const ix2 = px + cos2 * innerR, iy2 = py + sin2 * innerR;
+      const ox1 = px + cos1 * outerR, oy1 = py + sin1 * outerR;
+      const ox2 = px + cos2 * outerR, oy2 = py + sin2 * outerR;
+      renderer.drawTriangle(ix1, iy1, ix2, iy2, ox1, oy1, cr, cg, cb, alpha);
+      renderer.drawTriangle(ix2, iy2, ox2, oy2, ox1, oy1, cr, cg, cb, alpha);
+    }
+  }
+
+  /** Render spiral arm particles */
+  private renderSwirlArms(
+    renderer: Renderer, px: number, py: number, baseR: number,
+    armCount: number, wrapRadians: number, alphaScale: number,
+  ): void {
+    const [ar, ag, ab] = P.swirlArm;
+    for (const sp of this.swirlParticles) {
+      const armIdx = sp.arm % armCount;
+      const armBase = (armIdx / armCount) * TWO_PI + this.swirlRotation;
+      const spiralAngle = armBase + sp.t * wrapRadians;
+      const spiralR = baseR * (0.15 + sp.t * 1.3);
+      const spx = px + Math.cos(spiralAngle) * spiralR;
+      const spy = py + Math.sin(spiralAngle) * spiralR;
+
+      const tangentAngle = spiralAngle + Math.PI * 0.5;
+      const streakLen = (2.5 + sp.t * 5) * sp.size;
+      const tx = Math.cos(tangentAngle) * streakLen;
+      const ty = Math.sin(tangentAngle) * streakLen;
+
+      const alpha = sp.brightness * (1 - sp.t * 0.3) * alphaScale;
+      renderer.drawLine(spx - tx, spy - ty, spx + tx, spy + ty, ar, ag, ab, alpha);
+    }
+  }
+
+  /** Render infall streaks falling toward ring */
+  private renderInfallStreaks(renderer: Renderer, px: number, py: number, targetR: number): void {
+    const [ir, ig, ib] = P.infallStreak;
+    for (const s of this.infallStreaks) {
+      const ca = Math.cos(s.angle);
+      const sa = Math.sin(s.angle);
+      const x1 = px + ca * s.r;
+      const y1 = py + sa * s.r;
+      const x2 = px + ca * (s.r + s.length);
+      const y2 = py + sa * (s.r + s.length);
+      const proximity = 1 - Math.max(0, (s.r - targetR)) / (this.collisionRadius * 1.5);
+      renderer.drawLine(x1, y1, x2, y2, ir, ig, ib, s.alpha * Math.max(0.1, proximity));
+    }
+  }
+
+  private renderHitFlash(renderer: Renderer, px: number, py: number, radius: number): void {
     if (this.hitFlash > 0) {
       const flashAlpha = Math.min(this.hitFlash * 3, 1);
-      renderer.drawFilledCircle(px, py, effectiveR * 1.2, [1, 0.8, 0.3], 24, flashAlpha * 0.6);
+      renderer.drawFilledCircle(px, py, radius * 1.2, [1, 1, 1], 24, flashAlpha * 0.5);
     }
   }
 
   renderGlow(renderer: Renderer, time: number): void {
     if (!this.active) return;
     this.render(renderer);
-    // Pulsing gravity waves (color matches mode)
-    const isOrange = this.visualMode !== 'current';
     for (let i = 0; i < 4; i++) {
       const phase = (time * 0.6 + i * 0.25) % 1.0;
       const ringR = this.collisionRadius + phase * 60;
-      const alpha = (1 - phase) * 0.2;
-      if (isOrange) {
-        renderer.drawCircle(this.position.x, this.position.y, ringR, [alpha * 2, alpha * 0.7, alpha * 0.1], 28);
-      } else {
-        renderer.drawCircle(this.position.x, this.position.y, ringR, [alpha * 0.3, alpha * 0.7, alpha], 28);
-      }
+      const alpha = (1 - phase) * 0.15;
+      renderer.drawCircle(this.position.x, this.position.y, ringR, [alpha * 2, alpha * 0.7, alpha * 0.2], 28);
     }
   }
 
   onDeath(): EnemyDeathResult {
-    // No circle spawns on bullet-kill (evaporation)
-    // Circles only spawn on overload explosion (handled in game.ts)
     return {};
   }
 }
