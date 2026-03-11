@@ -1596,6 +1596,28 @@ export class Game {
         a.position.y = Math.max(-hh, Math.min(hh, a.position.y + ny * pushA));
         b.position.x = Math.max(-hw, Math.min(hw, b.position.x - nx * pushB));
         b.position.y = Math.max(-hh, Math.min(hh, b.position.y - ny * pushB));
+
+        // Bouncers (Pinwheel): deflect velocity off collision normal
+        const aIsBouncer = a instanceof Pinwheel;
+        const bIsBouncer = b instanceof Pinwheel;
+        if (aIsBouncer || bIsBouncer) {
+          if (aIsBouncer) {
+            // Reflect A's velocity off normal (n points from B→A)
+            const dot = a.velocity.x * nx + a.velocity.y * ny;
+            if (dot < 0) { // only if moving toward B
+              a.velocity.x -= 2 * dot * nx;
+              a.velocity.y -= 2 * dot * ny;
+            }
+          }
+          if (bIsBouncer) {
+            // Reflect B's velocity off -normal (points from A→B)
+            const dot = b.velocity.x * (-nx) + b.velocity.y * (-ny);
+            if (dot < 0) { // only if moving toward A
+              b.velocity.x -= 2 * dot * (-nx);
+              b.velocity.y -= 2 * dot * (-ny);
+            }
+          }
+        }
       }
     }
   }
