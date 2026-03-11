@@ -558,8 +558,15 @@ export class Game {
     for (const e of this.enemies) {
       if (!e.active) continue;
       if (e instanceof BlackHole) {
-        const mass = -(gameSettings.bhGridMassBase + e.absorbedCount * gameSettings.bhGridMassPerAbsorb) * e.breathMassMultiplier;
-        this.grid.applyGravityWell(e.position.x, e.position.y, mass, BlackHole.ATTRACT_RADIUS * gameSettings.bhGridRadiusMultiplier);
+        // Ramp gravity during spawn so the fabric warps in gradually
+        let spawnFactor = 1;
+        if (e.isSpawning) {
+          spawnFactor = 1 - e.spawnTimer / e.spawnDuration; // 0→1 over spawn
+          spawnFactor = spawnFactor * spawnFactor; // ease-in (quadratic)
+        }
+        const mass = -(gameSettings.bhGridMassBase + e.absorbedCount * gameSettings.bhGridMassPerAbsorb) * e.breathMassMultiplier * spawnFactor;
+        const radius = BlackHole.ATTRACT_RADIUS * gameSettings.bhGridRadiusMultiplier * spawnFactor;
+        this.grid.applyGravityWell(e.position.x, e.position.y, mass, radius);
       }
     }
   }
