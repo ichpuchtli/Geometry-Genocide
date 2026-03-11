@@ -1543,9 +1543,9 @@ export class Game {
 
         const dist = Math.sqrt(distSq);
         let nx: number, ny: number;
-        if (dist < 0.01) {
-          // Exactly overlapping — pick random direction
-          const angle = Math.random() * Math.PI * 2;
+        if (dist < 0.5) {
+          // Near-zero distance — deterministic direction from indices so it's consistent across frames
+          const angle = ((i * 7919 + j * 104729) % 6283) * 0.001;
           nx = Math.cos(angle);
           ny = Math.sin(angle);
         } else {
@@ -1554,6 +1554,8 @@ export class Game {
         }
 
         const overlap = minDist - dist;
+        // Push harder when heavily overlapping (>50% of minDist) to resolve clusters faster
+        const pushStrength = overlap > minDist * 0.5 ? overlap * 1.5 : overlap;
 
         // Weight: BlackHoles immovable (0), minibosses resist (0.25), others equal (1)
         const wA = (a instanceof BlackHole) ? 0 : a.isMiniboss ? 0.25 : 1;
@@ -1561,8 +1563,8 @@ export class Game {
         const totalW = wA + wB;
         if (totalW < 0.001) continue; // both immovable
 
-        const pushA = overlap * (wA / totalW);
-        const pushB = overlap * (wB / totalW);
+        const pushA = pushStrength * (wA / totalW);
+        const pushB = pushStrength * (wB / totalW);
 
         // Push A along +normal, B along -normal
         a.position.x = Math.max(-hw, Math.min(hw, a.position.x + nx * pushA));
