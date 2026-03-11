@@ -448,7 +448,7 @@ export class AudioManager {
     if (!this._initialized || !this.ctx || !this.sfxGain) return;
     switch (family) {
       case 'rhombus': this.playKillCrystal(); break;
-      case 'square': case 'square2': this.playKillThud(); break;
+      case 'square': this.playKillThud(); break;
       case 'pinwheel': this.playKillSpin(); break;
       case 'sierpinski': this.playKillFractal(); break;
     }

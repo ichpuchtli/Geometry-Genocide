@@ -72,7 +72,6 @@ export const ENEMY_SPEED = {
   rhombus: 0.15,
   pinwheel: 0.05,
   square: 0.15,
-  square2: 0.2,
   circle: 0.35,
   triangle: 0.2,
   blackhole: 0,
@@ -96,7 +95,6 @@ export const ENEMY_SCORES = {
   rhombus: 100,
   pinwheel: 50,
   square: 450,
-  square2: 150,
   circle: 300,
   triangle: 550,
   blackhole: 2000,
@@ -190,7 +188,7 @@ export const DIFFICULTY_PHASES = {
 
 export const SPAWN_DELAY_BETWEEN = 35; // ms between each enemy in a cluster (~1s for 30 enemies)
 export const SPAWN_DURATION_DEFAULT = 1.5;   // seconds (was 0.3)
-export const SPAWN_DURATION_CHILD = 0.5;     // for Shard, MiniMandel, Circle, Square2
+export const SPAWN_DURATION_CHILD = 0.5;     // for Shard, MiniMandel, Circle
 export const SPAWN_DURATION_AMBUSH = 2.0;    // ambush spawns get extra warning time
 export const MIN_SPAWN_DISTANCE = 200;       // px — enemies closer than this get pushed to edge
 export const ENEMY_SEPARATION_BUFFER = 2;    // px extra clearance beyond combined collision radii (per-frame push)

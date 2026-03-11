@@ -133,7 +133,7 @@ function computeMedals(stats: RunStats): MedalDef[] {
 // Enemy factory imports
 import { Rhombus } from './entities/enemies/rhombus';
 import { Pinwheel } from './entities/enemies/pinwheel';
-import { Square, Square2 } from './entities/enemies/square';
+import { Square } from './entities/enemies/square';
 import { CircleEnemy } from './entities/enemies/circle';
 import { BlackHole } from './entities/enemies/blackhole';
 import { Shard } from './entities/enemies/shard';
@@ -170,7 +170,7 @@ function createEnemy(type: string, pos?: Vec2, isElite = false, tier?: number): 
     case 'rhombus': e = new Rhombus(); break;
     case 'pinwheel': e = new Pinwheel(); break;
     case 'square': e = new Square(); break;
-    case 'square2': e = new Square2(pos); e.speed *= gameSettings.enemySpeedMultiplier; return e;
+    case 'square2': e = new Square(); break; // legacy — treat as regular square
     case 'circle': e = new CircleEnemy(pos); e.speed *= gameSettings.enemySpeedMultiplier; return e;
     case 'blackhole': e = new BlackHole(); break;
     case 'shard': e = new Shard(pos); e.speed *= gameSettings.enemySpeedMultiplier; return e;
@@ -1039,7 +1039,7 @@ export class Game {
           // No camera shake — grid impulse is enough for small enemies
           this.haptics.light();
           break;
-        default: // rhombus, circle, shard, square2, minimandel, etc.
+        default: // rhombus, circle, shard, minimandel, etc.
           this.explosions.spawn(
             kill.position.x, kill.position.y, kill.color,
             this.mobile ? Math.floor(EXPLOSION_PARTICLE_COUNT_SMALL * 0.6) : EXPLOSION_PARTICLE_COUNT_SMALL,
@@ -1192,7 +1192,7 @@ export class Game {
     if (enemy instanceof MiniMandel) return 'minimandel';
     if (enemy instanceof BlackHole) return 'blackhole';
     if (enemy instanceof Sierpinski) return 'sierpinski';
-    if (enemy instanceof Square || enemy instanceof Square2) return 'square';
+    if (enemy instanceof Square) return 'square';
     if (enemy instanceof Pinwheel) return 'pinwheel';
     if (enemy instanceof Rhombus) return 'rhombus';
     if (enemy instanceof CircleEnemy) return 'circle';
