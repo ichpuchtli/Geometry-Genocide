@@ -1,0 +1,79 @@
+[
+  {
+    "text": "Arcade game start stinger, neon synthwave ignition, confident launch pulse that ramps into gameplay, bright and clean, no vocals, no ambience, polished game-ready cue",
+    "out": "sounds/generated/start_elevenlabs_v1.mp3",
+    "duration": 4.5,
+    "promptInfluence": 0.5,
+    "loop": false
+  },
+  {
+    "text": "Player final death, catastrophic neon annihilation, huge low-end impact into collapsing synth tail, dramatic game over one-shot, dark sci-fi arcade energy, no background ambience",
+    "out": "sounds/generated/die_elevenlabs_v1.mp3",
+    "duration": 4.1,
+    "promptInfluence": 0.55,
+    "loop": false
+  },
+  {
+    "text": "Player loses a life but will respawn, sharp impact into shorter recovery tail, dramatic but not final, arcade sci-fi death sting, punchy and readable in a dense mix",
+    "out": "sounds/generated/die1_elevenlabs_v1.mp3",
+    "duration": 1.7,
+    "promptInfluence": 0.55,
+    "loop": false
+  },
+  {
+    "text": "Hard collision impact, compact shockwave hit with gritty crack and synthetic body, fast arcade contact sound, very short, no ring-out beyond a tight tail",
+    "out": "sounds/generated/crash_elevenlabs_v1.mp3",
+    "duration": 0.6,
+    "promptInfluence": 0.45,
+    "loop": false
+  },
+  {
+    "text": "Heavy geometric enemy spawn, square materialization with dense low-mid body and structural energy, magenta neon arcade enemy arrival, short and punchy, no explosion tail",
+    "out": "sounds/generated/square_elevenlabs_v1.mp3",
+    "duration": 0.5,
+    "promptInfluence": 0.5,
+    "loop": false
+  },
+  {
+    "text": "Sharp crystalline enemy spawn, cyan diamond materialization, bright glassy synth ping with a precise arcade transient, short and elegant, clean sci-fi one-shot",
+    "out": "sounds/generated/rhombus_elevenlabs_v1.mp3",
+    "duration": 0.5,
+    "promptInfluence": 0.45,
+    "loop": false
+  },
+  {
+    "text": "Fast angular enemy spawn, acidic geometric arrival with a lean sharp transient and short synthetic tail, aggressive arcade sci-fi tone, compact one-shot",
+    "out": "sounds/generated/triangle2_elevenlabs_v1.mp3",
+    "duration": 0.5,
+    "promptInfluence": 0.45,
+    "loop": false
+  },
+  {
+    "text": "Large fractal geometric enemy spawn, ominous gold polygon materialization, layered recursive shimmer with a tight attack, strange but readable arcade one-shot, no ambience",
+    "out": "sounds/generated/octagon_elevenlabs_v1.mp3",
+    "duration": 0.5,
+    "promptInfluence": 0.55,
+    "loop": false
+  },
+  {
+    "text": "Spinning enemy spawn, purple neon rotor waking up, spark attack into rotational whirr, stylized arcade sci-fi one-shot, quick and punchy",
+    "out": "sounds/generated/pinwheel_elevenlabs_v1.mp3",
+    "duration": 0.5,
+    "promptInfluence": 0.45,
+    "loop": false
+  },
+  {
+    "text": "Massive gravity-well enemy spawn, electric blue-white plasma arrival, ominous energy surge with deep body and unstable sci-fi glow, arcade boss materialization, polished and dramatic",
+    "out": "sounds/generated/deathstar_elevenlabs_v1.mp3",
+    "duration": 1.8,
+    "promptInfluence": 0.55,
+    "loop": false
+  },
+  {
+    "text": "Massive gravity-well enemy destruction, compressed implosion into heavy burst, short boss death punctuation, electric sci-fi arcade one-shot with a brutal transient",
+    "out": "sounds/generated/deathstar2_elevenlabs_v1.mp3",
+    "duration": 0.5,
+    "promptInfluence": 0.5,
+    "loop": false
+  }
+]

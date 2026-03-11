@@ -1,0 +1,1330 @@
+{
+  "summary": {
+    "generatedAt": "2026-03-09T11:20:22.754Z",
+    "bundle": "GridWars54",
+    "activeEnemyRoster": [
+      "Paul the Pinwheel",
+      "Dimmy the Diamond",
+      "Shy the Square",
+      "Cubie the Cube",
+      "Sammy the Seeker",
+      "Dwight the Black Hole",
+      "Selena the Snake",
+      "Ivan the Interceptor",
+      "Trish the Triangle",
+      "Indy the Butterfly"
+    ],
+    "gfxSetNames": [
+      "solid",
+      "low",
+      "med",
+      "high",
+      "user"
+    ],
+    "gfxFileCount": 91,
+    "wavFileCount": 37,
+    "musicModuleCount": 4,
+    "notes": [
+      "Windows build loads IT tracker modules directly via BASS.",
+      "Mac OGG fallback paths are referenced in source but not present in the archive.",
+      "shieldwarning.wav is referenced by sound.bmx but missing from docs/GridWars54/sounds."
+    ]
+  },
+  "gfx": {
+    "sets": {
+      "solid": [
+        {
+          "file": "bluecircle.png",
+          "baseName": "bluecircle",
+          "width": 27,
+          "height": 27,
+          "kind": "enemy",
+          "role": "Sammy the Seeker"
+        },
+        {
+          "file": "bluediamond.PNG",
+          "baseName": "bluediamond",
+          "width": 41,
+          "height": 41,
+          "kind": "enemy",
+          "role": "Dimmy the Diamond"
+        },
+        {
+          "file": "greensquare.PNG",
+          "baseName": "greensquare",
+          "width": 35,
+          "height": 35,
+          "kind": "enemy",
+          "role": "Shy the Square"
+        },
+        {
+          "file": "icons.PNG",
+          "baseName": "icons",
+          "width": 64,
+          "height": 128,
+          "kind": "ui_atlas",
+          "role": "Icon atlas"
+        },
+        {
+          "file": "indigotriangle.PNG",
+          "baseName": "indigotriangle",
+          "width": 37,
+          "height": 37,
+          "kind": "enemy",
+          "role": "Indy the Butterfly"
+        },
+        {
+          "file": "orangetriangle.PNG",
+          "baseName": "orangetriangle",
+          "width": 49,
+          "height": 49,
+          "kind": "enemy",
+          "role": "Trish the Triangle"
+        },
+        {
+          "file": "particle.PNG",
+          "baseName": "particle",
+          "width": 15,
+          "height": 15,
+          "kind": "fx",
+          "role": "Particle sprite"
+        },
+        {
+          "file": "pinkpinwheel.PNG",
+          "baseName": "pinkpinwheel",
+          "width": 35,
+          "height": 35,
+          "kind": "enemy",
+          "role": "Paul the Pinwheel"
+        },
+        {
+          "file": "powerups.PNG",
+          "baseName": "powerups",
+          "width": 128,
+          "height": 512,
+          "kind": "powerup_atlas",
+          "role": "Powerup atlas"
+        },
+        {
+          "file": "purplesquare1.png",
+          "baseName": "purplesquare1",
+          "width": 37,
+          "height": 37,
+          "kind": "enemy",
+          "role": "Cubie the Cube frame A"
+        },
+        {
+          "file": "purplesquare2.PNG",
+          "baseName": "purplesquare2",
+          "width": 23,
+          "height": 23,
+          "kind": "enemy",
+          "role": "Cubie the Cube frame B"
+        },
+        {
+          "file": "redcircle.png",
+          "baseName": "redcircle",
+          "width": 64,
+          "height": 64,
+          "kind": "enemy",
+          "role": "Dwight the Black Hole"
+        },
+        {
+          "file": "redclone.PNG",
+          "baseName": "redclone",
+          "width": 64,
+          "height": 64,
+          "kind": "enemy",
+          "role": "Ivan the Interceptor"
+        },
+        {
+          "file": "snakehead.png",
+          "baseName": "snakehead",
+          "width": 35,
+          "height": 35,
+          "kind": "enemy",
+          "role": "Selena the Snake head"
+        },
+        {
+          "file": "snaketail.PNG",
+          "baseName": "snaketail",
+          "width": 448,
+          "height": 168,
+          "kind": "enemy",
+          "role": "Selena the Snake tail animation"
+        },
+        {
+          "file": "whiteplayer.PNG",
+          "baseName": "whiteplayer",
+          "width": 64,
+          "height": 64,
+          "kind": "player",
+          "role": "Player ship"
+        },
+        {
+          "file": "whitestar.PNG",
+          "baseName": "whitestar",
+          "width": 98,
+          "height": 98,
+          "kind": "ui_fx",
+          "role": "Powerup aura / pickup star"
+        },
+        {
+          "file": "yellowshot.PNG",
+          "baseName": "yellowshot",
+          "width": 32,
+          "height": 32,
+          "kind": "projectile",
+          "role": "Player shot"
+        }
+      ],
+      "low": [
+        {
+          "file": "bluecircle.png",
+          "baseName": "bluecircle",
+          "width": 25,
+          "height": 25,
+          "kind": "enemy",
+          "role": "Sammy the Seeker"
+        },
+        {
+          "file": "bluediamond.PNG",
+          "baseName": "bluediamond",
+          "width": 41,
+          "height": 41,
+          "kind": "enemy",
+          "role": "Dimmy the Diamond"
+        },
+        {
+          "file": "greensquare.PNG",
+          "baseName": "greensquare",
+          "width": 35,
+          "height": 35,
+          "kind": "enemy",
+          "role": "Shy the Square"
+        },
+        {
+          "file": "icons.PNG",
+          "baseName": "icons",
+          "width": 24,
+          "height": 48,
+          "kind": "ui_atlas",
+          "role": "Icon atlas"
+        },
+        {
+          "file": "indigotriangle.PNG",
+          "baseName": "indigotriangle",
+          "width": 32,
+          "height": 32,
+          "kind": "enemy",
+          "role": "Indy the Butterfly"
+        },
+        {
+          "file": "orangetriangle.PNG",
+          "baseName": "orangetriangle",
+          "width": 45,
+          "height": 45,
+          "kind": "enemy",
+          "role": "Trish the Triangle"
+        },
+        {
+          "file": "particle.PNG",
+          "baseName": "particle",
+          "width": 15,
+          "height": 15,
+          "kind": "fx",
+          "role": "Particle sprite"
+        },
+        {
+          "file": "pinkpinwheel.PNG",
+          "baseName": "pinkpinwheel",
+          "width": 35,
+          "height": 35,
+          "kind": "enemy",
+          "role": "Paul the Pinwheel"
+        },
+        {
+          "file": "powerups.PNG",
+          "baseName": "powerups",
+          "width": 128,
+          "height": 512,
+          "kind": "powerup_atlas",
+          "role": "Powerup atlas"
+        },
+        {
+          "file": "purplesquare1.png",
+          "baseName": "purplesquare1",
+          "width": 35,
+          "height": 35,
+          "kind": "enemy",
+          "role": "Cubie the Cube frame A"
+        },
+        {
+          "file": "purplesquare2.PNG",
+          "baseName": "purplesquare2",
+          "width": 21,
+          "height": 21,
+          "kind": "enemy",
+          "role": "Cubie the Cube frame B"
+        },
+        {
+          "file": "redcircle.png",
+          "baseName": "redcircle",
+          "width": 64,
+          "height": 64,
+          "kind": "enemy",
+          "role": "Dwight the Black Hole"
+        },
+        {
+          "file": "redclone.PNG",
+          "baseName": "redclone",
+          "width": 45,
+          "height": 43,
+          "kind": "enemy",
+          "role": "Ivan the Interceptor"
+        },
+        {
+          "file": "snakehead.png",
+          "baseName": "snakehead",
+          "width": 32,
+          "height": 32,
+          "kind": "enemy",
+          "role": "Selena the Snake head"
+        },
+        {
+          "file": "snaketail.PNG",
+          "baseName": "snaketail",
+          "width": 256,
+          "height": 96,
+          "kind": "enemy",
+          "role": "Selena the Snake tail animation"
+        },
+        {
+          "file": "whiteplayer.PNG",
+          "baseName": "whiteplayer",
+          "width": 43,
+          "height": 43,
+          "kind": "player",
+          "role": "Player ship"
+        },
+        {
+          "file": "whitestar.PNG",
+          "baseName": "whitestar",
+          "width": 64,
+          "height": 64,
+          "kind": "ui_fx",
+          "role": "Powerup aura / pickup star"
+        },
+        {
+          "file": "yellowshot.PNG",
+          "baseName": "yellowshot",
+          "width": 32,
+          "height": 32,
+          "kind": "projectile",
+          "role": "Player shot"
+        }
+      ],
+      "med": [
+        {
+          "file": "bluecircle.png",
+          "baseName": "bluecircle",
+          "width": 29,
+          "height": 29,
+          "kind": "enemy",
+          "role": "Sammy the Seeker"
+        },
+        {
+          "file": "bluediamond.PNG",
+          "baseName": "bluediamond",
+          "width": 45,
+          "height": 45,
+          "kind": "enemy",
+          "role": "Dimmy the Diamond"
+        },
+        {
+          "file": "greensquare.PNG",
+          "baseName": "greensquare",
+          "width": 41,
+          "height": 41,
+          "kind": "enemy",
+          "role": "Shy the Square"
+        },
+        {
+          "file": "icons.PNG",
+          "baseName": "icons",
+          "width": 32,
+          "height": 64,
+          "kind": "ui_atlas",
+          "role": "Icon atlas"
+        },
+        {
+          "file": "indigotriangle.PNG",
+          "baseName": "indigotriangle",
+          "width": 32,
+          "height": 32,
+          "kind": "enemy",
+          "role": "Indy the Butterfly"
+        },
+        {
+          "file": "orangetriangle.PNG",
+          "baseName": "orangetriangle",
+          "width": 45,
+          "height": 45,
+          "kind": "enemy",
+          "role": "Trish the Triangle"
+        },
+        {
+          "file": "particle.PNG",
+          "baseName": "particle",
+          "width": 15,
+          "height": 15,
+          "kind": "fx",
+          "role": "Particle sprite"
+        },
+        {
+          "file": "pinkpinwheel.PNG",
+          "baseName": "pinkpinwheel",
+          "width": 41,
+          "height": 41,
+          "kind": "enemy",
+          "role": "Paul the Pinwheel"
+        },
+        {
+          "file": "powerups.PNG",
+          "baseName": "powerups",
+          "width": 128,
+          "height": 512,
+          "kind": "powerup_atlas",
+          "role": "Powerup atlas"
+        },
+        {
+          "file": "purplesquare1.png",
+          "baseName": "purplesquare1",
+          "width": 41,
+          "height": 41,
+          "kind": "enemy",
+          "role": "Cubie the Cube frame A"
+        },
+        {
+          "file": "purplesquare2.PNG",
+          "baseName": "purplesquare2",
+          "width": 25,
+          "height": 25,
+          "kind": "enemy",
+          "role": "Cubie the Cube frame B"
+        },
+        {
+          "file": "redcircle.png",
+          "baseName": "redcircle",
+          "width": 70,
+          "height": 70,
+          "kind": "enemy",
+          "role": "Dwight the Black Hole"
+        },
+        {
+          "file": "redclone.PNG",
+          "baseName": "redclone",
+          "width": 49,
+          "height": 49,
+          "kind": "enemy",
+          "role": "Ivan the Interceptor"
+        },
+        {
+          "file": "snakehead.png",
+          "baseName": "snakehead",
+          "width": 36,
+          "height": 36,
+          "kind": "enemy",
+          "role": "Selena the Snake head"
+        },
+        {
+          "file": "snaketail.PNG",
+          "baseName": "snaketail",
+          "width": 256,
+          "height": 96,
+          "kind": "enemy",
+          "role": "Selena the Snake tail animation"
+        },
+        {
+          "file": "whiteplayer.PNG",
+          "baseName": "whiteplayer",
+          "width": 53,
+          "height": 53,
+          "kind": "player",
+          "role": "Player ship"
+        },
+        {
+          "file": "whitestar.PNG",
+          "baseName": "whitestar",
+          "width": 68,
+          "height": 68,
+          "kind": "ui_fx",
+          "role": "Powerup aura / pickup star"
+        },
+        {
+          "file": "yellowshot.PNG",
+          "baseName": "yellowshot",
+          "width": 32,
+          "height": 32,
+          "kind": "projectile",
+          "role": "Player shot"
+        }
+      ],
+      "high": [
+        {
+          "file": "bluecircle.png",
+          "baseName": "bluecircle",
+          "width": 64,
+          "height": 64,
+          "kind": "enemy",
+          "role": "Sammy the Seeker"
+        },
+        {
+          "file": "bluediamond.PNG",
+          "baseName": "bluediamond",
+          "width": 64,
+          "height": 64,
+          "kind": "enemy",
+          "role": "Dimmy the Diamond"
+        },
+        {
+          "file": "greensquare.PNG",
+          "baseName": "greensquare",
+          "width": 64,
+          "height": 64,
+          "kind": "enemy",
+          "role": "Shy the Square"
+        },
+        {
+          "file": "icons.PNG",
+          "baseName": "icons",
+          "width": 64,
+          "height": 128,
+          "kind": "ui_atlas",
+          "role": "Icon atlas"
+        },
+        {
+          "file": "indigotriangle.PNG",
+          "baseName": "indigotriangle",
+          "width": 64,
+          "height": 64,
+          "kind": "enemy",
+          "role": "Indy the Butterfly"
+        },
+        {
+          "file": "orangetriangle.PNG",
+          "baseName": "orangetriangle",
+          "width": 64,
+          "height": 64,
+          "kind": "enemy",
+          "role": "Trish the Triangle"
+        },
+        {
+          "file": "particle.PNG",
+          "baseName": "particle",
+          "width": 15,
+          "height": 15,
+          "kind": "fx",
+          "role": "Particle sprite"
+        },
+        {
+          "file": "pinkpinwheel.PNG",
+          "baseName": "pinkpinwheel",
+          "width": 64,
+          "height": 64,
+          "kind": "enemy",
+          "role": "Paul the Pinwheel"
+        },
+        {
+          "file": "powerups.PNG",
+          "baseName": "powerups",
+          "width": 128,
+          "height": 512,
+          "kind": "powerup_atlas",
+          "role": "Powerup atlas"
+        },
+        {
+          "file": "purplesquare1.png",
+          "baseName": "purplesquare1",
+          "width": 64,
+          "height": 64,
+          "kind": "enemy",
+          "role": "Cubie the Cube frame A"
+        },
+        {
+          "file": "purplesquare2.PNG",
+          "baseName": "purplesquare2",
+          "width": 64,
+          "height": 64,
+          "kind": "enemy",
+          "role": "Cubie the Cube frame B"
+        },
+        {
+          "file": "redcircle.png",
+          "baseName": "redcircle",
+          "width": 128,
+          "height": 128,
+          "kind": "enemy",
+          "role": "Dwight the Black Hole"
+        },
+        {
+          "file": "redclone.PNG",
+          "baseName": "redclone",
+          "width": 64,
+          "height": 64,
+          "kind": "enemy",
+          "role": "Ivan the Interceptor"
+        },
+        {
+          "file": "snakehead.png",
+          "baseName": "snakehead",
+          "width": 64,
+          "height": 64,
+          "kind": "enemy",
+          "role": "Selena the Snake head"
+        },
+        {
+          "file": "snaketail.PNG",
+          "baseName": "snaketail",
+          "width": 448,
+          "height": 168,
+          "kind": "enemy",
+          "role": "Selena the Snake tail animation"
+        },
+        {
+          "file": "whiteplayer.PNG",
+          "baseName": "whiteplayer",
+          "width": 64,
+          "height": 64,
+          "kind": "player",
+          "role": "Player ship"
+        },
+        {
+          "file": "whitestar.PNG",
+          "baseName": "whitestar",
+          "width": 98,
+          "height": 98,
+          "kind": "ui_fx",
+          "role": "Powerup aura / pickup star"
+        },
+        {
+          "file": "yellowshot.PNG",
+          "baseName": "yellowshot",
+          "width": 32,
+          "height": 32,
+          "kind": "projectile",
+          "role": "Player shot"
+        }
+      ],
+      "user": [
+        {
+          "file": "bluecircle.png",
+          "baseName": "bluecircle",
+          "width": 64,
+          "height": 64,
+          "kind": "enemy",
+          "role": "Sammy the Seeker"
+        },
+        {
+          "file": "bluediamond.PNG",
+          "baseName": "bluediamond",
+          "width": 64,
+          "height": 64,
+          "kind": "enemy",
+          "role": "Dimmy the Diamond"
+        },
+        {
+          "file": "greensquare.PNG",
+          "baseName": "greensquare",
+          "width": 64,
+          "height": 64,
+          "kind": "enemy",
+          "role": "Shy the Square"
+        },
+        {
+          "file": "icons.PNG",
+          "baseName": "icons",
+          "width": 64,
+          "height": 128,
+          "kind": "ui_atlas",
+          "role": "Icon atlas"
+        },
+        {
+          "file": "indigotriangle.PNG",
+          "baseName": "indigotriangle",
+          "width": 64,
+          "height": 64,
+          "kind": "enemy",
+          "role": "Indy the Butterfly"
+        },
+        {
+          "file": "orangetriangle.PNG",
+          "baseName": "orangetriangle",
+          "width": 64,
+          "height": 64,
+          "kind": "enemy",
+          "role": "Trish the Triangle"
+        },
+        {
+          "file": "particle.PNG",
+          "baseName": "particle",
+          "width": 15,
+          "height": 15,
+          "kind": "fx",
+          "role": "Particle sprite"
+        },
+        {
+          "file": "pinkpinwheel.PNG",
+          "baseName": "pinkpinwheel",
+          "width": 64,
+          "height": 64,
+          "kind": "enemy",
+          "role": "Paul the Pinwheel"
+        },
+        {
+          "file": "powerups.PNG",
+          "baseName": "powerups",
+          "width": 128,
+          "height": 512,
+          "kind": "powerup_atlas",
+          "role": "Powerup atlas"
+        },
+        {
+          "file": "purplesquare1.png",
+          "baseName": "purplesquare1",
+          "width": 64,
+          "height": 64,
+          "kind": "enemy",
+          "role": "Cubie the Cube frame A"
+        },
+        {
+          "file": "purplesquare2.PNG",
+          "baseName": "purplesquare2",
+          "width": 64,
+          "height": 64,
+          "kind": "enemy",
+          "role": "Cubie the Cube frame B"
+        },
+        {
+          "file": "redcircle.png",
+          "baseName": "redcircle",
+          "width": 128,
+          "height": 128,
+          "kind": "enemy",
+          "role": "Dwight the Black Hole"
+        },
+        {
+          "file": "redclone.PNG",
+          "baseName": "redclone",
+          "width": 64,
+          "height": 64,
+          "kind": "enemy",
+          "role": "Ivan the Interceptor"
+        },
+        {
+          "file": "snakehead.png",
+          "baseName": "snakehead",
+          "width": 64,
+          "height": 64,
+          "kind": "enemy",
+          "role": "Selena the Snake head"
+        },
+        {
+          "file": "snaketail.PNG",
+          "baseName": "snaketail",
+          "width": 448,
+          "height": 168,
+          "kind": "enemy",
+          "role": "Selena the Snake tail animation"
+        },
+        {
+          "file": "whiteplayer.PNG",
+          "baseName": "whiteplayer",
+          "width": 64,
+          "height": 64,
+          "kind": "player",
+          "role": "Player ship"
+        },
+        {
+          "file": "whitestar.PNG",
+          "baseName": "whitestar",
+          "width": 98,
+          "height": 98,
+          "kind": "ui_fx",
+          "role": "Powerup aura / pickup star"
+        },
+        {
+          "file": "yellowshot.PNG",
+          "baseName": "yellowshot",
+          "width": 32,
+          "height": 32,
+          "kind": "projectile",
+          "role": "Player shot"
+        }
+      ]
+    },
+    "sharedAtlases": {
+      "colourpick": {
+        "file": "gfx/colourpick.PNG",
+        "width": 122,
+        "height": 27,
+        "frameWidth": 122,
+        "frameHeight": 9,
+        "frameCount": 3,
+        "role": "Grid color picker strip"
+      },
+      "powerups": {
+        "frameWidth": 64,
+        "frameHeight": 64,
+        "frameCount": 11,
+        "frameRoles": [
+          {
+            "frame": 0,
+            "role": "Extra front shooter"
+          },
+          {
+            "frame": 2,
+            "role": "Back shooter"
+          },
+          {
+            "frame": 3,
+            "role": "Side shooters"
+          },
+          {
+            "frame": 5,
+            "role": "Shot speed"
+          },
+          {
+            "frame": 6,
+            "role": "Extra life"
+          },
+          {
+            "frame": 7,
+            "role": "Super shots"
+          },
+          {
+            "frame": 8,
+            "role": "Extra bomb"
+          },
+          {
+            "frame": 9,
+            "role": "Shield"
+          },
+          {
+            "frame": 10,
+            "role": "Bouncy shots"
+          }
+        ]
+      },
+      "icons": {
+        "frameCount": 2
+      },
+      "snaketail": {
+        "frameCount": 24
+      }
+    }
+  },
+  "audio": {
+    "files": [
+      {
+        "file": "bondloop.wav",
+        "channels": 1,
+        "sampleRate": 44100,
+        "bitsPerSample": 16,
+        "dataBytes": 104376,
+        "durationSeconds": 1.1834,
+        "mapping": {
+          "id": "nme5_loop_snd",
+          "category": "enemy_loop",
+          "role": "Black hole loop"
+        }
+      },
+      {
+        "file": "bonus1.wav",
+        "channels": 1,
+        "sampleRate": 22050,
+        "bitsPerSample": 16,
+        "dataBytes": 36280,
+        "durationSeconds": 0.8227,
+        "mapping": {
+          "id": "pu_collect_snd/high_score_snd",
+          "category": "powerup",
+          "role": "Powerup collect / high score reuse"
+        }
+      },
+      {
+        "file": "bonus2.wav",
+        "channels": 1,
+        "sampleRate": 32000,
+        "bitsPerSample": 16,
+        "dataBytes": 79908,
+        "durationSeconds": 1.2486,
+        "mapping": {
+          "id": "multiplier_increase_snd",
+          "category": "powerup",
+          "role": "Multiplier increase"
+        }
+      },
+      {
+        "file": "bonusborn.wav",
+        "channels": 1,
+        "sampleRate": 22050,
+        "bitsPerSample": 16,
+        "dataBytes": 45488,
+        "durationSeconds": 1.0315,
+        "mapping": {
+          "id": "bonus_born_snd",
+          "category": "powerup",
+          "role": "Bonus born"
+        }
+      },
+      {
+        "file": "brainborn.wav",
+        "channels": 1,
+        "sampleRate": 11025,
+        "bitsPerSample": 16,
+        "dataBytes": 46332,
+        "durationSeconds": 2.1012,
+        "mapping": {
+          "id": "extra_life_snd",
+          "category": "powerup",
+          "role": "Extra life awarded"
+        }
+      },
+      {
+        "file": "butterfly.wav",
+        "channels": 1,
+        "sampleRate": 22050,
+        "bitsPerSample": 16,
+        "dataBytes": 32066,
+        "durationSeconds": 0.7271,
+        "mapping": {
+          "id": "nme8_born_snd",
+          "category": "enemy_spawn",
+          "role": "Butterfly born"
+        }
+      },
+      {
+        "file": "buzz1.wav",
+        "channels": 2,
+        "sampleRate": 44100,
+        "bitsPerSample": 16,
+        "dataBytes": 136044,
+        "durationSeconds": 0.7712,
+        "mapping": {
+          "id": "le_born_snd",
+          "category": "enemy_spawn",
+          "role": "Lateral/interceptor enemy born"
+        }
+      },
+      {
+        "file": "buzz2.wav",
+        "channels": 2,
+        "sampleRate": 44100,
+        "bitsPerSample": 16,
+        "dataBytes": 105156,
+        "durationSeconds": 0.5961,
+        "mapping": {
+          "id": "extra_bomb_snd",
+          "category": "powerup",
+          "role": "Extra bomb awarded"
+        }
+      },
+      {
+        "file": "buzz3.wav",
+        "channels": 1,
+        "sampleRate": 32000,
+        "bitsPerSample": 16,
+        "dataBytes": 32206,
+        "durationSeconds": 0.5032,
+        "mapping": {
+          "id": "nme_born_snd",
+          "category": "enemy_spawn",
+          "role": "Generic enemy born"
+        }
+      },
+      {
+        "file": "cat.wav",
+        "channels": 2,
+        "sampleRate": 22050,
+        "bitsPerSample": 16,
+        "dataBytes": 97104,
+        "durationSeconds": 1.101,
+        "mapping": {
+          "id": "ge_born_snd",
+          "category": "enemy_spawn",
+          "role": "Generator born"
+        }
+      },
+      {
+        "file": "click.wav",
+        "channels": 1,
+        "sampleRate": 22050,
+        "bitsPerSample": 16,
+        "dataBytes": 2246,
+        "durationSeconds": 0.0509,
+        "mapping": {
+          "id": null,
+          "category": "unused",
+          "role": "Present in archive but not loaded by sound.bmx"
+        }
+      },
+      {
+        "file": "die1.wav",
+        "channels": 1,
+        "sampleRate": 32000,
+        "bitsPerSample": 16,
+        "dataBytes": 106596,
+        "durationSeconds": 1.6656,
+        "mapping": {
+          "id": "player_hit_snd",
+          "category": "player",
+          "role": "Player hit / lose life"
+        }
+      },
+      {
+        "file": "echo1.wav",
+        "channels": 1,
+        "sampleRate": 32000,
+        "bitsPerSample": 16,
+        "dataBytes": 53980,
+        "durationSeconds": 0.8434,
+        "mapping": {
+          "id": "le_hit_snd",
+          "category": "enemy_hit",
+          "role": "Lateral/interceptor hit"
+        }
+      },
+      {
+        "file": "elastic.wav",
+        "channels": 1,
+        "sampleRate": 8000,
+        "bitsPerSample": 16,
+        "dataBytes": 12456,
+        "durationSeconds": 0.7785,
+        "mapping": {
+          "id": "le_killed_snd",
+          "category": "enemy_death",
+          "role": "Lateral/interceptor killed"
+        }
+      },
+      {
+        "file": "Explo1.wav",
+        "channels": 1,
+        "sampleRate": 32075,
+        "bitsPerSample": 16,
+        "dataBytes": 55900,
+        "durationSeconds": 0.8714,
+        "mapping": {
+          "id": "nme5_killed_snd/super_bomb_snd",
+          "category": "enemy_death",
+          "role": "Black hole killed / super bomb"
+        }
+      },
+      {
+        "file": "gameover.wav",
+        "channels": 1,
+        "sampleRate": 22050,
+        "bitsPerSample": 16,
+        "dataBytes": 197664,
+        "durationSeconds": 4.4822,
+        "mapping": {
+          "id": "game_over_snd",
+          "category": "ui",
+          "role": "Game over"
+        }
+      },
+      {
+        "file": "genhit1.wav",
+        "channels": 1,
+        "sampleRate": 22050,
+        "bitsPerSample": 16,
+        "dataBytes": 19862,
+        "durationSeconds": 0.4504,
+        "mapping": {
+          "id": "ge_hit_snd",
+          "category": "enemy_hit",
+          "role": "Generator hit"
+        }
+      },
+      {
+        "file": "genkilled1.wav",
+        "channels": 1,
+        "sampleRate": 22050,
+        "bitsPerSample": 16,
+        "dataBytes": 10432,
+        "durationSeconds": 0.2366,
+        "mapping": {
+          "id": "ge_killed_snd",
+          "category": "enemy_death",
+          "role": "Generator killed"
+        }
+      },
+      {
+        "file": "gruntborn.wav",
+        "channels": 1,
+        "sampleRate": 4791,
+        "bitsPerSample": 8,
+        "dataBytes": 1112,
+        "durationSeconds": 0.2321,
+        "mapping": {
+          "id": "nme4_born_snd",
+          "category": "enemy_spawn",
+          "role": "Square born"
+        }
+      },
+      {
+        "file": "pop1.wav",
+        "channels": 2,
+        "sampleRate": 44100,
+        "bitsPerSample": 16,
+        "dataBytes": 69956,
+        "durationSeconds": 0.3966,
+        "mapping": {
+          "id": null,
+          "category": "unused",
+          "role": "Present in archive but not loaded by sound.bmx"
+        }
+      },
+      {
+        "file": "pop2.wav",
+        "channels": 2,
+        "sampleRate": 44100,
+        "bitsPerSample": 16,
+        "dataBytes": 63636,
+        "durationSeconds": 0.3607,
+        "mapping": {
+          "id": "nme1_born_snd",
+          "category": "enemy_spawn",
+          "role": "Pinwheel born"
+        }
+      },
+      {
+        "file": "pop3.wav",
+        "channels": 2,
+        "sampleRate": 22050,
+        "bitsPerSample": 16,
+        "dataBytes": 30836,
+        "durationSeconds": 0.3496,
+        "mapping": {
+          "id": "nme2_born_snd",
+          "category": "enemy_spawn",
+          "role": "Diamond born"
+        }
+      },
+      {
+        "file": "quarkhit.wav",
+        "channels": 1,
+        "sampleRate": 11025,
+        "bitsPerSample": 16,
+        "dataBytes": 7736,
+        "durationSeconds": 0.3508,
+        "mapping": {
+          "id": "quarkhitsound",
+          "category": "enemy_hit",
+          "role": "Quark hit"
+        }
+      },
+      {
+        "file": "quarkhit2.wav",
+        "channels": 1,
+        "sampleRate": 8363,
+        "bitsPerSample": 8,
+        "dataBytes": 2100,
+        "durationSeconds": 0.2511,
+        "mapping": {
+          "id": "quarkhit2sound",
+          "category": "enemy_hit",
+          "role": "Quark hit variant"
+        }
+      },
+      {
+        "file": "shield1.wav",
+        "channels": 2,
+        "sampleRate": 11025,
+        "bitsPerSample": 16,
+        "dataBytes": 30344,
+        "durationSeconds": 0.6881,
+        "mapping": {
+          "id": "nme7_shield_snd",
+          "category": "enemy_state",
+          "role": "Shield active"
+        }
+      },
+      {
+        "file": "shotborn.wav",
+        "channels": 1,
+        "sampleRate": 11025,
+        "bitsPerSample": 16,
+        "dataBytes": 3744,
+        "durationSeconds": 0.1698,
+        "mapping": {
+          "id": "shot_born_snd",
+          "category": "player",
+          "role": "Shot fired"
+        }
+      },
+      {
+        "file": "shotwall.wav",
+        "channels": 1,
+        "sampleRate": 16000,
+        "bitsPerSample": 16,
+        "dataBytes": 1136,
+        "durationSeconds": 0.0355,
+        "mapping": {
+          "id": "shot_hit_wall_snd",
+          "category": "player",
+          "role": "Shot hit wall"
+        }
+      },
+      {
+        "file": "sizzle1.wav",
+        "channels": 1,
+        "sampleRate": 32075,
+        "bitsPerSample": 16,
+        "dataBytes": 29462,
+        "durationSeconds": 0.4593,
+        "mapping": {
+          "id": "nme5_grow_snd",
+          "category": "enemy_hit",
+          "role": "Black hole grow"
+        }
+      },
+      {
+        "file": "snake1.wav",
+        "channels": 1,
+        "sampleRate": 22050,
+        "bitsPerSample": 16,
+        "dataBytes": 6092,
+        "durationSeconds": 0.1381,
+        "mapping": {
+          "id": "nme3_born_snd",
+          "category": "enemy_spawn",
+          "role": "Snake born"
+        }
+      },
+      {
+        "file": "snakehit.wav",
+        "channels": 1,
+        "sampleRate": 22050,
+        "bitsPerSample": 16,
+        "dataBytes": 16478,
+        "durationSeconds": 0.3737,
+        "mapping": {
+          "id": "nme6_tailexplode_snd",
+          "category": "enemy_hit",
+          "role": "Snake tail explode"
+        }
+      },
+      {
+        "file": "startup.wav",
+        "channels": 1,
+        "sampleRate": 16000,
+        "bitsPerSample": 16,
+        "dataBytes": 72652,
+        "durationSeconds": 2.2704,
+        "mapping": {
+          "id": "get_ready_snd",
+          "category": "ui",
+          "role": "Get ready / startup"
+        }
+      },
+      {
+        "file": "sun1.wav",
+        "channels": 2,
+        "sampleRate": 22050,
+        "bitsPerSample": 16,
+        "dataBytes": 156844,
+        "durationSeconds": 1.7783,
+        "mapping": {
+          "id": "nme5_born_snd",
+          "category": "enemy_spawn",
+          "role": "Black hole born"
+        }
+      },
+      {
+        "file": "sunexp.wav",
+        "channels": 1,
+        "sampleRate": 22050,
+        "bitsPerSample": 16,
+        "dataBytes": 155396,
+        "durationSeconds": 3.5237,
+        "mapping": {
+          "id": "nme5_explode_snd",
+          "category": "enemy_death",
+          "role": "Black hole overload explosion"
+        }
+      },
+      {
+        "file": "sunhit1.wav",
+        "channels": 1,
+        "sampleRate": 22050,
+        "bitsPerSample": 8,
+        "dataBytes": 13494,
+        "durationSeconds": 0.612,
+        "mapping": {
+          "id": "nme5_shrink_snd",
+          "category": "enemy_hit",
+          "role": "Black hole shrink"
+        }
+      },
+      {
+        "file": "tailhit.wav",
+        "channels": 1,
+        "sampleRate": 22050,
+        "bitsPerSample": 16,
+        "dataBytes": 5390,
+        "durationSeconds": 0.1222,
+        "mapping": {
+          "id": "nme6_tailhit_snd",
+          "category": "enemy_hit",
+          "role": "Snake tail hit"
+        }
+      },
+      {
+        "file": "warn1.wav",
+        "channels": 1,
+        "sampleRate": 22050,
+        "bitsPerSample": 16,
+        "dataBytes": 19894,
+        "durationSeconds": 0.4511,
+        "mapping": {
+          "id": "nme7_born_snd",
+          "category": "enemy_spawn",
+          "role": "Shielded/warning enemy born"
+        }
+      },
+      {
+        "file": "wee.wav",
+        "channels": 2,
+        "sampleRate": 32075,
+        "bitsPerSample": 16,
+        "dataBytes": 59892,
+        "durationSeconds": 0.4668,
+        "mapping": {
+          "id": "nme6_born_snd",
+          "category": "enemy_spawn",
+          "role": "Snake child born"
+        }
+      }
+    ],
+    "missingReferences": [
+      "shieldwarning.wav"
+    ],
+    "unusedArchiveFiles": [
+      "click.wav",
+      "pop1.wav"
+    ],
+    "summaryByCategory": {
+      "enemy_loop": 1,
+      "powerup": 5,
+      "enemy_spawn": 11,
+      "unused": 2,
+      "player": 3,
+      "enemy_hit": 8,
+      "enemy_death": 4,
+      "ui": 2,
+      "enemy_state": 1
+    }
+  }
+}

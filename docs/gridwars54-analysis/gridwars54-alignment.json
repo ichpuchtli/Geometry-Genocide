@@ -1,0 +1,155 @@
+{
+  "generatedAt": "2026-03-09T11:21:13.119Z",
+  "sourceRoot": "docs/GridWars54",
+  "alignment": {
+    "gridWarsRefs": {
+      "readme": "docs/GridWars54/Readme.txt:9",
+      "images": "docs/GridWars54/images.bmx:7",
+      "sounds": "docs/GridWars54/sound.bmx:84",
+      "music": "docs/GridWars54/sound.bmx:265",
+      "powerups": "docs/GridWars54/gridwars.bmx:2717",
+      "enemyShowcase": "docs/GridWars54/gridwars.bmx:3985"
+    },
+    "geometryGenocideRefs": {
+      "factory": "web/src/game.ts:157",
+      "pools": "web/src/spawner/spawn-patterns.ts:4",
+      "audioConfig": "web/src/config.ts:317",
+      "audioRuntime": "web/src/core/audio.ts:1",
+      "spawnSfx": "web/src/game.ts:1587"
+    },
+    "rosterAlignment": [
+      {
+        "gridWarsConcept": "Pinwheel",
+        "gridWarsAssets": [
+          "pinkpinwheel"
+        ],
+        "ggCounterpart": "pinwheel",
+        "status": "already-aligned",
+        "notes": [
+          "Direct enemy family match.",
+          "Current spawn pools already include Pinwheel from tutorial onward."
+        ]
+      },
+      {
+        "gridWarsConcept": "Diamond / Rhombus",
+        "gridWarsAssets": [
+          "bluediamond"
+        ],
+        "ggCounterpart": "rhombus",
+        "status": "rename-tuning",
+        "notes": [
+          "Gameplay role is close.",
+          "If port fidelity matters, consider aliasing the family as Diamond or Dimmy in UI/lore."
+        ]
+      },
+      {
+        "gridWarsConcept": "Square + Cube split",
+        "gridWarsAssets": [
+          "greensquare",
+          "purplesquare1",
+          "purplesquare2"
+        ],
+        "ggCounterpart": "square + square2",
+        "status": "mechanically-close",
+        "notes": [
+          "Current GG already supports a parent/child split.",
+          "Scoring, naming, and sprite treatment differ."
+        ]
+      },
+      {
+        "gridWarsConcept": "Seeker",
+        "gridWarsAssets": [
+          "bluecircle"
+        ],
+        "ggCounterpart": "circle",
+        "status": "needs-reenable",
+        "notes": [
+          "Current GG Circle exists but is only a child spawned from BlackHole overload.",
+          "To match Grid Wars more closely, add Circle back into at least some active spawn pools."
+        ]
+      },
+      {
+        "gridWarsConcept": "Black Hole",
+        "gridWarsAssets": [
+          "redcircle"
+        ],
+        "ggCounterpart": "blackhole",
+        "status": "overpowered-relative-to-source",
+        "notes": [
+          "Current GG BlackHole is a major elite hazard with HP and crowd-control.",
+          "If fidelity is the goal, retune score/rarity and consider a lighter-weight baseline variant."
+        ]
+      },
+      {
+        "gridWarsConcept": "Snake",
+        "gridWarsAssets": [
+          "snakehead",
+          "snaketail"
+        ],
+        "ggCounterpart": null,
+        "status": "missing",
+        "notes": [
+          "No active GG equivalent.",
+          "This is a high-value porting target because both art and dedicated SFX already exist in the source bundle."
+        ]
+      },
+      {
+        "gridWarsConcept": "Interceptor",
+        "gridWarsAssets": [
+          "redclone"
+        ],
+        "ggCounterpart": null,
+        "status": "missing",
+        "notes": [
+          "No active GG equivalent.",
+          "Original-specific family that would materially increase authenticity."
+        ]
+      },
+      {
+        "gridWarsConcept": "Triangle",
+        "gridWarsAssets": [
+          "orangetriangle"
+        ],
+        "ggCounterpart": "triangle",
+        "status": "source-present-unwired",
+        "notes": [
+          "GG already has an unwired Triangle source file.",
+          "This is the easiest roster item to restore."
+        ]
+      },
+      {
+        "gridWarsConcept": "Butterfly",
+        "gridWarsAssets": [
+          "indigotriangle"
+        ],
+        "ggCounterpart": null,
+        "status": "missing",
+        "notes": [
+          "No active GG equivalent.",
+          "Original art and SFX naming suggest a distinct family worth reintroducing."
+        ]
+      },
+      {
+        "gridWarsConcept": "Music",
+        "gridWarsAssets": [
+          "Theme0.it",
+          "Theme1.it",
+          "Theme2.it"
+        ],
+        "ggCounterpart": "procedural music + generated SFX",
+        "status": "architecturally-different",
+        "notes": [
+          "GG currently uses procedural adaptive music rather than source-faithful module playback.",
+          "The original tracker modules are recoverable enough to support a faithful optional soundtrack mode."
+        ]
+      }
+    ],
+    "recommendations": [
+      "Re-enable Triangle first because the source file already exists in Geometry Genocide and the Grid Wars asset/SFX identity is clear.",
+      "Promote Circle back into active spawn pools to restore the Seeker family as an independent threat.",
+      "Add Snake and Interceptor as next-priority source-faithful families because the original archive includes both dedicated art and audio cues.",
+      "Offer an optional Grid Wars soundtrack mode using the recovered tracker modules or offline renders derived from them.",
+      "Preserve procedural/adaptive music as a separate mode rather than replacing it outright."
+    ]
+  }
+}

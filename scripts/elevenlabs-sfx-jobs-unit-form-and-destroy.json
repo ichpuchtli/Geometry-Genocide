@@ -1,0 +1,72 @@
+[
+  {
+    "text": "Rhombus enemy forming sound. Stay faithful to the original rhombus spawn identity: a short cyan crystalline materialization ping, precise, elegant, upper-register, clean arcade sci-fi one-shot. Bright glass-like transient, minimal tail, no explosion body, no ambience.",
+    "out": "sounds/generated/rhombus_form_elevenlabs_v1.mp3",
+    "duration": 0.5,
+    "promptInfluence": 0.5,
+    "loop": false
+  },
+  {
+    "text": "Rhombus enemy destruction sound. Stay faithful to the current original kill contour: a sharp sine-like crystalline ping descending from about 2400 Hz to 1200 Hz over a very short hit, bright and prismatic, extremely clean transient, compact arcade one-shot, no ambience.",
+    "out": "sounds/generated/rhombus_destroy_elevenlabs_v1.mp3",
+    "duration": 0.5,
+    "promptInfluence": 0.6,
+    "loop": false
+  },
+  {
+    "text": "Square enemy forming sound. Stay faithful to the original square spawn role: heavy geometric materialization with dense low-mid body, structural energy, magenta neon arcade arrival, short and punchy, like a solid object locking into place, not an explosion.",
+    "out": "sounds/generated/square_form_elevenlabs_v1.mp3",
+    "duration": 0.5,
+    "promptInfluence": 0.5,
+    "loop": false
+  },
+  {
+    "text": "Square enemy destruction sound. Stay faithful to the current original kill contour: heavy low sine-like thud dropping from about 120 Hz to 40 Hz with a short filtered noise crunch on top, dense structural break, chunky arcade impact, short and forceful, no ambience.",
+    "out": "sounds/generated/square_destroy_elevenlabs_v1.mp3",
+    "duration": 0.7,
+    "promptInfluence": 0.6,
+    "loop": false
+  },
+  {
+    "text": "Pinwheel enemy forming sound. Stay faithful to the original pinwheel spawn identity: a purple neon rotor waking up, spark attack into rotational whirr, fast and punchy, medium-high register, stylized arcade sci-fi one-shot with clear spin-up motion.",
+    "out": "sounds/generated/pinwheel_form_elevenlabs_v1.mp3",
+    "duration": 0.5,
+    "promptInfluence": 0.5,
+    "loop": false
+  },
+  {
+    "text": "Pinwheel enemy destruction sound. Stay faithful to the current original kill contour: a saw-like spinning whoosh that sweeps from about 400 Hz up to 1600 Hz and then falls toward 200 Hz, with rotational motion and a band-passed arcade body, bright and kinetic, no ambience.",
+    "out": "sounds/generated/pinwheel_destroy_elevenlabs_v1.mp3",
+    "duration": 0.7,
+    "promptInfluence": 0.6,
+    "loop": false
+  },
+  {
+    "text": "Sierpinski enemy forming sound. Stay faithful to the original octagon-like spawn role now used for Sierpinski: ominous gold fractal polygon materialization, layered recursive shimmer, strange but readable arcade arrival, geometric and ceremonial, short one-shot, no ambience.",
+    "out": "sounds/generated/sierpinski_form_elevenlabs_v1.mp3",
+    "duration": 0.6,
+    "promptInfluence": 0.55,
+    "loop": false
+  },
+  {
+    "text": "Sierpinski enemy destruction sound. Stay faithful to the current original kill contour: layered fractal tones in a descending pulse pattern built around A5 880 Hz, E5 660 Hz, and A4 440 Hz, staggered recursive hits that each fall downward in pitch, glowing gold shatter, strange but clean arcade one-shot.",
+    "out": "sounds/generated/sierpinski_destroy_elevenlabs_v1.mp3",
+    "duration": 0.9,
+    "promptInfluence": 0.65,
+    "loop": false
+  },
+  {
+    "text": "Black hole enemy forming sound. Stay faithful to the original deathstar spawn role and current black-hole presentation: electric blue-white plasma arrival, ominous gravity-well surge, deep body with unstable sci-fi glow, boss-like but still arcade-clean, dramatic materialization, no ambience bed.",
+    "out": "sounds/generated/blackhole_form_elevenlabs_v1.mp3",
+    "duration": 1.8,
+    "promptInfluence": 0.55,
+    "loop": false
+  },
+  {
+    "text": "Black hole enemy destruction sound. Stay faithful to the current original black-hole death contour: deep sub-bass boom beginning around 80 to 120 Hz and collapsing toward 20 Hz, layered with a bright noise burst and descending tone cluster around 200, 280, and 360 Hz, catastrophic implosion then burst, dramatic arcade sci-fi one-shot, no ambience.",
+    "out": "sounds/generated/blackhole_destroy_elevenlabs_v1.mp3",
+    "duration": 2.0,
+    "promptInfluence": 0.65,
+    "loop": false
+  }
+]

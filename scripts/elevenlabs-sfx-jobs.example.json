@@ -1,0 +1,30 @@
+[
+  {
+    "text": "Sharp crystalline neon enemy death, prismatic glass ping with a short synthetic tail, arcade one-shot, very clean transient",
+    "out": "sounds/generated/rhombus_kill_elevenlabs_v1.mp3",
+    "duration": 0.8,
+    "promptInfluence": 0.45,
+    "loop": false
+  },
+  {
+    "text": "Heavy geometric enemy destruction, dense low-mid impact with structural crack and arcade breakup, game-ready one-shot, no background ambience",
+    "out": "sounds/generated/square_kill_elevenlabs_v1.mp3",
+    "duration": 0.9,
+    "promptInfluence": 0.5,
+    "loop": false
+  },
+  {
+    "text": "Fast spinning sci-fi enemy death, spark attack into rotational tumble and synthetic whoosh, bright arcade one-shot, polished and punchy",
+    "out": "sounds/generated/pinwheel_kill_elevenlabs_v1.mp3",
+    "duration": 0.8,
+    "promptInfluence": 0.45,
+    "loop": false
+  },
+  {
+    "text": "Recursive fractal enemy death, layered glowing pulses folding inward into a gold sci-fi shatter, stylized arcade one-shot, crisp and strange",
+    "out": "sounds/generated/sierpinski_kill_elevenlabs_v1.mp3",
+    "duration": 1.0,
+    "promptInfluence": 0.55,
+    "loop": false
+  }
+]

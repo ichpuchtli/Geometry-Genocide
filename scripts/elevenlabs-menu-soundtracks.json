@@ -1,0 +1,44 @@
+[
+  {
+    "text": "Start menu soundtrack segment 1. Extend the identity of the original start.wav into a full menu theme. Begin with the same feeling of neon synthwave ignition and confident launch pulse, then bloom into an upbeat retro-arcade menu bed. Bright, clean, melodic, no vocals, no drums dominating, playable under a title screen, polished and game-ready.",
+    "out": "sounds/generated/menu/start_menu_seg1.mp3",
+    "duration": 24,
+    "promptInfluence": 0.55,
+    "loop": false
+  },
+  {
+    "text": "Start menu soundtrack segment 2. Continue the original start.wav identity after the ignition. Keep the same bright neon synthwave menu mood, optimistic arcade energy, melodic forward motion, gentle pulse, clean highs, no vocals, suitable for a looping start menu and settings screen.",
+    "out": "sounds/generated/menu/start_menu_seg2.mp3",
+    "duration": 24,
+    "promptInfluence": 0.55,
+    "loop": false
+  },
+  {
+    "text": "Start menu soundtrack segment 3. Final continuation of the original start.wav menu identity. Maintain the same bright synthwave arcade tone, slight variation and lift, smooth ending that can lead back into segment 1 if looped, no vocals, no harsh transitions, polished title-screen music.",
+    "out": "sounds/generated/menu/start_menu_seg3.mp3",
+    "duration": 24,
+    "promptInfluence": 0.55,
+    "loop": false
+  },
+  {
+    "text": "Game over menu soundtrack segment 1. Extend the identity of the original die.wav into a full game-over menu theme. Begin with the same catastrophic neon annihilation feeling and collapsing synth tail, then settle into a dark reflective synthwave aftermath. Dramatic, heavy, mournful but still arcade sci-fi, no vocals, suitable under a game-over screen.",
+    "out": "sounds/generated/menu/gameover_menu_seg1.mp3",
+    "duration": 24,
+    "promptInfluence": 0.6,
+    "loop": false
+  },
+  {
+    "text": "Game over menu soundtrack segment 2. Continue the original die.wav identity after the impact. Keep the same dark synthwave aftermath, low-end weight, broken neon atmosphere, restrained pulse, subtle melodic grief, no vocals, suitable for reading score and replay options on a game-over menu.",
+    "out": "sounds/generated/menu/gameover_menu_seg2.mp3",
+    "duration": 24,
+    "promptInfluence": 0.6,
+    "loop": false
+  },
+  {
+    "text": "Game over menu soundtrack segment 3. Final continuation of the original die.wav game-over theme. Maintain the same dark sci-fi arcade mood, slight variation and emotional resolution, smooth ending that can loop back without sounding abrupt, no vocals, polished menu music.",
+    "out": "sounds/generated/menu/gameover_menu_seg3.mp3",
+    "duration": 24,
+    "promptInfluence": 0.6,
+    "loop": false
+  }
+]

@@ -1,0 +1,79 @@
+[
+  {
+    "text": "Procedural rhombus kill signature replacement. Stay faithful to the current synthesis: a sharp crystalline sine-like ping descending from about 2400 Hz to 1200 Hz over a very short hit. Bright, prismatic, precise, compact arcade one-shot, extremely clean transient, no ambience.",
+    "out": "sounds/generated/procedural/rhombus_kill_proc_elevenlabs_v1.mp3",
+    "duration": 0.5,
+    "promptInfluence": 0.65,
+    "loop": false
+  },
+  {
+    "text": "Procedural square kill signature replacement. Stay faithful to the current synthesis: a heavy low sine-like thud dropping from about 120 Hz to 40 Hz with a short filtered noise crunch on top. Dense structural break, chunky arcade impact, short and forceful, no ambience.",
+    "out": "sounds/generated/procedural/square_kill_proc_elevenlabs_v1.mp3",
+    "duration": 0.7,
+    "promptInfluence": 0.65,
+    "loop": false
+  },
+  {
+    "text": "Procedural pinwheel kill signature replacement. Stay faithful to the current synthesis: a bright spinning saw-like whoosh sweeping from around 400 Hz up to 1600 Hz and then falling toward 200 Hz, with rotational motion and a band-passed arcade body. Fast, kinetic, clean one-shot, no ambience.",
+    "out": "sounds/generated/procedural/pinwheel_kill_proc_elevenlabs_v1.mp3",
+    "duration": 0.7,
+    "promptInfluence": 0.65,
+    "loop": false
+  },
+  {
+    "text": "Procedural sierpinski kill signature replacement. Stay faithful to the current synthesis: layered fractal tones in staggered descending pulses built around 880 Hz, 660 Hz, and 440 Hz. Recursive glowing shatter feel, strange but readable arcade one-shot, no ambience.",
+    "out": "sounds/generated/procedural/sierpinski_kill_proc_elevenlabs_v1.mp3",
+    "duration": 0.9,
+    "promptInfluence": 0.7,
+    "loop": false
+  },
+  {
+    "text": "Procedural phase transition cue replacement. Stay faithful to the current synthesis: a rising saw-like sweep from about 100 Hz to 800 Hz, opening into a brighter filtered top, then landing in a bass impact dropping from about 200 Hz to 60 Hz. Dramatic arcade stage transition, bright and dangerous, no ambience bed.",
+    "out": "sounds/generated/procedural/phase_transition_proc_elevenlabs_v1.mp3",
+    "duration": 1.1,
+    "promptInfluence": 0.65,
+    "loop": false
+  },
+  {
+    "text": "Procedural elite arrival cue replacement. Stay faithful to the current synthesis: two quick rising sine-like chimes, roughly 600 Hz to 800 Hz followed by 1000 Hz to 1300 Hz, short and distinct, premium arcade enemy arrival, elegant but threatening, no ambience.",
+    "out": "sounds/generated/procedural/elite_arrive_proc_elevenlabs_v1.mp3",
+    "duration": 0.5,
+    "promptInfluence": 0.65,
+    "loop": false
+  },
+  {
+    "text": "Procedural elite kill cue replacement. Stay faithful to the current synthesis: a bright major chord stab around C5, E5, and G5 with a sub thud dropping from about 80 Hz to 30 Hz underneath. Rewarding premium arcade kill, triumphant but heavy, short and punchy, no ambience.",
+    "out": "sounds/generated/procedural/elite_kill_proc_elevenlabs_v1.mp3",
+    "duration": 0.7,
+    "promptInfluence": 0.7,
+    "loop": false
+  },
+  {
+    "text": "Procedural spawn telegraph warning replacement. Stay faithful to the current synthesis: a short square-wave buzz centered around about 220 Hz, immediate and readable, arcade warning tone, terse and focused, no ambience, no musical tail.",
+    "out": "sounds/generated/procedural/telegraph_warning_proc_elevenlabs_v1.mp3",
+    "duration": 0.5,
+    "promptInfluence": 0.7,
+    "loop": false
+  },
+  {
+    "text": "Procedural recovery start cue replacement. Stay faithful to the current synthesis: an empowering rising power chord with tones around E4 330 Hz, A4 440 Hz, and E5 660 Hz, followed by a bright shimmer that falls from about 1320 Hz to 880 Hz. Heroic arcade recovery cue, clean and uplifting, no ambience.",
+    "out": "sounds/generated/procedural/recovery_start_proc_elevenlabs_v1.mp3",
+    "duration": 0.8,
+    "promptInfluence": 0.7,
+    "loop": false
+  },
+  {
+    "text": "Procedural recovery expiry warning replacement. Stay faithful to the current synthesis: two short descending sine-like warning tones, first around 660 Hz falling to 330 Hz, then around 440 Hz falling to 220 Hz. Clear arcade warning, brief, tense, no ambience.",
+    "out": "sounds/generated/procedural/recovery_expire_proc_elevenlabs_v1.mp3",
+    "duration": 0.6,
+    "promptInfluence": 0.7,
+    "loop": false
+  },
+  {
+    "text": "Procedural black hole death replacement. Stay faithful to the current synthesis: a deep sub-bass boom beginning around 80 to 120 Hz and collapsing toward 20 Hz, layered with a bright noise burst and descending tone cluster around 200, 280, and 360 Hz. Catastrophic implosion then burst, dramatic arcade sci-fi one-shot, dark and huge, no ambience bed.",
+    "out": "sounds/generated/procedural/blackhole_death_proc_elevenlabs_v1.mp3",
+    "duration": 2.0,
+    "promptInfluence": 0.7,
+    "loop": false
+  }
+]

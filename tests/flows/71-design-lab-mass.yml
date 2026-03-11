@@ -1,0 +1,255 @@
+name: "Design Lab - Mass Feeding"
+tags: [visual, designlab]
+steps:
+  - action: launch
+    url: "/"
+    waitFor: "canvas#game"
+
+  - action: wait
+    ms: 500
+
+  # Enter design lab
+  - action: keyPress
+    key: "d"
+    duration: 100
+
+  - action: wait
+    ms: 1000
+
+  # Switch to rhombus (key 1) — small enemies that get absorbed quickly
+  - action: keyPress
+    key: "1"
+    duration: 50
+
+  - action: wait
+    ms: 100
+
+  # Rapid-fire spawn enemies near each BH quadrant
+  # Top-left: Radiant Collapse (~x=0.3, y=0.3)
+  - action: click
+    selector: "canvas#game"
+    x: 0.28
+    y: 0.28
+  - action: wait
+    ms: 100
+  - action: click
+    selector: "canvas#game"
+    x: 0.26
+    y: 0.32
+  - action: wait
+    ms: 100
+  - action: click
+    selector: "canvas#game"
+    x: 0.32
+    y: 0.26
+  - action: wait
+    ms: 100
+  - action: click
+    selector: "canvas#game"
+    x: 0.30
+    y: 0.34
+  - action: wait
+    ms: 100
+  - action: click
+    selector: "canvas#game"
+    x: 0.24
+    y: 0.30
+  - action: wait
+    ms: 100
+  - action: click
+    selector: "canvas#game"
+    x: 0.34
+    y: 0.28
+  - action: wait
+    ms: 100
+
+  # Top-right: Swirl (~x=0.7, y=0.3)
+  - action: click
+    selector: "canvas#game"
+    x: 0.68
+    y: 0.28
+  - action: wait
+    ms: 100
+  - action: click
+    selector: "canvas#game"
+    x: 0.66
+    y: 0.32
+  - action: wait
+    ms: 100
+  - action: click
+    selector: "canvas#game"
+    x: 0.72
+    y: 0.26
+  - action: wait
+    ms: 100
+  - action: click
+    selector: "canvas#game"
+    x: 0.70
+    y: 0.34
+  - action: wait
+    ms: 100
+  - action: click
+    selector: "canvas#game"
+    x: 0.64
+    y: 0.30
+  - action: wait
+    ms: 100
+  - action: click
+    selector: "canvas#game"
+    x: 0.74
+    y: 0.28
+  - action: wait
+    ms: 100
+
+  # Bottom-left: Unstable Mass (~x=0.3, y=0.7)
+  - action: click
+    selector: "canvas#game"
+    x: 0.28
+    y: 0.68
+  - action: wait
+    ms: 100
+  - action: click
+    selector: "canvas#game"
+    x: 0.26
+    y: 0.72
+  - action: wait
+    ms: 100
+  - action: click
+    selector: "canvas#game"
+    x: 0.32
+    y: 0.66
+  - action: wait
+    ms: 100
+  - action: click
+    selector: "canvas#game"
+    x: 0.30
+    y: 0.74
+  - action: wait
+    ms: 100
+  - action: click
+    selector: "canvas#game"
+    x: 0.24
+    y: 0.70
+  - action: wait
+    ms: 100
+  - action: click
+    selector: "canvas#game"
+    x: 0.34
+    y: 0.68
+  - action: wait
+    ms: 100
+
+  # Bottom-right: Event Horizon (~x=0.7, y=0.7)
+  - action: click
+    selector: "canvas#game"
+    x: 0.68
+    y: 0.68
+  - action: wait
+    ms: 100
+  - action: click
+    selector: "canvas#game"
+    x: 0.66
+    y: 0.72
+  - action: wait
+    ms: 100
+  - action: click
+    selector: "canvas#game"
+    x: 0.72
+    y: 0.66
+  - action: wait
+    ms: 100
+  - action: click
+    selector: "canvas#game"
+    x: 0.70
+    y: 0.74
+  - action: wait
+    ms: 100
+  - action: click
+    selector: "canvas#game"
+    x: 0.64
+    y: 0.70
+  - action: wait
+    ms: 100
+  - action: click
+    selector: "canvas#game"
+    x: 0.74
+    y: 0.68
+  - action: wait
+    ms: 100
+
+  # Wait for enemies to be attracted and absorbed
+  - action: wait
+    ms: 4000
+
+  # Screenshot: mid-mass variants
+  - action: screenshot
+    name: "71-design-lab-midmass"
+
+  # Spawn more enemies to push toward overload
+  # Feed top-left more
+  - action: click
+    selector: "canvas#game"
+    x: 0.28
+    y: 0.28
+  - action: wait
+    ms: 80
+  - action: click
+    selector: "canvas#game"
+    x: 0.30
+    y: 0.30
+  - action: wait
+    ms: 80
+  - action: click
+    selector: "canvas#game"
+    x: 0.26
+    y: 0.26
+  - action: wait
+    ms: 80
+  - action: click
+    selector: "canvas#game"
+    x: 0.32
+    y: 0.32
+  - action: wait
+    ms: 80
+  - action: click
+    selector: "canvas#game"
+    x: 0.28
+    y: 0.34
+  - action: wait
+    ms: 80
+  - action: click
+    selector: "canvas#game"
+    x: 0.34
+    y: 0.28
+  - action: wait
+    ms: 80
+  - action: click
+    selector: "canvas#game"
+    x: 0.30
+    y: 0.26
+  - action: wait
+    ms: 80
+  - action: click
+    selector: "canvas#game"
+    x: 0.26
+    y: 0.30
+  - action: wait
+    ms: 80
+
+  # Wait for absorption + potential overload
+  - action: wait
+    ms: 6000
+
+  # Screenshot: high mass or post-overload
+  - action: screenshot
+    name: "71-design-lab-highmass"
+
+  - action: wait
+    ms: 4000
+
+  # Screenshot: aftermath (circles scattered, BH respawned)
+  - action: screenshot
+    name: "71-design-lab-aftermath"
+
+  - action: assertNoErrors
+    description: "No console errors during mass feeding"

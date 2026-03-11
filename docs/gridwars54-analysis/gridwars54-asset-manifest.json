@@ -1,0 +1,2625 @@
+{
+  "generatedAt": "2026-03-09T11:21:13.074Z",
+  "sourceRoot": "docs/GridWars54",
+  "credits": [
+    {
+      "name": "Swith",
+      "detail": "thank you for the music, the song I'm singing"
+    },
+    {
+      "name": "taumel",
+      "detail": "thanks for the cool grid effects and the bloom effect on the gfx sets"
+    },
+    {
+      "name": "mentil",
+      "detail": "thanks for your analysis of Geometry Wars and code bits"
+    },
+    {
+      "name": "RiK",
+      "detail": "thanks for coding suggestions and all the Mac builds"
+    },
+    {
+      "name": "svrman",
+      "detail": "thanks for gfx sets"
+    },
+    {
+      "name": "PVB",
+      "detail": "thanks for the download space!"
+    }
+  ],
+  "graphics": {
+    "sourceRef": "docs/GridWars54/images.bmx:7",
+    "gfxSets": {
+      "solid": {
+        "atlases": {
+          "iconimage": {
+            "file": "icons.png",
+            "frameWidth": 64,
+            "frameHeight": 64,
+            "frameCount": 2
+          },
+          "snaketail": {
+            "file": "snaketail.png",
+            "frameWidth": 56,
+            "frameHeight": 56,
+            "frameCount": 24
+          },
+          "powerimage": {
+            "file": "powerups.png",
+            "frameWidth": 64,
+            "frameHeight": 64,
+            "frameCount": 11
+          }
+        },
+        "sprites": []
+      },
+      "low": {
+        "atlases": {
+          "iconimage": {
+            "file": "icons.png",
+            "frameWidth": 24,
+            "frameHeight": 24,
+            "frameCount": 2
+          },
+          "snaketail": {
+            "file": "snaketail.png",
+            "frameWidth": 32,
+            "frameHeight": 32,
+            "frameCount": 24
+          },
+          "powerimage": {
+            "file": "powerups.png",
+            "frameWidth": 64,
+            "frameHeight": 64,
+            "frameCount": 11
+          }
+        },
+        "sprites": []
+      },
+      "med": {
+        "atlases": {
+          "iconimage": {
+            "file": "icons.png",
+            "frameWidth": 32,
+            "frameHeight": 32,
+            "frameCount": 2
+          },
+          "snaketail": {
+            "file": "snaketail.png",
+            "frameWidth": 32,
+            "frameHeight": 32,
+            "frameCount": 24
+          },
+          "powerimage": {
+            "file": "powerups.png",
+            "frameWidth": 64,
+            "frameHeight": 64,
+            "frameCount": 11
+          }
+        },
+        "sprites": []
+      },
+      "high": {
+        "atlases": {
+          "iconimage": {
+            "file": "icons.png",
+            "frameWidth": 64,
+            "frameHeight": 64,
+            "frameCount": 2
+          },
+          "snaketail": {
+            "file": "snaketail.png",
+            "frameWidth": 56,
+            "frameHeight": 56,
+            "frameCount": 24
+          },
+          "powerimage": {
+            "file": "powerups.png",
+            "frameWidth": 64,
+            "frameHeight": 64,
+            "frameCount": 11
+          }
+        },
+        "sprites": []
+      },
+      "user": {
+        "atlases": {
+          "iconimage": {
+            "file": "icons.png",
+            "frameWidth": 64,
+            "frameHeight": 64,
+            "frameCount": 2
+          },
+          "snaketail": {
+            "file": "snaketail.png",
+            "frameWidth": 56,
+            "frameHeight": 56,
+            "frameCount": 24
+          },
+          "powerimage": {
+            "file": "powerups.png",
+            "frameWidth": 64,
+            "frameHeight": 64,
+            "frameCount": 11
+          }
+        },
+        "sprites": [
+          {
+            "variable": "greensquare",
+            "file": "greensquare.png"
+          },
+          {
+            "variable": "purplesquare1",
+            "file": "purplesquare1.png"
+          },
+          {
+            "variable": "purplesquare2",
+            "file": "purplesquare2.png"
+          },
+          {
+            "variable": "bluediamond",
+            "file": "bluediamond.png"
+          },
+          {
+            "variable": "pinkpinwheel",
+            "file": "pinkpinwheel.png"
+          },
+          {
+            "variable": "indigotriangle",
+            "file": "indigotriangle.png"
+          },
+          {
+            "variable": "bluecircle",
+            "file": "bluecircle.png"
+          },
+          {
+            "variable": "redclone",
+            "file": "redclone.png"
+          },
+          {
+            "variable": "orangetriangle",
+            "file": "orangetriangle.png"
+          },
+          {
+            "variable": "redcircle",
+            "file": "redcircle.png"
+          },
+          {
+            "variable": "whiteplayer",
+            "file": "whiteplayer.png"
+          },
+          {
+            "variable": "yellowshot",
+            "file": "yellowshot.png"
+          },
+          {
+            "variable": "whitestar",
+            "file": "whitestar.png"
+          },
+          {
+            "variable": "snakehead",
+            "file": "snakehead.png"
+          },
+          {
+            "variable": "particleimg",
+            "file": "particle.png"
+          }
+        ]
+      }
+    },
+    "tiers": {
+      "high": [
+        {
+          "file": "bluecircle.png",
+          "path": "docs/GridWars54/gfx/high/bluecircle.png",
+          "width": 64,
+          "height": 64,
+          "bitDepth": 8,
+          "colorType": 6,
+          "colorModel": "rgba",
+          "compressionMethod": 0,
+          "filterMethod": 0,
+          "interlaceMethod": 1,
+          "interlaced": true
+        },
+        {
+          "file": "bluediamond.PNG",
+          "path": "docs/GridWars54/gfx/high/bluediamond.PNG",
+          "width": 64,
+          "height": 64,
+          "bitDepth": 8,
+          "colorType": 6,
+          "colorModel": "rgba",
+          "compressionMethod": 0,
+          "filterMethod": 0,
+          "interlaceMethod": 0,
+          "interlaced": false
+        },
+        {
+          "file": "greensquare.PNG",
+          "path": "docs/GridWars54/gfx/high/greensquare.PNG",
+          "width": 64,
+          "height": 64,
+          "bitDepth": 8,
+          "colorType": 6,
+          "colorModel": "rgba",
+          "compressionMethod": 0,
+          "filterMethod": 0,
+          "interlaceMethod": 0,
+          "interlaced": false
+        },
+        {
+          "file": "icons.PNG",
+          "path": "docs/GridWars54/gfx/high/icons.PNG",
+          "width": 64,
+          "height": 128,
+          "bitDepth": 8,
+          "colorType": 6,
+          "colorModel": "rgba",
+          "compressionMethod": 0,
+          "filterMethod": 0,
+          "interlaceMethod": 1,
+          "interlaced": true
+        },
+        {
+          "file": "indigotriangle.PNG",
+          "path": "docs/GridWars54/gfx/high/indigotriangle.PNG",
+          "width": 64,
+          "height": 64,
+          "bitDepth": 8,
+          "colorType": 6,
+          "colorModel": "rgba",
+          "compressionMethod": 0,
+          "filterMethod": 0,
+          "interlaceMethod": 1,
+          "interlaced": true
+        },
+        {
+          "file": "orangetriangle.PNG",
+          "path": "docs/GridWars54/gfx/high/orangetriangle.PNG",
+          "width": 64,
+          "height": 64,
+          "bitDepth": 8,
+          "colorType": 6,
+          "colorModel": "rgba",
+          "compressionMethod": 0,
+          "filterMethod": 0,
+          "interlaceMethod": 1,
+          "interlaced": true
+        },
+        {
+          "file": "particle.PNG",
+          "path": "docs/GridWars54/gfx/high/particle.PNG",
+          "width": 15,
+          "height": 15,
+          "bitDepth": 8,
+          "colorType": 6,
+          "colorModel": "rgba",
+          "compressionMethod": 0,
+          "filterMethod": 0,
+          "interlaceMethod": 0,
+          "interlaced": false
+        },
+        {
+          "file": "pinkpinwheel.PNG",
+          "path": "docs/GridWars54/gfx/high/pinkpinwheel.PNG",
+          "width": 64,
+          "height": 64,
+          "bitDepth": 8,
+          "colorType": 6,
+          "colorModel": "rgba",
+          "compressionMethod": 0,
+          "filterMethod": 0,
+          "interlaceMethod": 0,
+          "interlaced": false
+        },
+        {
+          "file": "powerups.PNG",
+          "path": "docs/GridWars54/gfx/high/powerups.PNG",
+          "width": 128,
+          "height": 512,
+          "bitDepth": 8,
+          "colorType": 6,
+          "colorModel": "rgba",
+          "compressionMethod": 0,
+          "filterMethod": 0,
+          "interlaceMethod": 0,
+          "interlaced": false
+        },
+        {
+          "file": "purplesquare1.png",
+          "path": "docs/GridWars54/gfx/high/purplesquare1.png",
+          "width": 64,
+          "height": 64,
+          "bitDepth": 8,
+          "colorType": 6,
+          "colorModel": "rgba",
+          "compressionMethod": 0,
+          "filterMethod": 0,
+          "interlaceMethod": 1,
+          "interlaced": true
+        },
+        {
+          "file": "purplesquare2.PNG",
+          "path": "docs/GridWars54/gfx/high/purplesquare2.PNG",
+          "width": 64,
+          "height": 64,
+          "bitDepth": 8,
+          "colorType": 6,
+          "colorModel": "rgba",
+          "compressionMethod": 0,
+          "filterMethod": 0,
+          "interlaceMethod": 1,
+          "interlaced": true
+        },
+        {
+          "file": "redcircle.png",
+          "path": "docs/GridWars54/gfx/high/redcircle.png",
+          "width": 128,
+          "height": 128,
+          "bitDepth": 8,
+          "colorType": 6,
+          "colorModel": "rgba",
+          "compressionMethod": 0,
+          "filterMethod": 0,
+          "interlaceMethod": 1,
+          "interlaced": true
+        },
+        {
+          "file": "redclone.PNG",
+          "path": "docs/GridWars54/gfx/high/redclone.PNG",
+          "width": 64,
+          "height": 64,
+          "bitDepth": 8,
+          "colorType": 6,
+          "colorModel": "rgba",
+          "compressionMethod": 0,
+          "filterMethod": 0,
+          "interlaceMethod": 1,
+          "interlaced": true
+        },
+        {
+          "file": "snakehead.png",
+          "path": "docs/GridWars54/gfx/high/snakehead.png",
+          "width": 64,
+          "height": 64,
+          "bitDepth": 8,
+          "colorType": 6,
+          "colorModel": "rgba",
+          "compressionMethod": 0,
+          "filterMethod": 0,
+          "interlaceMethod": 1,
+          "interlaced": true
+        },
+        {
+          "file": "snaketail.PNG",
+          "path": "docs/GridWars54/gfx/high/snaketail.PNG",
+          "width": 448,
+          "height": 168,
+          "bitDepth": 8,
+          "colorType": 6,
+          "colorModel": "rgba",
+          "compressionMethod": 0,
+          "filterMethod": 0,
+          "interlaceMethod": 1,
+          "interlaced": true
+        },
+        {
+          "file": "whiteplayer.PNG",
+          "path": "docs/GridWars54/gfx/high/whiteplayer.PNG",
+          "width": 64,
+          "height": 64,
+          "bitDepth": 8,
+          "colorType": 6,
+          "colorModel": "rgba",
+          "compressionMethod": 0,
+          "filterMethod": 0,
+          "interlaceMethod": 1,
+          "interlaced": true
+        },
+        {
+          "file": "whitestar.PNG",
+          "path": "docs/GridWars54/gfx/high/whitestar.PNG",
+          "width": 98,
+          "height": 98,
+          "bitDepth": 8,
+          "colorType": 6,
+          "colorModel": "rgba",
+          "compressionMethod": 0,
+          "filterMethod": 0,
+          "interlaceMethod": 1,
+          "interlaced": true
+        },
+        {
+          "file": "yellowshot.PNG",
+          "path": "docs/GridWars54/gfx/high/yellowshot.PNG",
+          "width": 32,
+          "height": 32,
+          "bitDepth": 8,
+          "colorType": 6,
+          "colorModel": "rgba",
+          "compressionMethod": 0,
+          "filterMethod": 0,
+          "interlaceMethod": 1,
+          "interlaced": true
+        }
+      ],
+      "low": [
+        {
+          "file": "bluecircle.png",
+          "path": "docs/GridWars54/gfx/low/bluecircle.png",
+          "width": 25,
+          "height": 25,
+          "bitDepth": 8,
+          "colorType": 2,
+          "colorModel": "rgb",
+          "compressionMethod": 0,
+          "filterMethod": 0,
+          "interlaceMethod": 0,
+          "interlaced": false
+        },
+        {
+          "file": "bluediamond.PNG",
+          "path": "docs/GridWars54/gfx/low/bluediamond.PNG",
+          "width": 41,
+          "height": 41,
+          "bitDepth": 8,
+          "colorType": 2,
+          "colorModel": "rgb",
+          "compressionMethod": 0,
+          "filterMethod": 0,
+          "interlaceMethod": 0,
+          "interlaced": false
+        },
+        {
+          "file": "greensquare.PNG",
+          "path": "docs/GridWars54/gfx/low/greensquare.PNG",
+          "width": 35,
+          "height": 35,
+          "bitDepth": 8,
+          "colorType": 2,
+          "colorModel": "rgb",
+          "compressionMethod": 0,
+          "filterMethod": 0,
+          "interlaceMethod": 0,
+          "interlaced": false
+        },
+        {
+          "file": "icons.PNG",
+          "path": "docs/GridWars54/gfx/low/icons.PNG",
+          "width": 24,
+          "height": 48,
+          "bitDepth": 8,
+          "colorType": 2,
+          "colorModel": "rgb",
+          "compressionMethod": 0,
+          "filterMethod": 0,
+          "interlaceMethod": 0,
+          "interlaced": false
+        },
+        {
+          "file": "indigotriangle.PNG",
+          "path": "docs/GridWars54/gfx/low/indigotriangle.PNG",
+          "width": 32,
+          "height": 32,
+          "bitDepth": 8,
+          "colorType": 2,
+          "colorModel": "rgb",
+          "compressionMethod": 0,
+          "filterMethod": 0,
+          "interlaceMethod": 0,
+          "interlaced": false
+        },
+        {
+          "file": "orangetriangle.PNG",
+          "path": "docs/GridWars54/gfx/low/orangetriangle.PNG",
+          "width": 45,
+          "height": 45,
+          "bitDepth": 8,
+          "colorType": 3,
+          "colorModel": "indexed",
+          "compressionMethod": 0,
+          "filterMethod": 0,
+          "interlaceMethod": 0,
+          "interlaced": false
+        },
+        {
+          "file": "particle.PNG",
+          "path": "docs/GridWars54/gfx/low/particle.PNG",
+          "width": 15,
+          "height": 15,
+          "bitDepth": 8,
+          "colorType": 6,
+          "colorModel": "rgba",
+          "compressionMethod": 0,
+          "filterMethod": 0,
+          "interlaceMethod": 0,
+          "interlaced": false
+        },
+        {
+          "file": "pinkpinwheel.PNG",
+          "path": "docs/GridWars54/gfx/low/pinkpinwheel.PNG",
+          "width": 35,
+          "height": 35,
+          "bitDepth": 8,
+          "colorType": 2,
+          "colorModel": "rgb",
+          "compressionMethod": 0,
+          "filterMethod": 0,
+          "interlaceMethod": 0,
+          "interlaced": false
+        },
+        {
+          "file": "powerups.PNG",
+          "path": "docs/GridWars54/gfx/low/powerups.PNG",
+          "width": 128,
+          "height": 512,
+          "bitDepth": 8,
+          "colorType": 6,
+          "colorModel": "rgba",
+          "compressionMethod": 0,
+          "filterMethod": 0,
+          "interlaceMethod": 0,
+          "interlaced": false
+        },
+        {
+          "file": "purplesquare1.png",
+          "path": "docs/GridWars54/gfx/low/purplesquare1.png",
+          "width": 35,
+          "height": 35,
+          "bitDepth": 8,
+          "colorType": 2,
+          "colorModel": "rgb",
+          "compressionMethod": 0,
+          "filterMethod": 0,
+          "interlaceMethod": 1,
+          "interlaced": true
+        },
+        {
+          "file": "purplesquare2.PNG",
+          "path": "docs/GridWars54/gfx/low/purplesquare2.PNG",
+          "width": 21,
+          "height": 21,
+          "bitDepth": 8,
+          "colorType": 2,
+          "colorModel": "rgb",
+          "compressionMethod": 0,
+          "filterMethod": 0,
+          "interlaceMethod": 1,
+          "interlaced": true
+        },
+        {
+          "file": "redcircle.png",
+          "path": "docs/GridWars54/gfx/low/redcircle.png",
+          "width": 64,
+          "height": 64,
+          "bitDepth": 8,
+          "colorType": 3,
+          "colorModel": "indexed",
+          "compressionMethod": 0,
+          "filterMethod": 0,
+          "interlaceMethod": 0,
+          "interlaced": false
+        },
+        {
+          "file": "redclone.PNG",
+          "path": "docs/GridWars54/gfx/low/redclone.PNG",
+          "width": 45,
+          "height": 43,
+          "bitDepth": 8,
+          "colorType": 3,
+          "colorModel": "indexed",
+          "compressionMethod": 0,
+          "filterMethod": 0,
+          "interlaceMethod": 0,
+          "interlaced": false
+        },
+        {
+          "file": "snakehead.png",
+          "path": "docs/GridWars54/gfx/low/snakehead.png",
+          "width": 32,
+          "height": 32,
+          "bitDepth": 8,
+          "colorType": 6,
+          "colorModel": "rgba",
+          "compressionMethod": 0,
+          "filterMethod": 0,
+          "interlaceMethod": 1,
+          "interlaced": true
+        },
+        {
+          "file": "snaketail.PNG",
+          "path": "docs/GridWars54/gfx/low/snaketail.PNG",
+          "width": 256,
+          "height": 96,
+          "bitDepth": 8,
+          "colorType": 3,
+          "colorModel": "indexed",
+          "compressionMethod": 0,
+          "filterMethod": 0,
+          "interlaceMethod": 0,
+          "interlaced": false
+        },
+        {
+          "file": "whiteplayer.PNG",
+          "path": "docs/GridWars54/gfx/low/whiteplayer.PNG",
+          "width": 43,
+          "height": 43,
+          "bitDepth": 8,
+          "colorType": 2,
+          "colorModel": "rgb",
+          "compressionMethod": 0,
+          "filterMethod": 0,
+          "interlaceMethod": 0,
+          "interlaced": false
+        },
+        {
+          "file": "whitestar.PNG",
+          "path": "docs/GridWars54/gfx/low/whitestar.PNG",
+          "width": 64,
+          "height": 64,
+          "bitDepth": 8,
+          "colorType": 2,
+          "colorModel": "rgb",
+          "compressionMethod": 0,
+          "filterMethod": 0,
+          "interlaceMethod": 0,
+          "interlaced": false
+        },
+        {
+          "file": "yellowshot.PNG",
+          "path": "docs/GridWars54/gfx/low/yellowshot.PNG",
+          "width": 32,
+          "height": 32,
+          "bitDepth": 8,
+          "colorType": 6,
+          "colorModel": "rgba",
+          "compressionMethod": 0,
+          "filterMethod": 0,
+          "interlaceMethod": 1,
+          "interlaced": true
+        }
+      ],
+      "med": [
+        {
+          "file": "bluecircle.png",
+          "path": "docs/GridWars54/gfx/med/bluecircle.png",
+          "width": 29,
+          "height": 29,
+          "bitDepth": 8,
+          "colorType": 6,
+          "colorModel": "rgba",
+          "compressionMethod": 0,
+          "filterMethod": 0,
+          "interlaceMethod": 0,
+          "interlaced": false
+        },
+        {
+          "file": "bluediamond.PNG",
+          "path": "docs/GridWars54/gfx/med/bluediamond.PNG",
+          "width": 45,
+          "height": 45,
+          "bitDepth": 8,
+          "colorType": 6,
+          "colorModel": "rgba",
+          "compressionMethod": 0,
+          "filterMethod": 0,
+          "interlaceMethod": 0,
+          "interlaced": false
+        },
+        {
+          "file": "greensquare.PNG",
+          "path": "docs/GridWars54/gfx/med/greensquare.PNG",
+          "width": 41,
+          "height": 41,
+          "bitDepth": 8,
+          "colorType": 6,
+          "colorModel": "rgba",
+          "compressionMethod": 0,
+          "filterMethod": 0,
+          "interlaceMethod": 0,
+          "interlaced": false
+        },
+        {
+          "file": "icons.PNG",
+          "path": "docs/GridWars54/gfx/med/icons.PNG",
+          "width": 32,
+          "height": 64,
+          "bitDepth": 8,
+          "colorType": 6,
+          "colorModel": "rgba",
+          "compressionMethod": 0,
+          "filterMethod": 0,
+          "interlaceMethod": 1,
+          "interlaced": true
+        },
+        {
+          "file": "indigotriangle.PNG",
+          "path": "docs/GridWars54/gfx/med/indigotriangle.PNG",
+          "width": 32,
+          "height": 32,
+          "bitDepth": 8,
+          "colorType": 6,
+          "colorModel": "rgba",
+          "compressionMethod": 0,
+          "filterMethod": 0,
+          "interlaceMethod": 1,
+          "interlaced": true
+        },
+        {
+          "file": "orangetriangle.PNG",
+          "path": "docs/GridWars54/gfx/med/orangetriangle.PNG",
+          "width": 45,
+          "height": 45,
+          "bitDepth": 8,
+          "colorType": 6,
+          "colorModel": "rgba",
+          "compressionMethod": 0,
+          "filterMethod": 0,
+          "interlaceMethod": 1,
+          "interlaced": true
+        },
+        {
+          "file": "particle.PNG",
+          "path": "docs/GridWars54/gfx/med/particle.PNG",
+          "width": 15,
+          "height": 15,
+          "bitDepth": 8,
+          "colorType": 6,
+          "colorModel": "rgba",
+          "compressionMethod": 0,
+          "filterMethod": 0,
+          "interlaceMethod": 0,
+          "interlaced": false
+        },
+        {
+          "file": "pinkpinwheel.PNG",
+          "path": "docs/GridWars54/gfx/med/pinkpinwheel.PNG",
+          "width": 41,
+          "height": 41,
+          "bitDepth": 8,
+          "colorType": 6,
+          "colorModel": "rgba",
+          "compressionMethod": 0,
+          "filterMethod": 0,
+          "interlaceMethod": 0,
+          "interlaced": false
+        },
+        {
+          "file": "powerups.PNG",
+          "path": "docs/GridWars54/gfx/med/powerups.PNG",
+          "width": 128,
+          "height": 512,
+          "bitDepth": 8,
+          "colorType": 6,
+          "colorModel": "rgba",
+          "compressionMethod": 0,
+          "filterMethod": 0,
+          "interlaceMethod": 0,
+          "interlaced": false
+        },
+        {
+          "file": "purplesquare1.png",
+          "path": "docs/GridWars54/gfx/med/purplesquare1.png",
+          "width": 41,
+          "height": 41,
+          "bitDepth": 8,
+          "colorType": 6,
+          "colorModel": "rgba",
+          "compressionMethod": 0,
+          "filterMethod": 0,
+          "interlaceMethod": 1,
+          "interlaced": true
+        },
+        {
+          "file": "purplesquare2.PNG",
+          "path": "docs/GridWars54/gfx/med/purplesquare2.PNG",
+          "width": 25,
+          "height": 25,
+          "bitDepth": 8,
+          "colorType": 6,
+          "colorModel": "rgba",
+          "compressionMethod": 0,
+          "filterMethod": 0,
+          "interlaceMethod": 1,
+          "interlaced": true
+        },
+        {
+          "file": "redcircle.png",
+          "path": "docs/GridWars54/gfx/med/redcircle.png",
+          "width": 70,
+          "height": 70,
+          "bitDepth": 8,
+          "colorType": 6,
+          "colorModel": "rgba",
+          "compressionMethod": 0,
+          "filterMethod": 0,
+          "interlaceMethod": 1,
+          "interlaced": true
+        },
+        {
+          "file": "redclone.PNG",
+          "path": "docs/GridWars54/gfx/med/redclone.PNG",
+          "width": 49,
+          "height": 49,
+          "bitDepth": 8,
+          "colorType": 6,
+          "colorModel": "rgba",
+          "compressionMethod": 0,
+          "filterMethod": 0,
+          "interlaceMethod": 1,
+          "interlaced": true
+        },
+        {
+          "file": "snakehead.png",
+          "path": "docs/GridWars54/gfx/med/snakehead.png",
+          "width": 36,
+          "height": 36,
+          "bitDepth": 8,
+          "colorType": 6,
+          "colorModel": "rgba",
+          "compressionMethod": 0,
+          "filterMethod": 0,
+          "interlaceMethod": 1,
+          "interlaced": true
+        },
+        {
+          "file": "snaketail.PNG",
+          "path": "docs/GridWars54/gfx/med/snaketail.PNG",
+          "width": 256,
+          "height": 96,
+          "bitDepth": 8,
+          "colorType": 6,
+          "colorModel": "rgba",
+          "compressionMethod": 0,
+          "filterMethod": 0,
+          "interlaceMethod": 1,
+          "interlaced": true
+        },
+        {
+          "file": "whiteplayer.PNG",
+          "path": "docs/GridWars54/gfx/med/whiteplayer.PNG",
+          "width": 53,
+          "height": 53,
+          "bitDepth": 8,
+          "colorType": 6,
+          "colorModel": "rgba",
+          "compressionMethod": 0,
+          "filterMethod": 0,
+          "interlaceMethod": 1,
+          "interlaced": true
+        },
+        {
+          "file": "whitestar.PNG",
+          "path": "docs/GridWars54/gfx/med/whitestar.PNG",
+          "width": 68,
+          "height": 68,
+          "bitDepth": 8,
+          "colorType": 6,
+          "colorModel": "rgba",
+          "compressionMethod": 0,
+          "filterMethod": 0,
+          "interlaceMethod": 1,
+          "interlaced": true
+        },
+        {
+          "file": "yellowshot.PNG",
+          "path": "docs/GridWars54/gfx/med/yellowshot.PNG",
+          "width": 32,
+          "height": 32,
+          "bitDepth": 8,
+          "colorType": 6,
+          "colorModel": "rgba",
+          "compressionMethod": 0,
+          "filterMethod": 0,
+          "interlaceMethod": 1,
+          "interlaced": true
+        }
+      ],
+      "solid": [
+        {
+          "file": "bluecircle.png",
+          "path": "docs/GridWars54/gfx/solid/bluecircle.png",
+          "width": 27,
+          "height": 27,
+          "bitDepth": 8,
+          "colorType": 3,
+          "colorModel": "indexed",
+          "compressionMethod": 0,
+          "filterMethod": 0,
+          "interlaceMethod": 0,
+          "interlaced": false
+        },
+        {
+          "file": "bluediamond.PNG",
+          "path": "docs/GridWars54/gfx/solid/bluediamond.PNG",
+          "width": 41,
+          "height": 41,
+          "bitDepth": 8,
+          "colorType": 3,
+          "colorModel": "indexed",
+          "compressionMethod": 0,
+          "filterMethod": 0,
+          "interlaceMethod": 0,
+          "interlaced": false
+        },
+        {
+          "file": "greensquare.PNG",
+          "path": "docs/GridWars54/gfx/solid/greensquare.PNG",
+          "width": 35,
+          "height": 35,
+          "bitDepth": 8,
+          "colorType": 3,
+          "colorModel": "indexed",
+          "compressionMethod": 0,
+          "filterMethod": 0,
+          "interlaceMethod": 0,
+          "interlaced": false
+        },
+        {
+          "file": "icons.PNG",
+          "path": "docs/GridWars54/gfx/solid/icons.PNG",
+          "width": 64,
+          "height": 128,
+          "bitDepth": 8,
+          "colorType": 3,
+          "colorModel": "indexed",
+          "compressionMethod": 0,
+          "filterMethod": 0,
+          "interlaceMethod": 0,
+          "interlaced": false
+        },
+        {
+          "file": "indigotriangle.PNG",
+          "path": "docs/GridWars54/gfx/solid/indigotriangle.PNG",
+          "width": 37,
+          "height": 37,
+          "bitDepth": 8,
+          "colorType": 2,
+          "colorModel": "rgb",
+          "compressionMethod": 0,
+          "filterMethod": 0,
+          "interlaceMethod": 0,
+          "interlaced": false
+        },
+        {
+          "file": "orangetriangle.PNG",
+          "path": "docs/GridWars54/gfx/solid/orangetriangle.PNG",
+          "width": 49,
+          "height": 49,
+          "bitDepth": 8,
+          "colorType": 3,
+          "colorModel": "indexed",
+          "compressionMethod": 0,
+          "filterMethod": 0,
+          "interlaceMethod": 0,
+          "interlaced": false
+        },
+        {
+          "file": "particle.PNG",
+          "path": "docs/GridWars54/gfx/solid/particle.PNG",
+          "width": 15,
+          "height": 15,
+          "bitDepth": 8,
+          "colorType": 6,
+          "colorModel": "rgba",
+          "compressionMethod": 0,
+          "filterMethod": 0,
+          "interlaceMethod": 0,
+          "interlaced": false
+        },
+        {
+          "file": "pinkpinwheel.PNG",
+          "path": "docs/GridWars54/gfx/solid/pinkpinwheel.PNG",
+          "width": 35,
+          "height": 35,
+          "bitDepth": 8,
+          "colorType": 2,
+          "colorModel": "rgb",
+          "compressionMethod": 0,
+          "filterMethod": 0,
+          "interlaceMethod": 0,
+          "interlaced": false
+        },
+        {
+          "file": "powerups.PNG",
+          "path": "docs/GridWars54/gfx/solid/powerups.PNG",
+          "width": 128,
+          "height": 512,
+          "bitDepth": 8,
+          "colorType": 3,
+          "colorModel": "indexed",
+          "compressionMethod": 0,
+          "filterMethod": 0,
+          "interlaceMethod": 0,
+          "interlaced": false
+        },
+        {
+          "file": "purplesquare1.png",
+          "path": "docs/GridWars54/gfx/solid/purplesquare1.png",
+          "width": 37,
+          "height": 37,
+          "bitDepth": 8,
+          "colorType": 3,
+          "colorModel": "indexed",
+          "compressionMethod": 0,
+          "filterMethod": 0,
+          "interlaceMethod": 0,
+          "interlaced": false
+        },
+        {
+          "file": "purplesquare2.PNG",
+          "path": "docs/GridWars54/gfx/solid/purplesquare2.PNG",
+          "width": 23,
+          "height": 23,
+          "bitDepth": 8,
+          "colorType": 3,
+          "colorModel": "indexed",
+          "compressionMethod": 0,
+          "filterMethod": 0,
+          "interlaceMethod": 0,
+          "interlaced": false
+        },
+        {
+          "file": "redcircle.png",
+          "path": "docs/GridWars54/gfx/solid/redcircle.png",
+          "width": 64,
+          "height": 64,
+          "bitDepth": 8,
+          "colorType": 3,
+          "colorModel": "indexed",
+          "compressionMethod": 0,
+          "filterMethod": 0,
+          "interlaceMethod": 0,
+          "interlaced": false
+        },
+        {
+          "file": "redclone.PNG",
+          "path": "docs/GridWars54/gfx/solid/redclone.PNG",
+          "width": 64,
+          "height": 64,
+          "bitDepth": 8,
+          "colorType": 3,
+          "colorModel": "indexed",
+          "compressionMethod": 0,
+          "filterMethod": 0,
+          "interlaceMethod": 0,
+          "interlaced": false
+        },
+        {
+          "file": "snakehead.png",
+          "path": "docs/GridWars54/gfx/solid/snakehead.png",
+          "width": 35,
+          "height": 35,
+          "bitDepth": 8,
+          "colorType": 3,
+          "colorModel": "indexed",
+          "compressionMethod": 0,
+          "filterMethod": 0,
+          "interlaceMethod": 0,
+          "interlaced": false
+        },
+        {
+          "file": "snaketail.PNG",
+          "path": "docs/GridWars54/gfx/solid/snaketail.PNG",
+          "width": 448,
+          "height": 168,
+          "bitDepth": 8,
+          "colorType": 3,
+          "colorModel": "indexed",
+          "compressionMethod": 0,
+          "filterMethod": 0,
+          "interlaceMethod": 0,
+          "interlaced": false
+        },
+        {
+          "file": "whiteplayer.PNG",
+          "path": "docs/GridWars54/gfx/solid/whiteplayer.PNG",
+          "width": 64,
+          "height": 64,
+          "bitDepth": 8,
+          "colorType": 2,
+          "colorModel": "rgb",
+          "compressionMethod": 0,
+          "filterMethod": 0,
+          "interlaceMethod": 1,
+          "interlaced": true
+        },
+        {
+          "file": "whitestar.PNG",
+          "path": "docs/GridWars54/gfx/solid/whitestar.PNG",
+          "width": 98,
+          "height": 98,
+          "bitDepth": 8,
+          "colorType": 3,
+          "colorModel": "indexed",
+          "compressionMethod": 0,
+          "filterMethod": 0,
+          "interlaceMethod": 0,
+          "interlaced": false
+        },
+        {
+          "file": "yellowshot.PNG",
+          "path": "docs/GridWars54/gfx/solid/yellowshot.PNG",
+          "width": 32,
+          "height": 32,
+          "bitDepth": 8,
+          "colorType": 2,
+          "colorModel": "rgb",
+          "compressionMethod": 0,
+          "filterMethod": 0,
+          "interlaceMethod": 0,
+          "interlaced": false
+        }
+      ],
+      "user": [
+        {
+          "file": "bluecircle.png",
+          "path": "docs/GridWars54/gfx/user/bluecircle.png",
+          "width": 64,
+          "height": 64,
+          "bitDepth": 8,
+          "colorType": 6,
+          "colorModel": "rgba",
+          "compressionMethod": 0,
+          "filterMethod": 0,
+          "interlaceMethod": 1,
+          "interlaced": true
+        },
+        {
+          "file": "bluediamond.PNG",
+          "path": "docs/GridWars54/gfx/user/bluediamond.PNG",
+          "width": 64,
+          "height": 64,
+          "bitDepth": 8,
+          "colorType": 6,
+          "colorModel": "rgba",
+          "compressionMethod": 0,
+          "filterMethod": 0,
+          "interlaceMethod": 0,
+          "interlaced": false
+        },
+        {
+          "file": "greensquare.PNG",
+          "path": "docs/GridWars54/gfx/user/greensquare.PNG",
+          "width": 64,
+          "height": 64,
+          "bitDepth": 8,
+          "colorType": 6,
+          "colorModel": "rgba",
+          "compressionMethod": 0,
+          "filterMethod": 0,
+          "interlaceMethod": 0,
+          "interlaced": false
+        },
+        {
+          "file": "icons.PNG",
+          "path": "docs/GridWars54/gfx/user/icons.PNG",
+          "width": 64,
+          "height": 128,
+          "bitDepth": 8,
+          "colorType": 6,
+          "colorModel": "rgba",
+          "compressionMethod": 0,
+          "filterMethod": 0,
+          "interlaceMethod": 1,
+          "interlaced": true
+        },
+        {
+          "file": "indigotriangle.PNG",
+          "path": "docs/GridWars54/gfx/user/indigotriangle.PNG",
+          "width": 64,
+          "height": 64,
+          "bitDepth": 8,
+          "colorType": 6,
+          "colorModel": "rgba",
+          "compressionMethod": 0,
+          "filterMethod": 0,
+          "interlaceMethod": 1,
+          "interlaced": true
+        },
+        {
+          "file": "orangetriangle.PNG",
+          "path": "docs/GridWars54/gfx/user/orangetriangle.PNG",
+          "width": 64,
+          "height": 64,
+          "bitDepth": 8,
+          "colorType": 6,
+          "colorModel": "rgba",
+          "compressionMethod": 0,
+          "filterMethod": 0,
+          "interlaceMethod": 1,
+          "interlaced": true
+        },
+        {
+          "file": "particle.PNG",
+          "path": "docs/GridWars54/gfx/user/particle.PNG",
+          "width": 15,
+          "height": 15,
+          "bitDepth": 8,
+          "colorType": 6,
+          "colorModel": "rgba",
+          "compressionMethod": 0,
+          "filterMethod": 0,
+          "interlaceMethod": 0,
+          "interlaced": false
+        },
+        {
+          "file": "pinkpinwheel.PNG",
+          "path": "docs/GridWars54/gfx/user/pinkpinwheel.PNG",
+          "width": 64,
+          "height": 64,
+          "bitDepth": 8,
+          "colorType": 6,
+          "colorModel": "rgba",
+          "compressionMethod": 0,
+          "filterMethod": 0,
+          "interlaceMethod": 0,
+          "interlaced": false
+        },
+        {
+          "file": "powerups.PNG",
+          "path": "docs/GridWars54/gfx/user/powerups.PNG",
+          "width": 128,
+          "height": 512,
+          "bitDepth": 8,
+          "colorType": 6,
+          "colorModel": "rgba",
+          "compressionMethod": 0,
+          "filterMethod": 0,
+          "interlaceMethod": 0,
+          "interlaced": false
+        },
+        {
+          "file": "purplesquare1.png",
+          "path": "docs/GridWars54/gfx/user/purplesquare1.png",
+          "width": 64,
+          "height": 64,
+          "bitDepth": 8,
+          "colorType": 6,
+          "colorModel": "rgba",
+          "compressionMethod": 0,
+          "filterMethod": 0,
+          "interlaceMethod": 1,
+          "interlaced": true
+        },
+        {
+          "file": "purplesquare2.PNG",
+          "path": "docs/GridWars54/gfx/user/purplesquare2.PNG",
+          "width": 64,
+          "height": 64,
+          "bitDepth": 8,
+          "colorType": 6,
+          "colorModel": "rgba",
+          "compressionMethod": 0,
+          "filterMethod": 0,
+          "interlaceMethod": 1,
+          "interlaced": true
+        },
+        {
+          "file": "redcircle.png",
+          "path": "docs/GridWars54/gfx/user/redcircle.png",
+          "width": 128,
+          "height": 128,
+          "bitDepth": 8,
+          "colorType": 2,
+          "colorModel": "rgb",
+          "compressionMethod": 0,
+          "filterMethod": 0,
+          "interlaceMethod": 1,
+          "interlaced": true
+        },
+        {
+          "file": "redclone.PNG",
+          "path": "docs/GridWars54/gfx/user/redclone.PNG",
+          "width": 64,
+          "height": 64,
+          "bitDepth": 8,
+          "colorType": 2,
+          "colorModel": "rgb",
+          "compressionMethod": 0,
+          "filterMethod": 0,
+          "interlaceMethod": 1,
+          "interlaced": true
+        },
+        {
+          "file": "snakehead.png",
+          "path": "docs/GridWars54/gfx/user/snakehead.png",
+          "width": 64,
+          "height": 64,
+          "bitDepth": 8,
+          "colorType": 6,
+          "colorModel": "rgba",
+          "compressionMethod": 0,
+          "filterMethod": 0,
+          "interlaceMethod": 1,
+          "interlaced": true
+        },
+        {
+          "file": "snaketail.PNG",
+          "path": "docs/GridWars54/gfx/user/snaketail.PNG",
+          "width": 448,
+          "height": 168,
+          "bitDepth": 8,
+          "colorType": 6,
+          "colorModel": "rgba",
+          "compressionMethod": 0,
+          "filterMethod": 0,
+          "interlaceMethod": 1,
+          "interlaced": true
+        },
+        {
+          "file": "whiteplayer.PNG",
+          "path": "docs/GridWars54/gfx/user/whiteplayer.PNG",
+          "width": 64,
+          "height": 64,
+          "bitDepth": 8,
+          "colorType": 2,
+          "colorModel": "rgb",
+          "compressionMethod": 0,
+          "filterMethod": 0,
+          "interlaceMethod": 1,
+          "interlaced": true
+        },
+        {
+          "file": "whitestar.PNG",
+          "path": "docs/GridWars54/gfx/user/whitestar.PNG",
+          "width": 98,
+          "height": 98,
+          "bitDepth": 8,
+          "colorType": 6,
+          "colorModel": "rgba",
+          "compressionMethod": 0,
+          "filterMethod": 0,
+          "interlaceMethod": 1,
+          "interlaced": true
+        },
+        {
+          "file": "yellowshot.PNG",
+          "path": "docs/GridWars54/gfx/user/yellowshot.PNG",
+          "width": 32,
+          "height": 32,
+          "bitDepth": 8,
+          "colorType": 2,
+          "colorModel": "rgb",
+          "compressionMethod": 0,
+          "filterMethod": 0,
+          "interlaceMethod": 1,
+          "interlaced": true
+        }
+      ]
+    },
+    "logicalAssets": [
+      {
+        "assetId": "pinkpinwheel",
+        "originalName": "Paul the Pinwheel",
+        "scoreText": "25 pts",
+        "currentGgType": "pinwheel",
+        "status": "direct",
+        "notes": [
+          "Direct visual/name match.",
+          "Current GG already has an active Pinwheel enemy."
+        ],
+        "variants": {
+          "high": {
+            "width": 64,
+            "height": 64,
+            "colorModel": "rgba",
+            "interlaced": false
+          },
+          "low": {
+            "width": 35,
+            "height": 35,
+            "colorModel": "rgb",
+            "interlaced": false
+          },
+          "med": {
+            "width": 41,
+            "height": 41,
+            "colorModel": "rgba",
+            "interlaced": false
+          },
+          "solid": {
+            "width": 35,
+            "height": 35,
+            "colorModel": "rgb",
+            "interlaced": false
+          },
+          "user": {
+            "width": 64,
+            "height": 64,
+            "colorModel": "rgba",
+            "interlaced": false
+          }
+        }
+      },
+      {
+        "assetId": "bluediamond",
+        "originalName": "Dimmy the Diamond",
+        "scoreText": "50 pts",
+        "currentGgType": "rhombus",
+        "status": "approximate",
+        "notes": [
+          "Closest current GG counterpart is Rhombus.",
+          "Shape/family aligns, but naming and score differ."
+        ],
+        "variants": {
+          "high": {
+            "width": 64,
+            "height": 64,
+            "colorModel": "rgba",
+            "interlaced": false
+          },
+          "low": {
+            "width": 41,
+            "height": 41,
+            "colorModel": "rgb",
+            "interlaced": false
+          },
+          "med": {
+            "width": 45,
+            "height": 45,
+            "colorModel": "rgba",
+            "interlaced": false
+          },
+          "solid": {
+            "width": 41,
+            "height": 41,
+            "colorModel": "indexed",
+            "interlaced": false
+          },
+          "user": {
+            "width": 64,
+            "height": 64,
+            "colorModel": "rgba",
+            "interlaced": false
+          }
+        }
+      },
+      {
+        "assetId": "greensquare",
+        "originalName": "Shy the Square",
+        "scoreText": "100 pts",
+        "currentGgType": "square",
+        "status": "partial",
+        "notes": [
+          "Current GG Square exists, but the original also distinguishes Cubie the Cube as a child/split form."
+        ],
+        "variants": {
+          "high": {
+            "width": 64,
+            "height": 64,
+            "colorModel": "rgba",
+            "interlaced": false
+          },
+          "low": {
+            "width": 35,
+            "height": 35,
+            "colorModel": "rgb",
+            "interlaced": false
+          },
+          "med": {
+            "width": 41,
+            "height": 41,
+            "colorModel": "rgba",
+            "interlaced": false
+          },
+          "solid": {
+            "width": 35,
+            "height": 35,
+            "colorModel": "indexed",
+            "interlaced": false
+          },
+          "user": {
+            "width": 64,
+            "height": 64,
+            "colorModel": "rgba",
+            "interlaced": false
+          }
+        }
+      },
+      {
+        "assetId": "purplesquare1",
+        "originalName": "Cubie the Cube",
+        "scoreText": "50/100 pts",
+        "currentGgType": "square2",
+        "status": "partial",
+        "notes": [
+          "Current GG Square2 covers the child role, but naming/score tuning differ."
+        ],
+        "variants": {
+          "high": {
+            "width": 64,
+            "height": 64,
+            "colorModel": "rgba",
+            "interlaced": true
+          },
+          "low": {
+            "width": 35,
+            "height": 35,
+            "colorModel": "rgb",
+            "interlaced": true
+          },
+          "med": {
+            "width": 41,
+            "height": 41,
+            "colorModel": "rgba",
+            "interlaced": true
+          },
+          "solid": {
+            "width": 37,
+            "height": 37,
+            "colorModel": "indexed",
+            "interlaced": false
+          },
+          "user": {
+            "width": 64,
+            "height": 64,
+            "colorModel": "rgba",
+            "interlaced": true
+          }
+        }
+      },
+      {
+        "assetId": "bluecircle",
+        "originalName": "Sammy the Seeker",
+        "scoreText": "10 pts",
+        "currentGgType": "circle",
+        "status": "missing-active",
+        "notes": [
+          "Current GG Circle exists only as a child spawned from BlackHole overload, not as an active spawn-pool enemy."
+        ],
+        "variants": {
+          "high": {
+            "width": 64,
+            "height": 64,
+            "colorModel": "rgba",
+            "interlaced": true
+          },
+          "low": {
+            "width": 25,
+            "height": 25,
+            "colorModel": "rgb",
+            "interlaced": false
+          },
+          "med": {
+            "width": 29,
+            "height": 29,
+            "colorModel": "rgba",
+            "interlaced": false
+          },
+          "solid": {
+            "width": 27,
+            "height": 27,
+            "colorModel": "indexed",
+            "interlaced": false
+          },
+          "user": {
+            "width": 64,
+            "height": 64,
+            "colorModel": "rgba",
+            "interlaced": true
+          }
+        }
+      },
+      {
+        "assetId": "redcircle",
+        "originalName": "Dwight the Black Hole",
+        "scoreText": "150 pts",
+        "currentGgType": "blackhole",
+        "status": "direct-evolved",
+        "notes": [
+          "Direct thematic match.",
+          "Current GG BlackHole is much more elite/boss-like than the original Grid Wars scoring suggests."
+        ],
+        "variants": {
+          "high": {
+            "width": 128,
+            "height": 128,
+            "colorModel": "rgba",
+            "interlaced": true
+          },
+          "low": {
+            "width": 64,
+            "height": 64,
+            "colorModel": "indexed",
+            "interlaced": false
+          },
+          "med": {
+            "width": 70,
+            "height": 70,
+            "colorModel": "rgba",
+            "interlaced": true
+          },
+          "solid": {
+            "width": 64,
+            "height": 64,
+            "colorModel": "indexed",
+            "interlaced": false
+          },
+          "user": {
+            "width": 128,
+            "height": 128,
+            "colorModel": "rgb",
+            "interlaced": true
+          }
+        }
+      },
+      {
+        "assetId": "snakehead",
+        "originalName": "Selena the Snake",
+        "scoreText": "100 pts",
+        "currentGgType": null,
+        "status": "missing",
+        "notes": [
+          "No active Snake equivalent in the current GG roster."
+        ],
+        "variants": {
+          "high": {
+            "width": 64,
+            "height": 64,
+            "colorModel": "rgba",
+            "interlaced": true
+          },
+          "low": {
+            "width": 32,
+            "height": 32,
+            "colorModel": "rgba",
+            "interlaced": true
+          },
+          "med": {
+            "width": 36,
+            "height": 36,
+            "colorModel": "rgba",
+            "interlaced": true
+          },
+          "solid": {
+            "width": 35,
+            "height": 35,
+            "colorModel": "indexed",
+            "interlaced": false
+          },
+          "user": {
+            "width": 64,
+            "height": 64,
+            "colorModel": "rgba",
+            "interlaced": true
+          }
+        }
+      },
+      {
+        "assetId": "redclone",
+        "originalName": "Ivan the Interceptor",
+        "scoreText": "100 pts",
+        "currentGgType": null,
+        "status": "missing",
+        "notes": [
+          "No active Interceptor/Clone equivalent in the current GG roster."
+        ],
+        "variants": {
+          "high": {
+            "width": 64,
+            "height": 64,
+            "colorModel": "rgba",
+            "interlaced": true
+          },
+          "low": {
+            "width": 45,
+            "height": 43,
+            "colorModel": "indexed",
+            "interlaced": false
+          },
+          "med": {
+            "width": 49,
+            "height": 49,
+            "colorModel": "rgba",
+            "interlaced": true
+          },
+          "solid": {
+            "width": 64,
+            "height": 64,
+            "colorModel": "indexed",
+            "interlaced": false
+          },
+          "user": {
+            "width": 64,
+            "height": 64,
+            "colorModel": "rgb",
+            "interlaced": true
+          }
+        }
+      },
+      {
+        "assetId": "orangetriangle",
+        "originalName": "Trish the Triangle",
+        "scoreText": "150 pts",
+        "currentGgType": null,
+        "status": "unwired",
+        "notes": [
+          "Triangle enemy source exists in GG but is not wired into pools/factory."
+        ],
+        "variants": {
+          "high": {
+            "width": 64,
+            "height": 64,
+            "colorModel": "rgba",
+            "interlaced": true
+          },
+          "low": {
+            "width": 45,
+            "height": 45,
+            "colorModel": "indexed",
+            "interlaced": false
+          },
+          "med": {
+            "width": 45,
+            "height": 45,
+            "colorModel": "rgba",
+            "interlaced": true
+          },
+          "solid": {
+            "width": 49,
+            "height": 49,
+            "colorModel": "indexed",
+            "interlaced": false
+          },
+          "user": {
+            "width": 64,
+            "height": 64,
+            "colorModel": "rgba",
+            "interlaced": true
+          }
+        }
+      },
+      {
+        "assetId": "indigotriangle",
+        "originalName": "Indy the Butterfly",
+        "scoreText": "10 pts",
+        "currentGgType": null,
+        "status": "missing",
+        "notes": [
+          "No active Butterfly equivalent in the current GG roster."
+        ],
+        "variants": {
+          "high": {
+            "width": 64,
+            "height": 64,
+            "colorModel": "rgba",
+            "interlaced": true
+          },
+          "low": {
+            "width": 32,
+            "height": 32,
+            "colorModel": "rgb",
+            "interlaced": false
+          },
+          "med": {
+            "width": 32,
+            "height": 32,
+            "colorModel": "rgba",
+            "interlaced": true
+          },
+          "solid": {
+            "width": 37,
+            "height": 37,
+            "colorModel": "rgb",
+            "interlaced": false
+          },
+          "user": {
+            "width": 64,
+            "height": 64,
+            "colorModel": "rgba",
+            "interlaced": true
+          }
+        }
+      },
+      {
+        "assetId": "whiteplayer",
+        "originalName": "Your Ship",
+        "scoreText": null,
+        "currentGgType": "player",
+        "status": "different-style",
+        "notes": [
+          "Current GG uses a procedural vector ship rather than the original sprite."
+        ],
+        "variants": {
+          "high": {
+            "width": 64,
+            "height": 64,
+            "colorModel": "rgba",
+            "interlaced": true
+          },
+          "low": {
+            "width": 43,
+            "height": 43,
+            "colorModel": "rgb",
+            "interlaced": false
+          },
+          "med": {
+            "width": 53,
+            "height": 53,
+            "colorModel": "rgba",
+            "interlaced": true
+          },
+          "solid": {
+            "width": 64,
+            "height": 64,
+            "colorModel": "rgb",
+            "interlaced": true
+          },
+          "user": {
+            "width": 64,
+            "height": 64,
+            "colorModel": "rgb",
+            "interlaced": true
+          }
+        }
+      },
+      {
+        "assetId": "yellowshot",
+        "originalName": "Player Shot",
+        "scoreText": null,
+        "currentGgType": "bullet",
+        "status": "different-style",
+        "notes": [
+          "Current GG uses a red vector bullet rather than the original yellow sprite."
+        ],
+        "variants": {
+          "high": {
+            "width": 32,
+            "height": 32,
+            "colorModel": "rgba",
+            "interlaced": true
+          },
+          "low": {
+            "width": 32,
+            "height": 32,
+            "colorModel": "rgba",
+            "interlaced": true
+          },
+          "med": {
+            "width": 32,
+            "height": 32,
+            "colorModel": "rgba",
+            "interlaced": true
+          },
+          "solid": {
+            "width": 32,
+            "height": 32,
+            "colorModel": "rgb",
+            "interlaced": false
+          },
+          "user": {
+            "width": 32,
+            "height": 32,
+            "colorModel": "rgb",
+            "interlaced": true
+          }
+        }
+      }
+    ],
+    "colourPick": {
+      "file": "colourpick.PNG",
+      "path": "docs/GridWars54/gfx/colourpick.PNG",
+      "width": 122,
+      "height": 27,
+      "bitDepth": 8,
+      "colorType": 2,
+      "colorModel": "rgb",
+      "compressionMethod": 0,
+      "filterMethod": 0,
+      "interlaceMethod": 0,
+      "interlaced": false,
+      "frameWidth": 122,
+      "frameHeight": 9,
+      "frameCount": 3
+    }
+  },
+  "powerups": {
+    "sourceRef": "docs/GridWars54/gridwars.bmx:2717",
+    "entries": [
+      {
+        "kind": 0,
+        "frame": 2,
+        "codeName": "back shooter",
+        "label": "Temporary Back Shooter"
+      },
+      {
+        "kind": 1,
+        "frame": 3,
+        "codeName": "side shooters",
+        "label": "Temporary Side Shooters"
+      },
+      {
+        "kind": 2,
+        "frame": 0,
+        "codeName": "xtra bullet b",
+        "label": "Extra Front Shooter"
+      },
+      {
+        "kind": 3,
+        "frame": 5,
+        "codeName": "shot speed",
+        "label": "Extra Shot Speed"
+      },
+      {
+        "kind": 4,
+        "frame": 6,
+        "codeName": "free ship",
+        "label": "Extra Player"
+      },
+      {
+        "kind": 5,
+        "frame": 8,
+        "codeName": "free bomb",
+        "label": "Extra Bomb"
+      },
+      {
+        "kind": 6,
+        "frame": 9,
+        "codeName": "shield",
+        "label": "Temporary Shield"
+      },
+      {
+        "kind": 7,
+        "frame": 7,
+        "codeName": "supershots",
+        "label": "Super Shots"
+      },
+      {
+        "kind": 8,
+        "frame": 10,
+        "codeName": "bouncyshots",
+        "label": "Bouncy Shots"
+      }
+    ]
+  },
+  "sounds": {
+    "sourceRef": "docs/GridWars54/sound.bmx:84",
+    "files": [
+      {
+        "file": "bondloop.wav",
+        "path": "docs/GridWars54/sounds/bondloop.wav",
+        "audioFormat": 1,
+        "channels": 1,
+        "sampleRate": 44100,
+        "byteRate": 88200,
+        "blockAlign": 2,
+        "bitsPerSample": 16,
+        "dataSize": 104376,
+        "durationSeconds": 1.183
+      },
+      {
+        "file": "bonus1.wav",
+        "path": "docs/GridWars54/sounds/bonus1.wav",
+        "audioFormat": 1,
+        "channels": 1,
+        "sampleRate": 22050,
+        "byteRate": 44100,
+        "blockAlign": 2,
+        "bitsPerSample": 16,
+        "dataSize": 36280,
+        "durationSeconds": 0.823
+      },
+      {
+        "file": "bonus2.wav",
+        "path": "docs/GridWars54/sounds/bonus2.wav",
+        "audioFormat": 1,
+        "channels": 1,
+        "sampleRate": 32000,
+        "byteRate": 64000,
+        "blockAlign": 2,
+        "bitsPerSample": 16,
+        "dataSize": 79908,
+        "durationSeconds": 1.249
+      },
+      {
+        "file": "bonusborn.wav",
+        "path": "docs/GridWars54/sounds/bonusborn.wav",
+        "audioFormat": 1,
+        "channels": 1,
+        "sampleRate": 22050,
+        "byteRate": 44100,
+        "blockAlign": 2,
+        "bitsPerSample": 16,
+        "dataSize": 45488,
+        "durationSeconds": 1.031
+      },
+      {
+        "file": "brainborn.wav",
+        "path": "docs/GridWars54/sounds/brainborn.wav",
+        "audioFormat": 1,
+        "channels": 1,
+        "sampleRate": 11025,
+        "byteRate": 22050,
+        "blockAlign": 2,
+        "bitsPerSample": 16,
+        "dataSize": 46332,
+        "durationSeconds": 2.101
+      },
+      {
+        "file": "butterfly.wav",
+        "path": "docs/GridWars54/sounds/butterfly.wav",
+        "audioFormat": 1,
+        "channels": 1,
+        "sampleRate": 22050,
+        "byteRate": 44100,
+        "blockAlign": 2,
+        "bitsPerSample": 16,
+        "dataSize": 32066,
+        "durationSeconds": 0.727
+      },
+      {
+        "file": "buzz1.wav",
+        "path": "docs/GridWars54/sounds/buzz1.wav",
+        "audioFormat": 1,
+        "channels": 2,
+        "sampleRate": 44100,
+        "byteRate": 176400,
+        "blockAlign": 4,
+        "bitsPerSample": 16,
+        "dataSize": 136044,
+        "durationSeconds": 0.771
+      },
+      {
+        "file": "buzz2.wav",
+        "path": "docs/GridWars54/sounds/buzz2.wav",
+        "audioFormat": 1,
+        "channels": 2,
+        "sampleRate": 44100,
+        "byteRate": 176400,
+        "blockAlign": 4,
+        "bitsPerSample": 16,
+        "dataSize": 105156,
+        "durationSeconds": 0.596
+      },
+      {
+        "file": "buzz3.wav",
+        "path": "docs/GridWars54/sounds/buzz3.wav",
+        "audioFormat": 1,
+        "channels": 1,
+        "sampleRate": 32000,
+        "byteRate": 64000,
+        "blockAlign": 2,
+        "bitsPerSample": 16,
+        "dataSize": 32206,
+        "durationSeconds": 0.503
+      },
+      {
+        "file": "cat.wav",
+        "path": "docs/GridWars54/sounds/cat.wav",
+        "audioFormat": 1,
+        "channels": 2,
+        "sampleRate": 22050,
+        "byteRate": 88200,
+        "blockAlign": 4,
+        "bitsPerSample": 16,
+        "dataSize": 97104,
+        "durationSeconds": 1.101
+      },
+      {
+        "file": "click.wav",
+        "path": "docs/GridWars54/sounds/click.wav",
+        "audioFormat": 1,
+        "channels": 1,
+        "sampleRate": 22050,
+        "byteRate": 44100,
+        "blockAlign": 2,
+        "bitsPerSample": 16,
+        "dataSize": 2246,
+        "durationSeconds": 0.051
+      },
+      {
+        "file": "die1.wav",
+        "path": "docs/GridWars54/sounds/die1.wav",
+        "audioFormat": 1,
+        "channels": 1,
+        "sampleRate": 32000,
+        "byteRate": 64000,
+        "blockAlign": 2,
+        "bitsPerSample": 16,
+        "dataSize": 106596,
+        "durationSeconds": 1.666
+      },
+      {
+        "file": "echo1.wav",
+        "path": "docs/GridWars54/sounds/echo1.wav",
+        "audioFormat": 1,
+        "channels": 1,
+        "sampleRate": 32000,
+        "byteRate": 64000,
+        "blockAlign": 2,
+        "bitsPerSample": 16,
+        "dataSize": 53980,
+        "durationSeconds": 0.843
+      },
+      {
+        "file": "elastic.wav",
+        "path": "docs/GridWars54/sounds/elastic.wav",
+        "audioFormat": 1,
+        "channels": 1,
+        "sampleRate": 8000,
+        "byteRate": 16000,
+        "blockAlign": 2,
+        "bitsPerSample": 16,
+        "dataSize": 12456,
+        "durationSeconds": 0.778
+      },
+      {
+        "file": "Explo1.wav",
+        "path": "docs/GridWars54/sounds/Explo1.wav",
+        "audioFormat": 1,
+        "channels": 1,
+        "sampleRate": 32075,
+        "byteRate": 64150,
+        "blockAlign": 2,
+        "bitsPerSample": 16,
+        "dataSize": 55900,
+        "durationSeconds": 0.871
+      },
+      {
+        "file": "gameover.wav",
+        "path": "docs/GridWars54/sounds/gameover.wav",
+        "audioFormat": 1,
+        "channels": 1,
+        "sampleRate": 22050,
+        "byteRate": 44100,
+        "blockAlign": 2,
+        "bitsPerSample": 16,
+        "dataSize": 197664,
+        "durationSeconds": 4.482
+      },
+      {
+        "file": "genhit1.wav",
+        "path": "docs/GridWars54/sounds/genhit1.wav",
+        "audioFormat": 1,
+        "channels": 1,
+        "sampleRate": 22050,
+        "byteRate": 44100,
+        "blockAlign": 2,
+        "bitsPerSample": 16,
+        "dataSize": 19862,
+        "durationSeconds": 0.45
+      },
+      {
+        "file": "genkilled1.wav",
+        "path": "docs/GridWars54/sounds/genkilled1.wav",
+        "audioFormat": 1,
+        "channels": 1,
+        "sampleRate": 22050,
+        "byteRate": 44100,
+        "blockAlign": 2,
+        "bitsPerSample": 16,
+        "dataSize": 10432,
+        "durationSeconds": 0.237
+      },
+      {
+        "file": "gruntborn.wav",
+        "path": "docs/GridWars54/sounds/gruntborn.wav",
+        "audioFormat": 1,
+        "channels": 1,
+        "sampleRate": 4791,
+        "byteRate": 4791,
+        "blockAlign": 1,
+        "bitsPerSample": 8,
+        "dataSize": 1112,
+        "durationSeconds": 0.232
+      },
+      {
+        "file": "pop1.wav",
+        "path": "docs/GridWars54/sounds/pop1.wav",
+        "audioFormat": 1,
+        "channels": 2,
+        "sampleRate": 44100,
+        "byteRate": 176400,
+        "blockAlign": 4,
+        "bitsPerSample": 16,
+        "dataSize": 69956,
+        "durationSeconds": 0.397
+      },
+      {
+        "file": "pop2.wav",
+        "path": "docs/GridWars54/sounds/pop2.wav",
+        "audioFormat": 1,
+        "channels": 2,
+        "sampleRate": 44100,
+        "byteRate": 176400,
+        "blockAlign": 4,
+        "bitsPerSample": 16,
+        "dataSize": 63636,
+        "durationSeconds": 0.361
+      },
+      {
+        "file": "pop3.wav",
+        "path": "docs/GridWars54/sounds/pop3.wav",
+        "audioFormat": 1,
+        "channels": 2,
+        "sampleRate": 22050,
+        "byteRate": 88200,
+        "blockAlign": 4,
+        "bitsPerSample": 16,
+        "dataSize": 30836,
+        "durationSeconds": 0.35
+      },
+      {
+        "file": "quarkhit.wav",
+        "path": "docs/GridWars54/sounds/quarkhit.wav",
+        "audioFormat": 1,
+        "channels": 1,
+        "sampleRate": 11025,
+        "byteRate": 22050,
+        "blockAlign": 2,
+        "bitsPerSample": 16,
+        "dataSize": 7736,
+        "durationSeconds": 0.351
+      },
+      {
+        "file": "quarkhit2.wav",
+        "path": "docs/GridWars54/sounds/quarkhit2.wav",
+        "audioFormat": 1,
+        "channels": 1,
+        "sampleRate": 8363,
+        "byteRate": 8363,
+        "blockAlign": 1,
+        "bitsPerSample": 8,
+        "dataSize": 2100,
+        "durationSeconds": 0.251
+      },
+      {
+        "file": "shield1.wav",
+        "path": "docs/GridWars54/sounds/shield1.wav",
+        "audioFormat": 1,
+        "channels": 2,
+        "sampleRate": 11025,
+        "byteRate": 44100,
+        "blockAlign": 4,
+        "bitsPerSample": 16,
+        "dataSize": 30344,
+        "durationSeconds": 0.688
+      },
+      {
+        "file": "shotborn.wav",
+        "path": "docs/GridWars54/sounds/shotborn.wav",
+        "audioFormat": 1,
+        "channels": 1,
+        "sampleRate": 11025,
+        "byteRate": 22050,
+        "blockAlign": 2,
+        "bitsPerSample": 16,
+        "dataSize": 3744,
+        "durationSeconds": 0.17
+      },
+      {
+        "file": "shotwall.wav",
+        "path": "docs/GridWars54/sounds/shotwall.wav",
+        "audioFormat": 1,
+        "channels": 1,
+        "sampleRate": 16000,
+        "byteRate": 32000,
+        "blockAlign": 2,
+        "bitsPerSample": 16,
+        "dataSize": 1136,
+        "durationSeconds": 0.035
+      },
+      {
+        "file": "sizzle1.wav",
+        "path": "docs/GridWars54/sounds/sizzle1.wav",
+        "audioFormat": 1,
+        "channels": 1,
+        "sampleRate": 32075,
+        "byteRate": 64150,
+        "blockAlign": 2,
+        "bitsPerSample": 16,
+        "dataSize": 29462,
+        "durationSeconds": 0.459
+      },
+      {
+        "file": "snake1.wav",
+        "path": "docs/GridWars54/sounds/snake1.wav",
+        "audioFormat": 1,
+        "channels": 1,
+        "sampleRate": 22050,
+        "byteRate": 44100,
+        "blockAlign": 2,
+        "bitsPerSample": 16,
+        "dataSize": 6092,
+        "durationSeconds": 0.138
+      },
+      {
+        "file": "snakehit.wav",
+        "path": "docs/GridWars54/sounds/snakehit.wav",
+        "audioFormat": 1,
+        "channels": 1,
+        "sampleRate": 22050,
+        "byteRate": 44100,
+        "blockAlign": 2,
+        "bitsPerSample": 16,
+        "dataSize": 16478,
+        "durationSeconds": 0.374
+      },
+      {
+        "file": "startup.wav",
+        "path": "docs/GridWars54/sounds/startup.wav",
+        "audioFormat": 1,
+        "channels": 1,
+        "sampleRate": 16000,
+        "byteRate": 32000,
+        "blockAlign": 2,
+        "bitsPerSample": 16,
+        "dataSize": 72652,
+        "durationSeconds": 2.27
+      },
+      {
+        "file": "sun1.wav",
+        "path": "docs/GridWars54/sounds/sun1.wav",
+        "audioFormat": 1,
+        "channels": 2,
+        "sampleRate": 22050,
+        "byteRate": 88200,
+        "blockAlign": 4,
+        "bitsPerSample": 16,
+        "dataSize": 156844,
+        "durationSeconds": 1.778
+      },
+      {
+        "file": "sunexp.wav",
+        "path": "docs/GridWars54/sounds/sunexp.wav",
+        "audioFormat": 1,
+        "channels": 1,
+        "sampleRate": 22050,
+        "byteRate": 44100,
+        "blockAlign": 2,
+        "bitsPerSample": 16,
+        "dataSize": 155396,
+        "durationSeconds": 3.524
+      },
+      {
+        "file": "sunhit1.wav",
+        "path": "docs/GridWars54/sounds/sunhit1.wav",
+        "audioFormat": 1,
+        "channels": 1,
+        "sampleRate": 22050,
+        "byteRate": 22050,
+        "blockAlign": 1,
+        "bitsPerSample": 8,
+        "dataSize": 13494,
+        "durationSeconds": 0.612
+      },
+      {
+        "file": "tailhit.wav",
+        "path": "docs/GridWars54/sounds/tailhit.wav",
+        "audioFormat": 1,
+        "channels": 1,
+        "sampleRate": 22050,
+        "byteRate": 44100,
+        "blockAlign": 2,
+        "bitsPerSample": 16,
+        "dataSize": 5390,
+        "durationSeconds": 0.122
+      },
+      {
+        "file": "warn1.wav",
+        "path": "docs/GridWars54/sounds/warn1.wav",
+        "audioFormat": 1,
+        "channels": 1,
+        "sampleRate": 22050,
+        "byteRate": 44100,
+        "blockAlign": 2,
+        "bitsPerSample": 16,
+        "dataSize": 19894,
+        "durationSeconds": 0.451
+      },
+      {
+        "file": "wee.wav",
+        "path": "docs/GridWars54/sounds/wee.wav",
+        "audioFormat": 1,
+        "channels": 2,
+        "sampleRate": 32075,
+        "byteRate": 128300,
+        "blockAlign": 4,
+        "bitsPerSample": 16,
+        "dataSize": 59892,
+        "durationSeconds": 0.467
+      }
+    ],
+    "bindings": [
+      {
+        "variable": "nme_born_snd",
+        "file": "buzz3.wav",
+        "usage": "generic enemy born"
+      },
+      {
+        "variable": "nme1_born_snd",
+        "file": "pop2.wav",
+        "usage": "pinwheel born"
+      },
+      {
+        "variable": "nme2_born_snd",
+        "file": "pop3.wav",
+        "usage": "diamond born"
+      },
+      {
+        "variable": "nme3_born_snd",
+        "file": "snake1.wav",
+        "usage": "snake born"
+      },
+      {
+        "variable": "nme4_born_snd",
+        "file": "gruntborn.wav",
+        "usage": "square born"
+      },
+      {
+        "variable": "nme5_born_snd",
+        "file": "sun1.wav",
+        "usage": "black hole born"
+      },
+      {
+        "variable": "nme5_loop_snd",
+        "file": "bondloop.wav",
+        "usage": "black hole loop"
+      },
+      {
+        "variable": "nme5_shrink_snd",
+        "file": "sunhit1.wav",
+        "usage": "black hole shrink / hit"
+      },
+      {
+        "variable": "nme5_grow_snd",
+        "file": "sizzle1.wav",
+        "usage": "black hole grow"
+      },
+      {
+        "variable": "nme5_explode_snd",
+        "file": "sunexp.wav",
+        "usage": "black hole explode"
+      },
+      {
+        "variable": "nme5_killed_snd",
+        "file": "Explo1.wav",
+        "usage": "black hole killed / bomb"
+      },
+      {
+        "variable": "nme6_born_snd",
+        "file": "wee.wav",
+        "usage": "butterfly or fast enemy born"
+      },
+      {
+        "variable": "nme6_tailexplode_snd",
+        "file": "snakehit.wav",
+        "usage": "snake tail explode"
+      },
+      {
+        "variable": "nme6_tailhit_snd",
+        "file": "tailhit.wav",
+        "usage": "snake tail hit"
+      },
+      {
+        "variable": "nme7_born_snd",
+        "file": "warn1.wav",
+        "usage": "interceptor born"
+      },
+      {
+        "variable": "nme7_shield_snd",
+        "file": "shield1.wav",
+        "usage": "shielded enemy cue"
+      },
+      {
+        "variable": "nme8_born_snd",
+        "file": "butterfly.wav",
+        "usage": "butterfly born"
+      },
+      {
+        "variable": "ge_born_snd",
+        "file": "cat.wav",
+        "usage": "generator born"
+      },
+      {
+        "variable": "ge_hit_snd",
+        "file": "genhit1.wav",
+        "usage": "generator hit"
+      },
+      {
+        "variable": "ge_killed_snd",
+        "file": "genkilled1.wav",
+        "usage": "generator killed"
+      },
+      {
+        "variable": "le_born_snd",
+        "file": "buzz1.wav",
+        "usage": "line enemy born"
+      },
+      {
+        "variable": "le_hit_snd",
+        "file": "echo1.wav",
+        "usage": "line enemy hit"
+      },
+      {
+        "variable": "le_killed_snd",
+        "file": "elastic.wav",
+        "usage": "line enemy killed"
+      },
+      {
+        "variable": "pu_collect_snd",
+        "file": "bonus1.wav",
+        "usage": "powerup collect"
+      },
+      {
+        "variable": "get_ready_snd",
+        "file": "startup.wav",
+        "usage": "get ready / startup"
+      },
+      {
+        "variable": "player_hit_snd",
+        "file": "die1.wav",
+        "usage": "player hit / life lost"
+      },
+      {
+        "variable": "shot_born_snd",
+        "file": "shotborn.wav",
+        "usage": "player shot fired"
+      },
+      {
+        "variable": "shot_hit_wall_snd",
+        "file": "shotwall.wav",
+        "usage": "shot hits wall"
+      },
+      {
+        "variable": "game_over_snd",
+        "file": "gameover.wav",
+        "usage": "game over"
+      },
+      {
+        "variable": "super_bomb_snd",
+        "file": "Explo1.wav",
+        "usage": "super bomb"
+      },
+      {
+        "variable": "extra_life_snd",
+        "file": "brainborn.wav",
+        "usage": "extra life"
+      },
+      {
+        "variable": "extra_bomb_snd",
+        "file": "buzz2.wav",
+        "usage": "extra bomb"
+      },
+      {
+        "variable": "multiplier_increase_snd",
+        "file": "bonus2.wav",
+        "usage": "multiplier increase"
+      },
+      {
+        "variable": "bonus_born_snd",
+        "file": "bonusborn.wav",
+        "usage": "bonus spawned"
+      },
+      {
+        "variable": "high_score_snd",
+        "file": "bonus1.wav",
+        "usage": "high score"
+      },
+      {
+        "variable": "quarkhitsound",
+        "file": "quarkhit.wav",
+        "usage": "quark hit"
+      },
+      {
+        "variable": "quarkhit2sound",
+        "file": "quarkhit2.wav",
+        "usage": "alternate quark hit"
+      },
+      {
+        "variable": "shieldwarningsnd",
+        "file": "shieldwarning.wav",
+        "usage": "shield warning (referenced, file missing)"
+      }
+    ],
+    "unusedFiles": [
+      "click.wav",
+      "pop1.wav"
+    ],
+    "missingFiles": [
+      "shieldwarning.wav"
+    ]
+  }
+}
