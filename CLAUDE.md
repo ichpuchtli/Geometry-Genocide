@@ -84,8 +84,7 @@ web/src/
 │       ├── enemy.ts            # Base Enemy class
 │       ├── rhombus.ts          # Tier 1 — tracker
 │       ├── pinwheel.ts         # Tier 1 — bouncer
-│       ├── square.ts           # Tier 2 — splits into Square2
-│       ├── blackhole.ts        # Tier 3 — gravity well, absorbs enemies
+│       ├── blackhole.ts        # Tier 3 — gravity well, absorbs enemies (supernova on overload)
 │       ├── sierpinski.ts       # Tier 3 — fractal breakup
 │       ├── mandelbrot.ts       # Miniboss — 3 HP stages
 │       ├── [children]          # circle, shard, square2, minimandel
@@ -110,7 +109,7 @@ web/src/
 
 `update(dt)`: player movement → BlackHole gravity → bullets → enemy AI → **enemy separation** → trail recording → wave manager spawning → collision/kills → child spawns → explosions/grid/camera → music intensity.
 
-**Enemy separation** (`separateEnemies()`): Per-frame O(n²/2) pairwise position correction. If two enemies overlap (distance < sum of collision radii + `ENEMY_SEPARATION_BUFFER`), push both apart proportionally. Near-zero distance uses deterministic direction (index-derived, not random) for consistent frame-to-frame separation. Heavy overlaps (>50% of minDist) get 1.5× push strength for faster cluster resolution. BlackHoles immovable (weight 0), minibosses resist (0.25), all others 50/50. Enemies inside a BlackHole gravity well exempt (gravity wins).
+**Enemy separation** (`separateEnemies()`): Per-frame O(n²/2) pairwise position correction. If two enemies overlap (distance < sum of collision radii + `ENEMY_SEPARATION_BUFFER`), push both apart proportionally. Near-zero distance uses deterministic direction (index-derived, not random) for consistent frame-to-frame separation. Heavy overlaps (>50% of minDist) get 1.5× push strength for faster cluster resolution. BlackHoles immovable (weight 0), minibosses resist (0.25), all others 50/50. Enemies inside a BlackHole gravity well exempt (gravity wins). Spawning enemies participate in separation during the final 70% of their spawn animation (allows clustered formations to spread before spawn completes).
 
 `render()`: grid → starfield → entities (normal blend) → trails + explosions (additive) → bloom → HUD.
 
@@ -179,7 +178,12 @@ Full development history: **`docs/DEVELOPMENT_HISTORY.md`**
 - Formation group spawn sound: **Complete** (6 procedural "gatling brrrr" variants per formation type, individual SFX suppressed for 6+ enemy formations, first 2 leak through at 15% volume)
 - Clustered formation spawns: **Complete** (all formation types spawn enemies at a single point; separation steering organically spreads them into blobs/lines/rings)
 - Sierpinski fractal breakup: **Complete** (3-tier cascade: 1 boss → 3 medium → 9 small. Config: `SIERPINSKI_TIER_HP/RADIUS/SPEED/SCORE/DEPTH` arrays. Tier 0 is miniboss weight in separation. No more Shard spawns from Sierpinski.)
-- Square rework: **Complete** (Square no longer splits — Square2 removed entirely. Explosion particles 70→40, ghost trails threshold 30→60, ring segments 32→16)
+- Square removed: **Complete** (Square enemy deleted entirely — file, spawn pools, kill VFX, SFX, config all removed)
+- Haptics cleanup: **Complete** (All haptics calls removed except `haptics.supernova()` on BlackHole overload detonation)
+- Miniboss gravity immunity: **Complete** (Mandelbrot + Sierpinski tier 0 have `gravityImmune = true`)
+- Bullet gravity bending: **Complete** (Bullets curve near BlackHoles. Config: `BULLET_GRAVITY_STRENGTH = 0.15`. Modifies velocity + updates angle for diamond rotation.)
+- Spawn overlap fix: **Complete** (Separation steering now applies in final 70% of spawn animation instead of waiting for it to finish)
+- Ominous supernova: **Complete** (1.5s destabilize telegraph with visual effects + rising drone audio, then massive 400-particle detonation with screen flash, 300ms hitstop, enhanced BH death audio with metallic ring layer)
 - Phase 4 (Scores, Polish & Tuning): **Not started** — leaderboard, debug overlay, perf profiling
 
 ---

@@ -48,7 +48,6 @@ export const WEAPON_STAGES = [
 export const COLORS = {
   rhombus:  { color: [0, 0.784, 1.0] as [number, number, number], color2: [0, 0.549, 0.784] as [number, number, number] },
   pinwheel: { color: [0.784, 0.251, 1.0] as [number, number, number], color2: [0.298, 0, 0.722] as [number, number, number] },
-  square:   { color: [1.0, 0.125, 1.0] as [number, number, number], color2: [1.0, 0.125, 1.0] as [number, number, number] },
   circle:   { color: [0.125, 0.251, 1.0] as [number, number, number], color2: [0.196, 0.784, 1.0] as [number, number, number] },
   triangle: { color: [0.682, 0.796, 0.0] as [number, number, number], color2: [0, 0.502, 0] as [number, number, number] },
   blackhole:{ color: [0.4, 0.7, 1.0] as [number, number, number], color2: [0.1, 0.9, 1.0] as [number, number, number] },
@@ -71,7 +70,6 @@ export const COLORS = {
 export const ENEMY_SPEED = {
   rhombus: 0.15,
   pinwheel: 0.05,
-  square: 0.15,
   circle: 0.35,
   triangle: 0.2,
   blackhole: 0,
@@ -94,7 +92,6 @@ export const ENEMY_SPEED = {
 export const ENEMY_SCORES = {
   rhombus: 100,
   pinwheel: 50,
-  square: 450,
   circle: 300,
   triangle: 550,
   blackhole: 2000,
@@ -158,6 +155,13 @@ export const BLACKHOLE_PALETTE = {
   orbitDot:    [1.0, 0.95, 0.8] as [number, number, number],
 };
 export const BLACKHOLE_PLAYER_PULL_STRENGTH = 0.4; // px/ms² force on player
+
+// --- Supernova (BlackHole overload detonation) ---
+export const SUPERNOVA_PARTICLE_COUNT = 400;
+export const SUPERNOVA_GRID_IMPULSE = 2500;
+export const SUPERNOVA_HITSTOP = 300;
+export const SUPERNOVA_FLASH_DURATION = 200; // ms
+export const BULLET_GRAVITY_STRENGTH = 0.15; // bullet bending near BlackHoles (much weaker than enemy pull)
 export const BLACKHOLE_LENSING_BASE = 1.5;
 export const BLACKHOLE_LENSING_PER_ABSORB = 0.35;
 
@@ -259,7 +263,6 @@ export const DEATH_SLOWMO_SHOCKWAVE_SPEED = 0.8; // px/ms expansion speed of kil
 export const ELITE_MODIFIERS: Record<string, { speedMult: number; scoreMult: number; hpAdd: number; colorBright: number }> = {
   rhombus:   { speedMult: 1.4, scoreMult: 3.0, hpAdd: 1, colorBright: 0.2 },
   pinwheel:  { speedMult: 1.3, scoreMult: 2.5, hpAdd: 1, colorBright: 0.15 },
-  square:    { speedMult: 1.0, scoreMult: 2.0, hpAdd: 2, colorBright: 0.25 },
   blackhole: { speedMult: 1.0, scoreMult: 1.5, hpAdd: 4, colorBright: 0.15 },
   sierpinski:{ speedMult: 1.2, scoreMult: 2.0, hpAdd: 1, colorBright: 0.2 },
 };
@@ -274,7 +277,6 @@ export const MAX_CONCURRENT_ELITES = 3;
 export const HITSTOP_ELITE = 65;   // ms — elite kills
 
 // --- Hitstop (combat freeze on major kills) ---
-export const HITSTOP_SQUARE = 35;       // ms
 export const HITSTOP_SIERPINSKI = 50;   // ms
 export const HITSTOP_BLACKHOLE = 75;    // ms
 export const HITSTOP_MULTI = 35;        // ms — bonus for 3+ kills in same frame
@@ -354,7 +356,7 @@ export const FORMATION_LEAKTHROUGH_VOLUME = 0.15;
 
 // --- Audio ---
 export const SFX_NAMES = [
-  'start', 'die', 'die1', 'crash', 'square', 'rhombus',
+  'start', 'die', 'die1', 'crash', 'rhombus',
   'triangle2', 'octagon', 'pinwheel', 'deathstar', 'deathstar2',
 ] as const;
 export type SFXName = typeof SFX_NAMES[number];

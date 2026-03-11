@@ -13,21 +13,19 @@ import { BlackHole, BlackHoleVisualMode } from './entities/enemies/blackhole';
 import { CircleEnemy } from './entities/enemies/circle';
 import { Rhombus } from './entities/enemies/rhombus';
 import { Pinwheel } from './entities/enemies/pinwheel';
-import { Square } from './entities/enemies/square';
 import { Sierpinski } from './entities/enemies/sierpinski';
 import { Vec2 } from './core/vector';
 import { TRAIL_LENGTH_ENEMY, EXPLOSION_DURATION_DEFAULT, BLACKHOLE_PALETTE } from './config';
 import { gameSettings } from './settings';
 
-type SpawnableType = 'rhombus' | 'pinwheel' | 'square' | 'sierpinski' | 'blackhole';
+type SpawnableType = 'rhombus' | 'pinwheel' | 'sierpinski' | 'blackhole';
 type ExplosionStyle = 'shockwave' | 'nova' | 'implosion' | 'jets';
 
-const SPAWNABLE_TYPES: SpawnableType[] = ['rhombus', 'pinwheel', 'square', 'sierpinski', 'blackhole'];
+const SPAWNABLE_TYPES: SpawnableType[] = ['rhombus', 'pinwheel', 'sierpinski', 'blackhole'];
 
 const SPAWNABLE_COLORS: Record<SpawnableType, string> = {
   rhombus: '#00c8ff',
   pinwheel: '#c840ff',
-  square: '#ff20ff',
   sierpinski: '#ffd700',
   blackhole: '#66b3ff',
 };
@@ -653,7 +651,6 @@ export class DesignLab {
     switch (type) {
       case 'rhombus': enemy = new Rhombus(); break;
       case 'pinwheel': enemy = new Pinwheel(); break;
-      case 'square': enemy = new Square(); break;
       case 'sierpinski': enemy = new Sierpinski(); break;
       case 'blackhole': {
         const bh = new BlackHole();

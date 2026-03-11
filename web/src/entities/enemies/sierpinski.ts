@@ -26,9 +26,10 @@ export class Sierpinski extends Enemy {
     this.maxHp = SIERPINSKI_TIER_HP[tier];
     this.collisionRadius = SIERPINSKI_TIER_RADIUS[tier];
 
-    // Tier 0 is a miniboss (resists separation push)
+    // Tier 0 is a miniboss (resists separation push, immune to gravity)
     if (tier === 0) {
       this.isMiniboss = true;
+      this.gravityImmune = true;
     }
 
     // Precompute outer triangle as shape points for collision

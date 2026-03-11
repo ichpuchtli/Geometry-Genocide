@@ -44,7 +44,6 @@ import {
   MIN_SPAWN_DISTANCE,
   ENEMY_SEPARATION_BUFFER,
   SPAWN_DURATION_AMBUSH,
-  HITSTOP_SQUARE,
   HITSTOP_SIERPINSKI,
   HITSTOP_BLACKHOLE,
   HITSTOP_MULTI,
@@ -91,6 +90,11 @@ import {
   FORMATION_SOUND_MIN_COUNT,
   FORMATION_LEAKTHROUGH_COUNT,
   FORMATION_LEAKTHROUGH_VOLUME,
+  BULLET_GRAVITY_STRENGTH,
+  SUPERNOVA_PARTICLE_COUNT,
+  SUPERNOVA_GRID_IMPULSE,
+  SUPERNOVA_HITSTOP,
+  SUPERNOVA_FLASH_DURATION,
 } from './config';
 import { FormationMeta } from './spawner/spawn-patterns';
 
@@ -133,7 +137,6 @@ function computeMedals(stats: RunStats): MedalDef[] {
 // Enemy factory imports
 import { Rhombus } from './entities/enemies/rhombus';
 import { Pinwheel } from './entities/enemies/pinwheel';
-import { Square } from './entities/enemies/square';
 import { CircleEnemy } from './entities/enemies/circle';
 import { BlackHole } from './entities/enemies/blackhole';
 import { Shard } from './entities/enemies/shard';
@@ -169,8 +172,6 @@ function createEnemy(type: string, pos?: Vec2, isElite = false, tier?: number): 
   switch (type) {
     case 'rhombus': e = new Rhombus(); break;
     case 'pinwheel': e = new Pinwheel(); break;
-    case 'square': e = new Square(); break;
-    case 'square2': e = new Square(); break; // legacy — treat as regular square
     case 'circle': e = new CircleEnemy(pos); e.speed *= gameSettings.enemySpeedMultiplier; return e;
     case 'blackhole': e = new BlackHole(); break;
     case 'shard': e = new Shard(pos); e.speed *= gameSettings.enemySpeedMultiplier; return e;
@@ -289,6 +290,10 @@ export class Game {
   };
   private gameOverMedals: MedalDef[] = [];
   private medalRevealPlayed = false;
+
+  // Supernova flash + warning tracking
+  private supernovaFlashTimer = 0;
+  private supernovaWarningPlayed = new Set<BlackHole>();
 
   // Design Lab
   private designLab: DesignLab | null = null;
@@ -484,6 +489,8 @@ export class Game {
     };
     this.gameOverMedals = [];
     this.medalRevealPlayed = false;
+    this.supernovaFlashTimer = 0;
+    this.supernovaWarningPlayed.clear();
     this.sierpinskiBossActive = false;
     this.sierpinskiBossDefeated = false;
     this.sierpinskiBossWarningTimer = 0;
@@ -585,9 +592,15 @@ export class Game {
           if (e.trailId >= 0) this.trails.unregister(e.trailId);
           this.explosions.spawn(e.position.x, e.position.y, e.color, 15, 0.6);
           this.grid.applyImpulse(e.position.x, e.position.y, -20, 120);
-          this.haptics.absorb();
 
-          // Auto-explode on overload
+          // Destabilize warning — play once per BH
+          if (bh.destabilizing && !bh.overloaded && !this.supernovaWarningPlayed.has(bh)) {
+            this.supernovaWarningPlayed.add(bh);
+            this.audio.playSupernovaWarning();
+            this.phaseBorderPulseTimer = PHASE_BORDER_PULSE_DURATION;
+          }
+
+          // Auto-explode on overload (after 1.5s destabilize)
           if (bh.overloaded) {
             bh.active = false;
             const absorbed = bh.absorbedCount;
@@ -603,25 +616,35 @@ export class Game {
               ce.trailId = this.trails.register(ce.color, this.trailLenEnemy);
               this.enemies.push(ce);
             }
-            // Massive explosion
+            // Layer 1: Primary supernova explosion (massive)
             this.explosions.spawn(
               bh.position.x, bh.position.y, bh.color,
-              this.mobile ? 100 : 200,
+              this.mobile ? 150 : SUPERNOVA_PARTICLE_COUNT,
               EXPLOSION_DURATION_LARGE,
             );
-            // White flash particles
+            // Layer 2: White flash particles
             this.explosions.spawn(
               bh.position.x, bh.position.y, [1, 1, 1],
-              this.mobile ? 40 : 80,
+              this.mobile ? 60 : Math.floor(SUPERNOVA_PARTICLE_COUNT * 0.4),
               EXPLOSION_DURATION_LARGE * 0.6,
             );
-            this.grid.applyImpulse(bh.position.x, bh.position.y, 1200, 400);
+            // Layer 3: Orange embers (long duration)
+            this.explosions.spawn(
+              bh.position.x, bh.position.y, [1, 0.5, 0.1],
+              this.mobile ? 40 : Math.floor(SUPERNOVA_PARTICLE_COUNT * 0.3),
+              EXPLOSION_DURATION_LARGE * 1.5,
+              0.3,
+            );
+            this.grid.applyImpulse(bh.position.x, bh.position.y, SUPERNOVA_GRID_IMPULSE, 600);
             this.camera.shake(SCREEN_SHAKE_DEATH);
             this.audio.playBlackHoleDeath(absorbed);
             this.player.score += bh.scoreValue;
             this.player.enemiesKilled++;
             if (bh.trailId >= 0) this.trails.unregister(bh.trailId);
-            this.haptics.heavy();
+            this.haptics.supernova();
+            this.hitstopTimer = Math.max(this.hitstopTimer, SUPERNOVA_HITSTOP);
+            this.supernovaFlashTimer = SUPERNOVA_FLASH_DURATION;
+            this.supernovaWarningPlayed.delete(bh);
           }
           continue;
         }
@@ -633,6 +656,20 @@ export class Game {
           e.position.x += dx / dist * force;
           e.position.y += dy / dist * force;
         }
+      }
+
+      // Bullet gravity bending — curve trajectories near BlackHoles
+      for (const b of this.bullets.bullets) {
+        if (!b.active) continue;
+        const bdx = bh.position.x - b.position.x;
+        const bdy = bh.position.y - b.position.y;
+        const bdist2 = bdx * bdx + bdy * bdy;
+        if (bdist2 >= attractR2 || bdist2 < 1) continue;
+        const bdist = Math.sqrt(bdist2);
+        const force = BULLET_GRAVITY_STRENGTH * dt / bdist;
+        b.velocity.x += bdx / bdist * force;
+        b.velocity.y += bdy / bdist * force;
+        b.angle = Math.atan2(b.velocity.y, b.velocity.x);
       }
     }
   }
@@ -851,7 +888,6 @@ export class Game {
         this.playEnemySpawnSFX(req.type);
       }
       if (elite) this.audio.playEliteArrive();
-      this.haptics.medium();
     }
 
     // Create telegraphs from formation events + play group spawn sounds
@@ -936,7 +972,6 @@ export class Game {
           this.grid.applyImpulse(kill.position.x, kill.position.y, 1200, 500);
           this.camera.shake(SCREEN_SHAKE_DEATH);
           maxHitstop = Math.max(maxHitstop, MINIBOSS_HITSTOP_DEATH);
-          this.haptics.death();
           // Kill all active MiniMandels
           for (const e of this.enemies) {
             if (e.active && e instanceof MiniMandel) {
@@ -971,7 +1006,6 @@ export class Game {
             this.camera.shake(SCREEN_SHAKE_LARGE);
           }
           maxHitstop = Math.max(maxHitstop, HITSTOP_BLACKHOLE);
-          this.haptics.heavy();
           break;
         }
         case 'sierpinski': {
@@ -993,7 +1027,6 @@ export class Game {
             this.grid.applyImpulse(kill.position.x, kill.position.y, 800, 350);
             this.camera.shake(SCREEN_SHAKE_DEATH);
             maxHitstop = Math.max(maxHitstop, HITSTOP_SIERPINSKI * 2);
-            this.haptics.heavy();
             // End boss encounter
             this.onSierpinskiBossDefeated();
           } else if (sTier === 1) {
@@ -1009,7 +1042,6 @@ export class Game {
             this.grid.applyImpulse(kill.position.x, kill.position.y, 500, 220);
             this.camera.shake(SCREEN_SHAKE_LARGE);
             maxHitstop = Math.max(maxHitstop, HITSTOP_SIERPINSKI);
-            this.haptics.medium();
           } else {
             // Tier 2 small death — small explosion
             this.explosions.spawn(
@@ -1017,19 +1049,9 @@ export class Game {
               this.mobile ? 25 : 50, EXPLOSION_DURATION_DEFAULT * 0.8,
             );
             this.grid.applyImpulse(kill.position.x, kill.position.y, 350, 150);
-            this.haptics.light();
           }
           break;
         }
-        case 'square':
-          this.explosions.spawn(
-            kill.position.x, kill.position.y, kill.color,
-            this.mobile ? 20 : 40, EXPLOSION_DURATION_DEFAULT * 0.9, 0.8,
-          );
-          this.grid.applyImpulse(kill.position.x, kill.position.y, 450, 200);
-          maxHitstop = Math.max(maxHitstop, HITSTOP_SQUARE);
-          this.haptics.medium();
-          break;
         case 'pinwheel':
           this.explosions.spawn(
             kill.position.x, kill.position.y, kill.color,
@@ -1037,7 +1059,6 @@ export class Game {
           );
           this.grid.applyImpulse(kill.position.x, kill.position.y, 350, 180);
           // No camera shake — grid impulse is enough for small enemies
-          this.haptics.light();
           break;
         default: // rhombus, circle, shard, minimandel, etc.
           this.explosions.spawn(
@@ -1047,7 +1068,6 @@ export class Game {
           );
           this.grid.applyImpulse(kill.position.x, kill.position.y, 400, 200);
           // No camera shake for basic kills
-          this.haptics.light();
           break;
       }
 
@@ -1116,7 +1136,6 @@ export class Game {
         // Mini flash per spawn
         this.explosions.spawn(ps.position.x, ps.position.y, [1, 0.6, 0.2], 12, 0.3);
         this.grid.applyImpulse(ps.position.x, ps.position.y, 200, 150);
-        this.haptics.light();
       }
     }
     // Emit a pulsing warning ring at the origin while spawns are pending
@@ -1192,7 +1211,6 @@ export class Game {
     if (enemy instanceof MiniMandel) return 'minimandel';
     if (enemy instanceof BlackHole) return 'blackhole';
     if (enemy instanceof Sierpinski) return 'sierpinski';
-    if (enemy instanceof Square) return 'square';
     if (enemy instanceof Pinwheel) return 'pinwheel';
     if (enemy instanceof Rhombus) return 'rhombus';
     if (enemy instanceof CircleEnemy) return 'circle';
@@ -1202,7 +1220,7 @@ export class Game {
   /** Spawn per-family kill signature visual effect */
   private spawnKillSignature(x: number, y: number, color: [number, number, number], family: string, isElite = false): void {
     // Only spawn for families with distinct signatures
-    if (family === 'rhombus' || family === 'pinwheel' || family === 'square' || family === 'sierpinski' || family === 'mandelbrot') {
+    if (family === 'rhombus' || family === 'pinwheel' || family === 'sierpinski' || family === 'mandelbrot') {
       const angles: number[] = [];
       const baseCount = family === 'pinwheel' ? 8 : KILL_SIG_RAY_COUNT;
       const count = isElite ? Math.floor(baseCount * 1.5) : baseCount;
@@ -1234,8 +1252,9 @@ export class Game {
     }
   }
 
-  /** Update combat feedback timers (kill effects, banners, telegraphs, border pulse) */
+  /** Update combat feedback timers (kill effects, banners, telegraphs, border pulse, supernova flash) */
   private updateCombatFeedback(dt: number): void {
+    if (this.supernovaFlashTimer > 0) this.supernovaFlashTimer -= dt;
     const dtSec = dt / 1000;
     // Kill effects
     for (const ke of this.killEffects) {
@@ -1390,7 +1409,6 @@ export class Game {
     this.audio.playMinibossArrive();
     this.grid.applyImpulse(spawnX, spawnY, 600, 300);
     this.camera.shake(SCREEN_SHAKE_LARGE);
-    this.haptics.heavy();
   }
 
   private onSierpinskiBossDefeated(): void {
@@ -1454,7 +1472,6 @@ export class Game {
         this.grid.applyImpulse(
           this.minibossRef.position.x, this.minibossRef.position.y, 600, 300,
         );
-        this.haptics.heavy();
       }
     }
 
@@ -1501,7 +1518,6 @@ export class Game {
     this.audio.playMinibossArrive();
     this.grid.applyImpulse(spawnX, spawnY, 800, 400);
     this.camera.shake(SCREEN_SHAKE_LARGE);
-    this.haptics.heavy();
   }
 
   private onMinibossDefeated(): void {
@@ -1525,11 +1541,13 @@ export class Game {
 
     for (let i = 0; i < len; i++) {
       const a = enemies[i];
-      if (!a.active || a.isSpawning) continue;
+      if (!a.active) continue;
+      if (a.isSpawning && a.spawnTimer > a.spawnDuration * 0.3) continue;
 
       for (let j = i + 1; j < len; j++) {
         const b = enemies[j];
-        if (!b.active || b.isSpawning) continue;
+        if (!b.active) continue;
+        if (b.isSpawning && b.spawnTimer > b.spawnDuration * 0.3) continue;
 
         // Don't fight gravity — if either enemy is being pulled into a BlackHole, skip
         if (inGravityWell.has(a) || inGravityWell.has(b)) continue;
@@ -1628,27 +1646,6 @@ export class Game {
             const x3 = ke.x + Math.cos(angle) * len * 1.2;
             const y3 = ke.y + Math.sin(angle) * len * 1.2;
             this.renderer.drawLine(x2, y2, x3, y3, r, g, b, alpha * 0.4);
-          }
-          break;
-        }
-        case 'square': {
-          // Chunky fragments: rectangular shapes flying outward
-          const fragSize = 8 + t * 4;
-          for (const angle of ke.angles) {
-            const dist = t * 60;
-            const cx = ke.x + Math.cos(angle) * dist;
-            const cy = ke.y + Math.sin(angle) * dist;
-            const rot = angle + t * 2;
-            // Draw a small rotated square
-            for (let j = 0; j < 4; j++) {
-              const a1 = rot + (j / 4) * Math.PI * 2;
-              const a2 = rot + ((j + 1) / 4) * Math.PI * 2;
-              this.renderer.drawLine(
-                cx + Math.cos(a1) * fragSize, cy + Math.sin(a1) * fragSize,
-                cx + Math.cos(a2) * fragSize, cy + Math.sin(a2) * fragSize,
-                r, g, b, alpha * 0.7,
-              );
-            }
           }
           break;
         }
@@ -1849,7 +1846,6 @@ export class Game {
   private playEnemySpawnSFX(type: string): void {
     switch (type) {
       case 'rhombus': this.audio.playSFX('rhombus'); break;
-      case 'square': this.audio.playSFX('square'); break;
       case 'pinwheel': this.audio.playSFX('pinwheel'); break;
       case 'blackhole': this.audio.playSFX('deathstar'); break;
       case 'sierpinski': this.audio.playSFX('octagon'); break;
@@ -1860,7 +1856,6 @@ export class Game {
   private playSFXAtVolume(type: string, volume: number): void {
     switch (type) {
       case 'rhombus': this.audio.playSFXAtVolume('rhombus', volume); break;
-      case 'square': this.audio.playSFXAtVolume('square', volume); break;
       case 'pinwheel': this.audio.playSFXAtVolume('pinwheel', volume); break;
       case 'blackhole': this.audio.playSFXAtVolume('deathstar', volume); break;
       case 'sierpinski': this.audio.playSFXAtVolume('octagon', volume); break;
@@ -1909,7 +1904,6 @@ export class Game {
 
     this.audio.playSFX('die');
     this.audio.stopMusic();
-    this.haptics.death();
   }
 
   private onPlayerRespawn(): void {
@@ -1939,8 +1933,6 @@ export class Game {
     this.bullets.clear();
 
     this.audio.playSFX('die1');
-    this.haptics.respawn();
-    if (this.player.lives === 1) this.haptics.warning();
   }
 
   private updateDeathSlowmo(dt: number): void {
@@ -2137,6 +2129,19 @@ export class Game {
 
     // --- Bloom post-process: scene FBO -> screen ---
     this.bloom.apply(this.renderer.canvasWidth, this.renderer.canvasHeight);
+
+    // --- Supernova screen flash (after bloom, over entire screen) ---
+    if (this.supernovaFlashTimer > 0) {
+      const flashT = this.supernovaFlashTimer / SUPERNOVA_FLASH_DURATION;
+      const flashAlpha = flashT * 0.6;
+      // Draw large quad covering visible area
+      this.renderer.begin(false);
+      const hw = gameSettings.arenaWidth;
+      const hh = gameSettings.arenaHeight;
+      this.renderer.drawTriangle(-hw, -hh, hw, -hh, hw, hh, 1, 1, 1, flashAlpha);
+      this.renderer.drawTriangle(-hw, -hh, hw, hh, -hw, hh, 1, 1, 1, flashAlpha);
+      this.renderer.end();
+    }
 
     // --- HUD (drawn on separate 2D canvas, unaffected by bloom) ---
     if (this.state === 'playing' || this.state === 'death_slowmo') {

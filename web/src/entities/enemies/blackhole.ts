@@ -40,6 +40,8 @@ const P = BLACKHOLE_PALETTE;
 export class BlackHole extends Enemy {
   absorbedCount = 0;
   overloaded = false;
+  destabilizing = false;
+  destabilizeTimer = 0;
 
   override hp = BLACKHOLE_HP;
   override maxHp = BLACKHOLE_HP;
@@ -128,8 +130,9 @@ export class BlackHole extends Enemy {
     this.collisionRadius = 30 + this.absorbedCount * 2.5;
     for (let i = 0; i < 4; i++) this.pushSwirlParticle(i % 4);
     for (let i = 0; i < 2; i++) this.pushHorizonParticle();
-    if (this.absorbedCount >= BlackHole.MAX_ABSORB) {
-      this.overloaded = true;
+    if (this.absorbedCount >= BlackHole.MAX_ABSORB && !this.destabilizing) {
+      this.destabilizing = true;
+      this.destabilizeTimer = 0;
     }
   }
 
@@ -152,6 +155,14 @@ export class BlackHole extends Enemy {
   update(dt: number, _playerPos?: Vec2): void {
     if (!this.active) return;
     const instability = this.absorbedCount / BlackHole.MAX_ABSORB;
+
+    // Destabilize countdown → overload
+    if (this.destabilizing && !this.overloaded) {
+      this.destabilizeTimer += dt;
+      if (this.destabilizeTimer >= 1500) {
+        this.overloaded = true;
+      }
+    }
 
     this.rotation += dt * (0.003 + this.absorbedCount * 0.0008);
     this.wobbleTime += dt;
@@ -205,6 +216,10 @@ export class BlackHole extends Enemy {
       case 'haze': this.renderHaze(renderer); break;
       case 'corona': this.renderCorona(renderer); break;
       case 'molten': this.renderMolten(renderer); break;
+    }
+    // Destabilize telegraph overlay
+    if (this.destabilizing && !this.overloaded) {
+      this.renderDestabilize(renderer);
     }
   }
 
@@ -580,6 +595,48 @@ export class BlackHole extends Enemy {
       const flashAlpha = Math.min(this.hitFlash * 3, 1);
       renderer.drawFilledCircle(px, py, radius * 1.2, [1, 1, 1], 24, flashAlpha * 0.5);
     }
+  }
+
+  /** Destabilize telegraph: pulsing, color shift, discharge arcs, warning ring */
+  private renderDestabilize(renderer: Renderer): void {
+    const t = this.destabilizeTimer / 1500; // 0→1 over 1.5s
+    const px = this.position.x;
+    const py = this.position.y;
+    const baseR = this.collisionRadius;
+
+    // Pulsing radius (±15% sinusoidal at 8Hz)
+    const pulse = 1 + Math.sin(this.wobbleTime * 0.05) * 0.15 * (0.5 + t);
+
+    // Color shift toward white/red
+    const r = 1.0;
+    const g = 1.0 - t * 0.6;
+    const b = 1.0 - t * 0.8;
+
+    // Growing warning ring (red, pulsing)
+    const ringPulse = 0.5 + 0.5 * Math.sin(this.wobbleTime * 0.03);
+    const ringR = baseR * (1.4 + t * 0.6) * pulse;
+    const ringAlpha = (0.15 + t * 0.4) * ringPulse;
+    renderer.drawCircle(px, py, ringR, [1, 0.2, 0.05], 32, ringAlpha);
+    renderer.drawCircle(px, py, ringR * 0.95, [1, 0.4, 0.1], 32, ringAlpha * 0.5);
+
+    // Flickering discharge arcs radiating outward
+    const arcCount = 6 + Math.floor(t * 10);
+    for (let i = 0; i < arcCount; i++) {
+      const angle = (i / arcCount) * TWO_PI + this.wobbleTime * 0.004;
+      const flicker = Math.sin(i * 17.3 + this.wobbleTime * 0.02);
+      if (flicker < 0.2 - t * 0.5) continue; // skip some arcs, more show as t grows
+      const innerR = baseR * 0.8;
+      const outerR = baseR * (1.2 + t * 0.8 + flicker * 0.3);
+      const arcAlpha = (0.3 + t * 0.5) * Math.max(0, flicker);
+      renderer.drawLine(
+        px + Math.cos(angle) * innerR, py + Math.sin(angle) * innerR,
+        px + Math.cos(angle + 0.05) * outerR, py + Math.sin(angle + 0.05) * outerR,
+        r, g, b, arcAlpha,
+      );
+    }
+
+    // Inner color shift glow
+    renderer.drawFilledCircle(px, py, baseR * 0.6, [r, g * 0.3, b * 0.1], 20, t * 0.15);
   }
 
   renderGlow(renderer: Renderer, time: number): void {

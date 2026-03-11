@@ -448,7 +448,6 @@ export class AudioManager {
     if (!this._initialized || !this.ctx || !this.sfxGain) return;
     switch (family) {
       case 'rhombus': this.playKillCrystal(); break;
-      case 'square': this.playKillThud(); break;
       case 'pinwheel': this.playKillSpin(); break;
       case 'sierpinski': this.playKillFractal(); break;
     }
@@ -469,40 +468,6 @@ export class AudioManager {
     gain.connect(this.sfxGain!);
     osc.start(now);
     osc.stop(now + 0.25);
-  }
-
-  /** Heavy thud for square kills */
-  private playKillThud(): void {
-    const ctx = this.ctx!;
-    const now = ctx.currentTime;
-    // Low thud
-    const osc = ctx.createOscillator();
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(120, now);
-    osc.frequency.exponentialRampToValueAtTime(40, now + 0.3);
-    const gain = ctx.createGain();
-    gain.gain.setValueAtTime(0.4, now);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
-    osc.connect(gain);
-    gain.connect(this.sfxGain!);
-    osc.start(now);
-    osc.stop(now + 0.45);
-    // Noise crunch
-    const noiseBuf = ctx.createBuffer(1, ctx.sampleRate * 0.1 | 0, ctx.sampleRate);
-    const data = noiseBuf.getChannelData(0);
-    for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
-    const noise = ctx.createBufferSource();
-    noise.buffer = noiseBuf;
-    const filter = ctx.createBiquadFilter();
-    filter.type = 'lowpass';
-    filter.frequency.value = 300;
-    const ng = ctx.createGain();
-    ng.gain.setValueAtTime(0.15, now);
-    ng.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
-    noise.connect(filter);
-    filter.connect(ng);
-    ng.connect(this.sfxGain!);
-    noise.start(now);
   }
 
   /** Spinning whoosh for pinwheel kills */
@@ -723,21 +688,21 @@ export class AudioManager {
     const now = ctx.currentTime;
     const intensity = Math.min(absorbed / 12, 1);
 
-    // 1. Deep sub-bass boom (swept sine 80Hz → 20Hz)
+    // 1. Deep sub-bass boom (swept sine 80Hz → 20Hz) — louder for supernova
     const boom = ctx.createOscillator();
     boom.type = 'sine';
     boom.frequency.setValueAtTime(80 + intensity * 40, now);
-    boom.frequency.exponentialRampToValueAtTime(20, now + 0.8);
+    boom.frequency.exponentialRampToValueAtTime(20, now + 1.0);
     const boomGain = ctx.createGain();
-    boomGain.gain.setValueAtTime(0.7 + intensity * 0.3, now);
-    boomGain.gain.exponentialRampToValueAtTime(0.001, now + 1.2 + intensity * 0.5);
+    boomGain.gain.setValueAtTime(0.8 + intensity * 0.2, now);
+    boomGain.gain.exponentialRampToValueAtTime(0.001, now + 1.8 + intensity * 0.7);
     boom.connect(boomGain);
     boomGain.connect(this.sfxGain);
     boom.start(now);
-    boom.stop(now + 1.5 + intensity * 0.5);
+    boom.stop(now + 2.0 + intensity * 0.7);
 
     // 2. Noise burst (white noise through bandpass for crunch)
-    const noiseLen = 1.0 + intensity * 0.8;
+    const noiseLen = 1.2 + intensity * 1.0;
     const noiseBuf = ctx.createBuffer(1, ctx.sampleRate * noiseLen, ctx.sampleRate);
     const data = noiseBuf.getChannelData(0);
     for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
@@ -749,27 +714,75 @@ export class AudioManager {
     noiseBP.frequency.exponentialRampToValueAtTime(80, now + noiseLen);
     noiseBP.Q.value = 1.5;
     const noiseGain = ctx.createGain();
-    noiseGain.gain.setValueAtTime(0.4 + intensity * 0.3, now);
+    noiseGain.gain.setValueAtTime(0.45 + intensity * 0.35, now);
     noiseGain.gain.exponentialRampToValueAtTime(0.001, now + noiseLen);
     noise.connect(noiseBP);
     noiseBP.connect(noiseGain);
     noiseGain.connect(this.sfxGain);
     noise.start(now);
 
-    // 3. Reverb-like tail — descending tone cluster
+    // 3. Reverb-like tail — descending tone cluster (longer tail: 2.5s)
     for (let i = 0; i < 3; i++) {
       const tail = ctx.createOscillator();
       tail.type = 'triangle';
       tail.frequency.setValueAtTime(200 + i * 80 + intensity * 100, now);
-      tail.frequency.exponentialRampToValueAtTime(40 + i * 10, now + 1.5);
+      tail.frequency.exponentialRampToValueAtTime(40 + i * 10, now + 2.0);
       const tGain = ctx.createGain();
-      tGain.gain.setValueAtTime(0.12, now);
-      tGain.gain.exponentialRampToValueAtTime(0.001, now + 1.8);
+      tGain.gain.setValueAtTime(0.14, now);
+      tGain.gain.exponentialRampToValueAtTime(0.001, now + 2.5);
       tail.connect(tGain);
       tGain.connect(this.sfxGain);
       tail.start(now + 0.02 * i);
-      tail.stop(now + 2.0);
+      tail.stop(now + 2.7);
     }
+
+    // 4. Metallic ring layer — shimmering high harmonic
+    const ring = ctx.createOscillator();
+    ring.type = 'sine';
+    ring.frequency.setValueAtTime(1800 + intensity * 600, now);
+    ring.frequency.exponentialRampToValueAtTime(600, now + 2.0);
+    const ringGain = ctx.createGain();
+    ringGain.gain.setValueAtTime(0.08 + intensity * 0.06, now);
+    ringGain.gain.exponentialRampToValueAtTime(0.001, now + 2.5);
+    ring.connect(ringGain);
+    ringGain.connect(this.sfxGain);
+    ring.start(now);
+    ring.stop(now + 2.7);
+  }
+
+  /** Supernova warning: rising sub-bass drone + high whine (1.5s) */
+  playSupernovaWarning(): void {
+    if (!this._initialized || !this.ctx || !this.sfxGain) return;
+    const ctx = this.ctx;
+    const now = ctx.currentTime;
+
+    // 1. Sub-bass drone: 30Hz rising to 50Hz over 1.5s
+    const drone = ctx.createOscillator();
+    drone.type = 'sine';
+    drone.frequency.setValueAtTime(30, now);
+    drone.frequency.linearRampToValueAtTime(50, now + 1.5);
+    const droneGain = ctx.createGain();
+    droneGain.gain.setValueAtTime(0.1, now);
+    droneGain.gain.linearRampToValueAtTime(0.5, now + 1.2);
+    droneGain.gain.exponentialRampToValueAtTime(0.001, now + 1.5);
+    drone.connect(droneGain);
+    droneGain.connect(this.sfxGain);
+    drone.start(now);
+    drone.stop(now + 1.6);
+
+    // 2. High whine: 3kHz rising to 5kHz
+    const whine = ctx.createOscillator();
+    whine.type = 'sine';
+    whine.frequency.setValueAtTime(3000, now);
+    whine.frequency.exponentialRampToValueAtTime(5000, now + 1.5);
+    const whineGain = ctx.createGain();
+    whineGain.gain.setValueAtTime(0.02, now);
+    whineGain.gain.linearRampToValueAtTime(0.12, now + 1.3);
+    whineGain.gain.exponentialRampToValueAtTime(0.001, now + 1.5);
+    whine.connect(whineGain);
+    whineGain.connect(this.sfxGain);
+    whine.start(now);
+    whine.stop(now + 1.6);
   }
 
   /** Gravitational collapse — building low rumble + rising tension (~500ms) */

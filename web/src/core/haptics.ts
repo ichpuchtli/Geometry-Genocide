@@ -56,4 +56,9 @@ export class HapticsManager {
   warning(): void {
     vibrate([40, 40, 40, 40, 40]);
   }
+
+  /** BlackHole supernova — escalating dramatic pattern */
+  supernova(): void {
+    vibrate([100, 30, 150, 40, 200]);
+  }
 }

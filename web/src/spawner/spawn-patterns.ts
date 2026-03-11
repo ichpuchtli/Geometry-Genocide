@@ -5,7 +5,6 @@ import { gameSettings } from '../settings';
 export type EnemyType =
   | 'rhombus'
   | 'pinwheel'
-  | 'square'
   | 'blackhole'
   // --- Child types (spawned by parents, not in pools) ---
   | 'circle'   // spawned only by BlackHole overload explosion
@@ -28,28 +27,24 @@ export const TUTORIAL_POOL: EnemyType[] = [
 export const RAMPUP_POOL: EnemyType[] = [
   'rhombus', 'rhombus', 'rhombus', 'rhombus', 'rhombus',
   'pinwheel', 'pinwheel', 'pinwheel', 'pinwheel',
-  'square', 'square',
   'blackhole',
 ];
 
 export const MIDGAME_POOL: EnemyType[] = [
   'rhombus', 'rhombus', 'rhombus', 'rhombus',
   'pinwheel', 'pinwheel', 'pinwheel',
-  'square', 'square', 'square',
   'blackhole',
 ];
 
 export const INTENSE_POOL: EnemyType[] = [
   'rhombus', 'rhombus', 'rhombus', 'rhombus',
   'pinwheel', 'pinwheel', 'pinwheel',
-  'square', 'square', 'square',
   'blackhole', 'blackhole',
 ];
 
 export const CHAOS_POOL: EnemyType[] = [
   'rhombus', 'rhombus', 'rhombus',
   'pinwheel', 'pinwheel',
-  'square', 'square', 'square',
   'blackhole', 'blackhole',
 ];
 

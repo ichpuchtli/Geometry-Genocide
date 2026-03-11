@@ -26,6 +26,7 @@ export class Mandelbrot extends Enemy {
 
   constructor() {
     super();
+    this.gravityImmune = true;
     this.color = COLORS.mandelbrot.color;
     this.color2 = COLORS.mandelbrot.color2;
     this.speed = MINIBOSS_SPEED[0];
